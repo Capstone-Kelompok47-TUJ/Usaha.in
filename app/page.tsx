@@ -127,9 +127,15 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-blue-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-          {/* Kalimat Peringatan Demo (Di atas Badge Sistem Operasional) */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20 shadow-xs mb-4 animate-fade-in max-w-2xl text-center">
-            <span>Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.</span>
+          {/* Kalimat Peringatan Demo (Desain Banner Kartu dengan Aksen Kiri & Badge) */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 sm:px-4 sm:py-2.5 rounded-xl border border-amber-200 dark:border-amber-800/80 border-l-[5px] border-l-amber-500 bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-amber-50/10 dark:from-amber-950/40 dark:via-amber-950/20 dark:to-transparent shadow-xs mb-5 animate-fade-in max-w-3xl text-left w-full">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold tracking-wider uppercase bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 shrink-0">
+              <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400 fill-amber-500" />
+              <span>TAHAP PENGEMBANGAN</span>
+            </div>
+            <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-normal">
+              Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.
+            </p>
           </div>
 
           {/* Badge */}
