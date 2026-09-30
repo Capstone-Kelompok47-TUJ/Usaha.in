@@ -18,10 +18,10 @@ export const metadata: Metadata = {
   keywords: ["UMKM", "manajemen toko", "dashboard bisnis", "stok", "penjualan"],
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo-icon.png", type: "image/png" },
     ],
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    shortcut: "/logo-icon.png",
+    apple: "/logo-icon.png",
   },
 };
 
@@ -33,9 +33,8 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" href="/logo-icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo-icon.png" />
       </head>
       <body className={`${inter.variable} min-h-screen`}>{children}</body>
     </html>

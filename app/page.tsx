@@ -49,7 +49,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <LogoIcon className="w-10 h-10 group-hover:scale-105 transition-transform" />
+            <LogoIcon className="w-10 h-10 group-hover:scale-105 transition-transform" size={40} />
             <div>
               <div className="font-extrabold text-base tracking-tight leading-tight flex items-center gap-1.5">
                 Usaha.in
