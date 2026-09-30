@@ -278,8 +278,8 @@ export default function LandingPage() {
                       </div>
                       <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Pemesanan Chat & Media Sosial</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pemesanan langsung via pesan & DM</div>
+                          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Pemesanan via Chat</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pencatatan pesanan dari perpesanan langsung</div>
                         </div>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0 ml-2">Pesan Langsung</span>
                       </div>
