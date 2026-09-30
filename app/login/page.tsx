@@ -14,7 +14,6 @@ export default function LoginPage() {
   const router = useRouter();
   const login = useStore((s) => s.login);
   const isAuthenticated = useStore((s) => s.isAuthenticated);
-  const users = useStore((s) => s.users);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,22 +46,6 @@ export default function LoginPage() {
         setLoading(false);
       }
     }, 400);
-  }
-
-  function handleRoleLogin(userId: string) {
-    const targetUser = users.find((u) => u.id === userId);
-    if (!targetUser) return;
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      const res = login(targetUser.loginEmail, targetUser.password);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(res.message ?? "Gagal masuk.");
-        setLoading(false);
-      }
-    }, 250);
   }
 
   return (
@@ -142,7 +125,7 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert("Gunakan pilihan Akun Contoh di bawah atau hubungi pemilik usaha untuk reset kata sandi.")}
+                  onClick={() => alert("Silakan hubungi pemilik usaha Anda atau periksa email kontak untuk mereset kata sandi.")}
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
                   Lupa sandi?
@@ -201,98 +184,11 @@ export default function LoginPage() {
           </form>
 
           {/* Link to Register */}
-          <div className="mt-5 text-center text-xs text-[hsl(var(--muted-fg))]">
+          <div className="mt-6 text-center text-xs text-[hsl(var(--muted-fg))]">
             Belum punya akun UMKM?{" "}
             <Link href="/daftar" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
               Daftar Sekarang
             </Link>
-          </div>
-
-          {/* Akun Contoh — 1-Klik Masuk */}
-          <div className="mt-8 pt-6 border-t border-[hsl(var(--border))]">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                Pilihan Akun Contoh (Toko Sejahtera):
-              </span>
-              <span className="text-[11px] text-[hsl(var(--muted-fg))]">
-                1-Klik Masuk
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("owner-1")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">👑</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors truncate">
-                      Pak Ahmad (Pemilik)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-amber-600 dark:text-amber-400 truncate">
-                      ahmad@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-sari")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🛍️</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-blue-600 transition-colors truncate">
-                      Sari (Staf Penjualan)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-blue-600 dark:text-blue-400 truncate">
-                      sari@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-budi")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">📦</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-emerald-600 transition-colors truncate">
-                      Budi (Staf Gudang)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-emerald-600 dark:text-emerald-400 truncate">
-                      budi@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-rina")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">💳</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-purple-600 transition-colors truncate">
-                      Rina (Staf Keuangan)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-purple-600 dark:text-purple-400 truncate">
-                      rina@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
           </div>
         </div>
 

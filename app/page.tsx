@@ -170,7 +170,7 @@ export default function LandingPage() {
               href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
-              <span>Masuk (Akun Contoh)</span>
+              <span>Masuk ke Akun</span>
             </Link>
           </div>
 
@@ -765,7 +765,7 @@ export default function LandingPage() {
               Coba langsung alur kerja pemilik dan karyawan
             </h4>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Gunakan akun contoh untuk mencoba alur kerja pemilik dan karyawan.
+              Masuk dan kelola seluruh alur operasional bisnis UMKM Anda dengan mudah.
             </p>
           </div>
           <Link
