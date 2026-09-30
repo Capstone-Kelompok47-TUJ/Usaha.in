@@ -43,11 +43,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] transition-colors selection:bg-blue-600 selection:text-white">
-      {/* 0. TOP THIN BANNER (Satu-satunya tempat kata 'demo' diperbolehkan) */}
-      <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs py-2 px-4 text-center font-medium">
-        Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.
-      </div>
-
       {/* 1. STICKY NAVBAR */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-[hsl(var(--background))]/80 border-b border-[hsl(var(--border))]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -131,7 +126,12 @@ export default function LandingPage() {
         {/* Ambient Gradient Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-blue-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none -z-10" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+          {/* Kalimat Peringatan Demo (Di atas Badge Sistem Operasional) */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20 shadow-xs mb-4 animate-fade-in max-w-2xl text-center">
+            <span>Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.</span>
+          </div>
+
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 shadow-xs mb-6 animate-fade-in">
             <Sparkles className="w-3.5 h-3.5 text-blue-500" />
@@ -604,8 +604,8 @@ export default function LandingPage() {
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             Pemilik Mengatur, Tim Bekerja Sesuai Penugasan
           </h2>
-          <p className="mt-3 text-sm text-[hsl(var(--muted-fg))]">
-            Hanya ada dua pihak dalam sistem: Pemilik Usaha sebagai pemegang akun utama dan Karyawan dengan modul yang disesuaikan penugasan.
+          <p className="mt-3 text-sm text-[hsl(var(--muted-fg))] leading-relaxed">
+            Membagi wewenang strategis pemilik usaha dan efisiensi kerja operasional tim secara fleksibel, aman, dan transparan.
           </p>
         </div>
 
@@ -618,7 +618,7 @@ export default function LandingPage() {
                 <span className="text-3xl">👑</span>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Pemilik Usaha</h3>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Akun Utama Sistem</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Kendali Strategis & Akun Utama</p>
                 </div>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
@@ -626,28 +626,28 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Memegang hak kontrol mutlak untuk mengelola struktur akun tim, melihat kesehatan finansial bisnis, dan memanfaatkan asisten AI Copilot.
+              Memegang wewenang penuh untuk mengelola struktur tim, memantau kesehatan finansial dan stok produk, serta memanfaatkan asisten pintar AI Copilot.
             </p>
             <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Membuat dan mengelola akun karyawan</span>
+                <span>Membuat dan mengelola akun staf secara mandiri</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Mengatur penugasan modul dan tingkat izin (Lihat/Kelola)</span>
+                <span>Menentukan wewenang per modul dengan opsi izin <strong>Lihat</strong> atau <strong>Kelola</strong></span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Melihat laporan keuangan, HPP, & laba rugi lengkap</span>
+                <span>Menganalisis laporan keuangan, HPP, & laba rugi komprehensif</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Mengakses asisten AI Business Copilot</span>
+                <span>Mendapatkan evaluasi bisnis instan bersama AI Copilot</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>Memantau log aktivitas audit seluruh tindakan staf</span>
+                <span>Memantau log aktivitas audit untuk transparansi seluruh operasional</span>
               </div>
             </div>
           </div>
@@ -658,33 +658,33 @@ export default function LandingPage() {
               <div className="flex items-center gap-3">
                 <span className="text-3xl">👥</span>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Karyawan</h3>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Dibuat & Diatur oleh Pemilik</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Karyawan & Tim Kerja</h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Akses Operasional Terarah</p>
                 </div>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                Akses Terbatas
+                Akses Terarah
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Karyawan hanya dapat melihat dan mengoperasikan modul yang ditugaskan secara eksplisit oleh pemilik usaha (tingkat Lihat atau Kelola).
+              Fokus mengeksekusi aktivitas harian pada modul yang ditugaskan pemilik usaha, dengan tampilan bersih tanpa kerumitan akses di luar wewenang.
             </p>
             <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Hanya mengakses modul sesuai penugasan pemilik</span>
+                <span>Hanya melihat dan mengakses modul sesuai mandat penugasan</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Tingkat hak akses fleksibel: <strong>Lihat</strong> atau <strong>Kelola</strong></span>
+                <span>Tingkat wewenang presisi: mode <strong>Lihat</strong> data atau <strong>Kelola</strong> operasional</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Data sensitif (keuangan/log/izin) terkunci otomatis</span>
+                <span>Data rahasia (laporan laba rugi, log audit, izin akun) terlindungi otomatis</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Check className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Aktivitas operasional tercatat pada riwayat audit</span>
+                <span>Setiap pembaruan data transaksi tercatat akurat ke riwayat sistem</span>
               </div>
             </div>
           </div>
