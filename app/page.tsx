@@ -213,7 +213,7 @@ export default function LandingPage() {
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
                   }`}
                 >
-                  Alur 4 Kanal
+                  Alur Multi-Kanal
                 </button>
                 <button
                   onClick={() => setActiveTab("copilot")}
@@ -264,26 +264,31 @@ export default function LandingPage() {
 
                   {/* DIAGRAM ALUR */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                    {/* 4 Kanal Input */}
+                    {/* 3 Kanal Input */}
                     <div className="space-y-2.5">
                       <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
                         1. Kanal Penjualan
                       </div>
-                      <div className="p-3 rounded-xl border border-orange-200 dark:border-orange-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
-                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">Marketplace A</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-semibold">Online</span>
+                      <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-bold text-blue-600 dark:text-blue-400">Berbagai Marketplace Online</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pesanan dari berbagai platform e-commerce</div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold shrink-0 ml-2">E-Commerce</span>
                       </div>
                       <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Marketplace B</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold">Online</span>
-                      </div>
-                      <div className="p-3 rounded-xl border border-green-200 dark:border-green-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
-                        <span className="text-xs font-bold text-green-600 dark:text-green-400">Chat</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-semibold">Pesan Langsung</span>
+                        <div>
+                          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Pemesanan Chat & Media Sosial</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pemesanan langsung via pesan & DM</div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0 ml-2">Pesan Langsung</span>
                       </div>
                       <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Toko Offline</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">Fisik</span>
+                        <div>
+                          <div className="text-xs font-bold text-slate-700 dark:text-slate-300">Toko Fisik & Kasir Offline</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Transaksi langsung di gerai fisik</div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold shrink-0 ml-2">Fisik / POS</span>
                       </div>
                     </div>
 
@@ -363,11 +368,11 @@ export default function LandingPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
                     <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-white dark:bg-slate-900 shadow-sm">
                       <div className="font-bold text-blue-600 dark:text-blue-400">Baru</div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-001 (Marketplace A)</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-001 (Marketplace)</div>
                     </div>
                     <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-900 bg-white dark:bg-slate-900 shadow-sm">
                       <div className="font-bold text-amber-600 dark:text-amber-400">Diproses</div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-002 (Marketplace B)</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-002 (Marketplace)</div>
                     </div>
                     <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900 bg-white dark:bg-slate-900 shadow-sm">
                       <div className="font-bold text-purple-600 dark:text-purple-400">Dikemas</div>
@@ -391,7 +396,7 @@ export default function LandingPage() {
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 shadow-sm">
                       <div className="text-xs text-blue-600 dark:text-blue-400 font-bold">Total Pendapatan</div>
                       <div className="text-sm font-semibold mt-1 text-slate-700 dark:text-slate-300">Akumulasi seluruh transaksi kanal</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Marketplace A, B, Chat & Offline</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Marketplace, Chat, & Toko Offline</div>
                     </div>
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 shadow-sm">
                       <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Laba Bersih</div>
@@ -416,9 +421,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400">4 Kanal</div>
+              <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400">Multi-Kanal</div>
               <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Penjualan Terintegrasi</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Marketplace A, B, Chat & Offline</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Marketplace, Chat, & Offline</div>
             </div>
             <div>
               <div className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">11 Modul</div>
