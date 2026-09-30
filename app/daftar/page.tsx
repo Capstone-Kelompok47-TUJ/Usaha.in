@@ -67,6 +67,7 @@ export default function DaftarPage() {
   // Step 2: Akun Pemilik
   const [ownerName, setOwnerName] = useState("");
   const [username, setUsername] = useState("");
+  const [isUsernameEditedManually, setIsUsernameEditedManually] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -84,6 +85,16 @@ export default function DaftarPage() {
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
+      .slice(0, 30);
+  }
+
+  // Username formatter from owner name
+  function usernameify(text: string) {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ".")
+      .replace(/[^a-z0-9._]/g, "")
       .slice(0, 30);
   }
 
@@ -120,6 +131,20 @@ export default function DaftarPage() {
         message: "Minimal 3 karakter.",
       });
     }
+  }
+
+  function handleOwnerNameChange(val: string) {
+    setOwnerName(val);
+    if (!isUsernameEditedManually) {
+      const generated = usernameify(val);
+      setUsername(generated);
+    }
+  }
+
+  function handleUsernameChange(val: string) {
+    setIsUsernameEditedManually(true);
+    const clean = val.toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 30);
+    setUsername(clean);
   }
 
   function toggleChannel(c: BusinessChannel) {
@@ -178,7 +203,7 @@ export default function DaftarPage() {
     
     const cleanUser = username.trim().toLowerCase();
     if (!cleanUser) {
-      errs.username = "Nama pengguna wajib diisi.";
+      errs.username = "Nama pengguna / awalan email wajib diisi.";
     } else if (!/^[a-z0-9._]{3,30}$/.test(cleanUser)) {
       errs.username = "Hanya huruf kecil, angka, titik, atau garis bawah (3-30 karakter).";
     }
@@ -212,13 +237,6 @@ export default function DaftarPage() {
   function handleNextToStep2(e: React.FormEvent) {
     e.preventDefault();
     if (validateStep1()) {
-      // Auto-suggest owner username if empty
-      if (!username) {
-        const suggested = ownerName
-          ? slugify(ownerName).replace(/-/g, "")
-          : "owner";
-        setUsername(suggested || "owner");
-      }
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -624,8 +642,8 @@ export default function DaftarPage() {
                   <input
                     type="text"
                     value={ownerName}
-                    onChange={(e) => setOwnerName(e.target.value)}
-                    placeholder="Contoh: Budi Prasetyo"
+                    onChange={(e) => handleOwnerNameChange(e.target.value)}
+                    placeholder="Contoh: Lisnuy / Budi Prasetyo"
                     className={`w-full px-3.5 py-2.5 rounded-xl border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 transition-all ${
                       step2Errors.ownerName
                         ? "border-red-500 focus:ring-red-500/30"
@@ -639,21 +657,30 @@ export default function DaftarPage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
-                    Nama Pengguna (Username) <span className="text-red-500">*</span>
+                    Nama Pengguna / Awalan Email Login <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
-                    placeholder="budi"
-                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-[hsl(var(--background))] text-sm font-mono focus:outline-none focus:ring-2 transition-all ${
-                      step2Errors.username
-                        ? "border-red-500 focus:ring-red-500/30"
-                        : "border-[hsl(var(--border))] focus:ring-blue-500/30"
-                    }`}
-                  />
-                  {step2Errors.username && (
+                  <div className={`flex rounded-xl border overflow-hidden bg-[hsl(var(--background))] focus-within:ring-2 transition-all ${
+                    step2Errors.username
+                      ? "border-red-500 focus-within:ring-red-500/30"
+                      : "border-[hsl(var(--border))] focus-within:ring-blue-500/30"
+                  }`}>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      placeholder="lisnuy"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono bg-transparent focus:outline-none"
+                    />
+                    <span className="inline-flex items-center px-3 py-2 bg-[hsl(var(--muted))]/60 border-l border-[hsl(var(--border))] text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 select-none shrink-0">
+                      @{slug || "kodeumkm"}.usaha.in
+                    </span>
+                  </div>
+                  {step2Errors.username ? (
                     <p className="text-xs text-red-500 mt-1">{step2Errors.username}</p>
+                  ) : (
+                    <p className="text-[11px] text-[hsl(var(--muted-fg))] mt-1">
+                      Otomatis dari nama atau sesuaikan nama pengguna yang Anda inginkan.
+                    </p>
                   )}
                 </div>
               </div>
