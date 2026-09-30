@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   USAHA.IN — Global Design System
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Brand Colors */
+    --brand-50:  224 100% 97%;
+    --brand-100: 224 95%  93%;
+    --brand-200: 224 90%  85%;
+    --brand-300: 224 82%  74%;
+    --brand-400: 224 78%  63%;
+    --brand-500: 224 76%  52%;   /* Primary */
+    --brand-600: 224 74%  44%;
+    --brand-700: 224 70%  36%;
+    --brand-800: 224 66%  28%;
+    --brand-900: 224 62%  20%;
+
+    /* Semantic Colors — Light Mode */
+    --background:    0 0% 97%;
+    --foreground:    224 20% 10%;
+    --card:          0 0% 100%;
+    --card-border:   220 13% 91%;
+    --muted:         220 14% 95%;
+    --muted-fg:      220 10% 50%;
+    --border:        220 13% 91%;
+    --input:         220 13% 91%;
+    --ring:          224 76% 52%;
+
+    /* Status Colors */
+    --success:       142 72% 39%;
+    --warning:       38 92% 50%;
+    --error:         0 84% 55%;
+    --info:          224 76% 52%;
+
+    /* Sidebar */
+    --sidebar-bg:    224 24% 14%;
+    --sidebar-text:  224 20% 75%;
+    --sidebar-active: 224 76% 52%;
+
+    /* Chart colors */
+    --chart-1: 224 76% 52%;
+    --chart-2: 142 72% 39%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 55%;
+    --chart-5: 271 80% 60%;
+  }
+
+  .dark {
+    --background:    224 24% 7%;
+    --foreground:    220 20% 92%;
+    --card:          224 24% 11%;
+    --card-border:   224 20% 18%;
+    --muted:         224 20% 15%;
+    --muted-fg:      220 10% 55%;
+    --border:        224 20% 18%;
+    --input:         224 20% 18%;
+
+    --sidebar-bg:    224 24% 9%;
+    --sidebar-text:  224 20% 65%;
+    --sidebar-active: 224 76% 60%;
+  }
+
+  * {
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-inter), system-ui, sans-serif;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-fg));
+  }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+@layer utilities {
+  /* Card styles */
+  .card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--card-border));
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+  }
+
+  /* Channel badge colors */
+  .badge-shopee {
+    background-color: hsl(24 100% 93%);
+    color: hsl(24 100% 35%);
+    border: 1px solid hsl(24 100% 82%);
+  }
+  .badge-tokopedia {
+    background-color: hsl(142 72% 92%);
+    color: hsl(142 72% 25%);
+    border: 1px solid hsl(142 72% 78%);
+  }
+  .badge-whatsapp {
+    background-color: hsl(152 68% 92%);
+    color: hsl(152 68% 25%);
+    border: 1px solid hsl(152 68% 78%);
+  }
+  .badge-offline {
+    background-color: hsl(220 14% 93%);
+    color: hsl(220 10% 40%);
+    border: 1px solid hsl(220 14% 82%);
+  }
+
+  /* Payment status */
+  .badge-lunas {
+    background-color: hsl(142 72% 92%);
+    color: hsl(142 72% 25%);
+  }
+  .badge-belum {
+    background-color: hsl(38 92% 93%);
+    color: hsl(38 92% 28%);
+  }
+  .badge-gagal {
+    background-color: hsl(0 84% 93%);
+    color: hsl(0 84% 35%);
+  }
+
+  /* Shipment status */
+  .badge-baru { background-color: hsl(224 76% 93%); color: hsl(224 76% 30%); }
+  .badge-diproses { background-color: hsl(271 80% 93%); color: hsl(271 80% 30%); }
+  .badge-dikemas { background-color: hsl(38 92% 93%); color: hsl(38 92% 28%); }
+  .badge-dikirim { background-color: hsl(224 76% 93%); color: hsl(224 76% 30%); }
+  .badge-selesai { background-color: hsl(142 72% 92%); color: hsl(142 72% 25%); }
+
+  /* Animations */
+  .animate-highlight {
+    animation: highlight 2s ease-out;
+  }
+
+  @keyframes highlight {
+    0%   { background-color: hsl(224 76% 93%); }
+    100% { background-color: transparent; }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.25s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Typing dots animation */
+  .typing-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: hsl(var(--muted-fg));
+    animation: typingBounce 1.4s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%           { transform: translateY(-6px); }
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px);
+    background-color: hsl(var(--card) / 0.8);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(224 76% 52%), hsl(271 80% 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
