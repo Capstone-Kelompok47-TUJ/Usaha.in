@@ -78,7 +78,7 @@ export function calcChannelFinance(
   period: "daily" | "weekly" | "monthly"
 ): ChannelFinance[] {
   const filteredOrders = filterOrdersByPeriod(orders, period);
-  const channels: Channel[] = ["shopee", "tokopedia", "whatsapp", "offline"];
+  const channels: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
 
   return channels.map((channel) => {
     const channelOrders = filteredOrders.filter((o) => o.channel === channel);

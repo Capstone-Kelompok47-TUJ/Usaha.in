@@ -8,13 +8,13 @@ import {
   ShoppingCart, Package, Warehouse, CreditCard, Truck, Users,
   BarChart3, Bot, ArrowRight, CheckCircle2, Sparkles, Shield,
   Layers, Zap, Clock, TrendingUp, ChevronRight, Moon, Sun,
-  Smartphone, Store, HelpCircle, Star, MessageSquare
+  Smartphone, Store, HelpCircle, ArrowDown, Database, Cpu, Globe,
+  UserCheck, Lock, RefreshCw, Check
 } from "lucide-react";
 
 export default function LandingPage() {
   const router = useRouter();
   const isAuthenticated = useStore((s) => s.isAuthenticated);
-  const currentUser = useStore((s) => s.getCurrentUser());
 
   const [dark, setDark] = useState(false);
   const [activeTab, setActiveTab] = useState<"omnichannel" | "copilot" | "kanban" | "finance">("omnichannel");
@@ -43,6 +43,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] transition-colors selection:bg-blue-600 selection:text-white">
+      {/* 0. TOP THIN BANNER (Satu-satunya tempat kata 'demo' diperbolehkan) */}
+      <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs py-2 px-4 text-center font-medium">
+        Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.
+      </div>
+
       {/* 1. STICKY NAVBAR */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-[hsl(var(--background))]/80 border-b border-[hsl(var(--border))]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -55,11 +60,11 @@ export default function LandingPage() {
               <div className="font-extrabold text-base tracking-tight leading-tight flex items-center gap-1.5">
                 Usaha.in
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
-                  UMKM
+                  Internal UMKM
                 </span>
               </div>
               <div className="text-[10px] text-[hsl(var(--muted-fg))] leading-none">
-                Manajemen Terpadu
+                Sistem Operasional
               </div>
             </div>
           </Link>
@@ -76,11 +81,8 @@ export default function LandingPage() {
               <Bot className="w-3.5 h-3.5 text-purple-500" />
               AI Copilot
             </a>
-            <a href="#peran-tim" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Peran Tim
-            </a>
-            <a href="#testimoni" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Testimoni
+            <a href="#pemilik-tim" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Pemilik & Tim
             </a>
           </nav>
 
@@ -89,7 +91,7 @@ export default function LandingPage() {
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDark}
-              className="p-2 rounded-lg text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors"
+              className="p-2 rounded-lg text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
               title={dark ? "Mode Terang" : "Mode Gelap"}
             >
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -115,7 +117,7 @@ export default function LandingPage() {
                   href="/login"
                   className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-500/20 hover:shadow-lg transition-all"
                 >
-                  <span>Coba Demo</span>
+                  <span>Coba Sekarang</span>
                   <Sparkles className="w-3.5 h-3.5" />
                 </Link>
               </>
@@ -133,7 +135,7 @@ export default function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 shadow-xs mb-6 animate-fade-in">
             <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-            <span>Platform Manajemen UMKM Terintegrasi & Asisten AI</span>
+            <span>Sistem Operasional Internal UMKM Terpadu</span>
           </div>
 
           {/* Main Title */}
@@ -146,7 +148,7 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <p className="mt-6 text-base sm:text-lg text-[hsl(var(--muted-fg))] max-w-2xl mx-auto leading-relaxed">
-            Sinkronisasi otomatis pesanan dari <strong>Shopee, Tokopedia, WhatsApp,</strong> hingga <strong>Kasir Toko</strong> secara real-time. Dilengkapi analisis Laba Rugi instan dan asisten AI Copilot untuk mencegah stok habis.
+            Kelola pesanan dari marketplace, chat, dan toko offline dalam satu sistem internal. Stok, keuangan, dan laporan terpusat, dilengkapi AI Copilot.
           </p>
 
           {/* Dual CTA */}
@@ -155,7 +157,7 @@ export default function LandingPage() {
               href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
             >
-              <span>Mulai Jelajahi Demo</span>
+              <span>Jelajahi Sistem</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
@@ -163,27 +165,27 @@ export default function LandingPage() {
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
               <Layers className="w-4 h-4 text-blue-500" />
-              <span>Lihat Fitur & Simulasi</span>
+              <span>Lihat Fitur & Alur Kerja</span>
             </a>
           </div>
 
-          {/* Trust badges */}
+          {/* Core structural points */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-[hsl(var(--muted-fg))]">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Data Mock 54 Transaksi & 10 Produk
+              4 kanal penjualan terpusat
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Simulasi Pesanan Real-time 1-Klik
+              Penugasan akses fleksibel per karyawan
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              4 Hak Akses (Owner, Kasir, Gudang, Keuangan)
+              Stok, keuangan, dan laporan dalam satu sistem
             </span>
           </div>
 
-          {/* 3. INTERACTIVE HERO APP PREVIEW */}
+          {/* 3. INTERACTIVE HERO APP PREVIEW & FLOW DIAGRAM */}
           <div className="mt-14 max-w-5xl mx-auto rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl overflow-hidden text-left">
             {/* Browser top chrome */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
@@ -199,17 +201,17 @@ export default function LandingPage() {
               <div className="flex items-center gap-1 bg-[hsl(var(--card))] p-0.5 rounded-lg border border-[hsl(var(--border))] text-xs font-medium">
                 <button
                   onClick={() => setActiveTab("omnichannel")}
-                  className={`px-3 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                     activeTab === "omnichannel"
                       ? "bg-blue-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
                   }`}
                 >
-                  Multi-Kanal
+                  Alur 4 Kanal
                 </button>
                 <button
                   onClick={() => setActiveTab("copilot")}
-                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                     activeTab === "copilot"
                       ? "bg-purple-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
@@ -220,7 +222,7 @@ export default function LandingPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("kanban")}
-                  className={`px-3 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                     activeTab === "kanban"
                       ? "bg-emerald-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
@@ -230,7 +232,7 @@ export default function LandingPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("finance")}
-                  className={`px-3 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                     activeTab === "finance"
                       ? "bg-amber-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
@@ -244,126 +246,134 @@ export default function LandingPage() {
             {/* Tab Preview Content */}
             <div className="p-6 sm:p-8 bg-gradient-to-b from-transparent to-[hsl(var(--muted))]/20">
               {activeTab === "omnichannel" && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Sinkronisasi Penjualan Multi-Kanal Otomatis</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Pesanan dari Shopee, Tokopedia, WA & Toko langsung memotong stok pusat.</p>
-                    </div>
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs w-fit">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      Status: Terhubung Real-Time
-                    </span>
+                <div className="space-y-6 animate-fade-in">
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+                      Diagram Alur Penjualan Multi-Kanal
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Pesanan dari berbagai kanal masuk dan dinormalkan dalam satu sistem internal terpadu.
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
-                    {/* Shopee */}
-                    <div className="p-4 rounded-xl border border-orange-200 dark:border-orange-800/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">Shopee</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-bold">22 Pesanan</span>
+                  {/* DIAGRAM ALUR */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    {/* 4 Kanal Input */}
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        1. Kanal Penjualan
                       </div>
-                      <div className="text-lg font-black mt-2 text-slate-900 dark:text-white">Rp 51.450.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Omzet terbesar bulan ini</div>
+                      <div className="p-3 rounded-xl border border-orange-200 dark:border-orange-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">Marketplace A</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-semibold">Online</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Marketplace B</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold">Online</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-green-200 dark:border-green-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <span className="text-xs font-bold text-green-600 dark:text-green-400">Chat</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-semibold">Pesan Langsung</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Toko Offline</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">Fisik</span>
+                      </div>
                     </div>
 
-                    {/* Tokopedia */}
-                    <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tokopedia</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">14 Pesanan</span>
+                    {/* Arrow & Center Engine */}
+                    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                        <RefreshCw className="w-6 h-6" />
                       </div>
-                      <div className="text-lg font-black mt-2 text-slate-900 dark:text-white">Rp 34.200.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Konversi transaksi 4.8%</div>
+                      <div>
+                        <h4 className="text-sm font-bold text-blue-900 dark:text-blue-200">Sistem Pusat Usaha.in</h4>
+                        <p className="text-[11px] text-blue-700/70 dark:text-blue-300/70 mt-0.5">
+                          Normalisasi data pesanan, nomor resi, & verifikasi pembayaran
+                        </p>
+                      </div>
+                      <div className="flex gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                        <span>Input Terpusat</span> • <span>Satu Pintu</span>
+                      </div>
                     </div>
 
-                    {/* WhatsApp */}
-                    <div className="p-4 rounded-xl border border-green-200 dark:border-green-800/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-green-600 dark:text-green-400">WhatsApp</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-bold">11 Pesanan</span>
+                    {/* Output Modules */}
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        2. Modul Terintegrasi
                       </div>
-                      <div className="text-lg font-black mt-2 text-slate-900 dark:text-white">Rp 26.800.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Langganan repeat order</div>
-                    </div>
-
-                    {/* Toko Offline */}
-                    <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800/80 bg-white dark:bg-slate-900 shadow-sm hover:shadow transition-shadow">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Toko Offline</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">7 Pesanan</span>
+                      <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-white dark:bg-slate-900 flex items-center gap-3">
+                        <Warehouse className="w-4 h-4 text-indigo-500 shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">Buku Besar Stok</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pemotongan kuantitas produk</div>
+                        </div>
                       </div>
-                      <div className="text-lg font-black mt-2 text-slate-900 dark:text-white">Rp 16.050.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Kasir POS langsung</div>
+                      <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-800/80 bg-white dark:bg-slate-900 flex items-center gap-3">
+                        <Truck className="w-4 h-4 text-purple-500 shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">Kanban Pengiriman</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Alur proses kemas & kurir</div>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 flex items-center gap-3">
+                        <BarChart3 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">Laba Rugi & Keuangan</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Kalkulasi HPP & margin kanal</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {activeTab === "copilot" && (
-                <div className="space-y-4 animate-fade-in">
+                <div className="space-y-4 animate-fade-in" id="copilot">
                   <div className="flex items-center gap-3.5 p-4 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 shadow-sm">
                     <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 flex items-center justify-center shrink-0">
                       <Bot className="w-5 h-5" />
                     </div>
                     <div className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
                       <span className="font-bold text-purple-700 dark:text-purple-400">AI Usaha.in Copilot: </span>
-                      &ldquo;Peringatan Sistem: Stok <strong>Keripik Tempe Renyah</strong> sisa 24 pcs (di bawah batas minimum 30 pcs). Diprediksi habis dalam 2 hari berdasarkan laju pesanan Shopee. Segera buat PO ke Supplier Bahan Baku.&rdquo;
+                      &ldquo;Peringatan Sistem: Stok <strong>Kopi Arabika 250g</strong> sisa 8 unit (di bawah batas minimum 15 unit). Pembelian terakhir menunjukkan harga modal naik. Segera buat catatan Pembelian ke Supplier Nusantara Kopi.&rdquo;
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Aksi Copilot Otomatis:</span>
-                    <button className="text-xs px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-xs">
-                      Buat Pesanan Pembelian (PO) Sekarang
-                    </button>
-                    <button className="text-xs px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors shadow-xs">
-                      Lihat Histori Penjualan
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Pertanyaan Bisnis:</span>
+                    <span className="text-xs px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-medium">
+                      Kenapa laba turun minggu ini?
+                    </span>
+                    <span className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium">
+                      Kanal mana yang marginnya terbaik?
+                    </span>
                   </div>
                 </div>
               )}
 
               {activeTab === "kanban" && (
                 <div className="space-y-3 animate-fade-in">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Alur Pengiriman 5 Tahap: Baru → Diproses → Dikemas → Dikirim → Selesai</div>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 text-xs">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Alur Status Pengiriman Terpadu (5 Tahap)</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
                     <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-white dark:bg-slate-900 shadow-sm">
-                      <div className="font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between">
-                        <span>Baru</span>
-                        <span className="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">3</span>
-                      </div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-202609-054 (Shopee)</div>
+                      <div className="font-bold text-blue-600 dark:text-blue-400">Baru</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-001 (Marketplace A)</div>
                     </div>
                     <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-900 bg-white dark:bg-slate-900 shadow-sm">
-                      <div className="font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
-                        <span>Diproses</span>
-                        <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full">2</span>
-                      </div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-202609-052 (Tokopedia)</div>
+                      <div className="font-bold text-amber-600 dark:text-amber-400">Diproses</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-002 (Marketplace B)</div>
                     </div>
                     <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900 bg-white dark:bg-slate-900 shadow-sm">
-                      <div className="font-bold text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                        <span>Dikemas</span>
-                        <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full">4</span>
-                      </div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-202609-050 (WA)</div>
+                      <div className="font-bold text-purple-600 dark:text-purple-400">Dikemas</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-003 (Chat)</div>
                     </div>
-                    <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-white dark:bg-slate-900 shadow-sm hidden sm:block">
-                      <div className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-between">
-                        <span>Dikirim</span>
-                        <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">5</span>
-                      </div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">Resi JNE / SiCepat aktif</div>
+                    <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-white dark:bg-slate-900 shadow-sm">
+                      <div className="font-bold text-indigo-600 dark:text-indigo-400">Dikirim</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">Resi ekspedisi kurir</div>
                     </div>
-                    <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-white dark:bg-slate-900 shadow-sm hidden sm:block">
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                        <span>Selesai</span>
-                        <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full">40</span>
-                      </div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">Diterima pelanggan</div>
+                    <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-white dark:bg-slate-900 shadow-sm">
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400">Selesai</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">Diterima pembeli</div>
                     </div>
                   </div>
                 </div>
@@ -373,19 +383,19 @@ export default function LandingPage() {
                 <div className="space-y-4 animate-fade-in">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 shadow-sm">
-                      <div className="text-xs text-blue-600 dark:text-blue-400 font-bold">Total Omzet (Bulan Ini)</div>
-                      <div className="text-xl font-black mt-1 text-slate-900 dark:text-white">Rp 128.500.000</div>
-                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">↑ +14.2% vs bulan lalu</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-bold">Total Pendapatan</div>
+                      <div className="text-sm font-semibold mt-1 text-slate-700 dark:text-slate-300">Akumulasi seluruh transaksi kanal</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Marketplace A, B, Chat & Offline</div>
                     </div>
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 shadow-sm">
-                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Estimasi Laba Bersih</div>
-                      <div className="text-xl font-black mt-1 text-emerald-600 dark:text-emerald-400">Rp 42.350.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Margin bersih 32.9%</div>
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Laba Bersih</div>
+                      <div className="text-sm font-semibold mt-1 text-emerald-600 dark:text-emerald-400">Pendapatan − HPP − Admin − Ongkir</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Transparansi margin per produk</div>
                     </div>
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900 shadow-sm">
-                      <div className="text-xs text-purple-600 dark:text-purple-400 font-bold">Total Pengeluaran & HPP</div>
-                      <div className="text-xl font-black mt-1 text-slate-900 dark:text-white">Rp 86.150.000</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Pembelian bahan & operasional</div>
+                      <div className="text-xs text-purple-600 dark:text-purple-400 font-bold">Biaya & Admin Fee</div>
+                      <div className="text-sm font-semibold mt-1 text-slate-700 dark:text-slate-300">HPP Pembelian & Admin Marketplace</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Biaya perantara tercatat rapi</div>
                     </div>
                   </div>
                 </div>
@@ -395,29 +405,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 4. STATS METRICS ROW */}
+      {/* 4. STATS FACTUAL ROW (Fakta struktural) */}
       <section className="border-y border-[hsl(var(--border))] bg-[hsl(var(--card))]/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400">4 Kanal</div>
-              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Terintegrasi Sentral</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Shopee, Tokopedia, WA & POS</div>
+              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Penjualan Terintegrasi</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Marketplace A, B, Chat & Offline</div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">99.8%</div>
-              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Akurasi Stok</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Bebas overselling & salah stok</div>
+              <div className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">11 Modul</div>
+              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Sistem Internal Lengkap</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Penjualan, Stok, Keuangan, dll</div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-black text-purple-600 dark:text-purple-400">15+ Jam</div>
-              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Waktu Dihemat Tiap Minggu</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Otomasi rekapitulasi data</div>
+              <div className="text-3xl sm:text-4xl font-black text-purple-600 dark:text-purple-400">2 Stakeholder</div>
+              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Fleksibilitas Hak Akses</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Pemilik Usaha & Karyawan (RBAC)</div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">100%</div>
-              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Transparansi Laba Rugi</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">HPP dan margin otomatis</div>
+              <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">1 Dashboard</div>
+              <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Pusat Kendali Bisnis</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Ringkasan transaksi & stok terpadu</div>
             </div>
           </div>
         </div>
@@ -430,7 +440,7 @@ export default function LandingPage() {
             Mengapa UMKM Butuh Usaha.in?
           </h2>
           <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-            Tinggalkan cara manual yang bikin pusing dan rawan rugi
+            Tinggalkan pencatatan manual yang terpisah dan rawan selisih
           </h3>
         </div>
 
@@ -442,26 +452,26 @@ export default function LandingPage() {
                 ✕
               </div>
               <div>
-                <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">Sebelum Pakai Usaha.in</h4>
+                <h4 className="text-lg font-bold text-rose-600 dark:text-rose-400">Sebelum Memakai Usaha.in</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Cara kerja konvensional & manual</p>
               </div>
             </div>
             <ul className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
-                <span>Pesanan dari Shopee, Tokopedia, dan chat WA dicatat manual di buku atau Excel terpisah.</span>
+                <span>Pesanan dari marketplace, chat, dan offline dicatat manual di buku atau spreadsheet terpisah.</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
-                <span>Stok sering habis tiba-tiba karena tidak ada peringatan reorder otomatis ke supplier.</span>
+                <span>Stok sering habis tiba-tiba karena tidak ada pemantauan batas minimum barang.</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
-                <span>Karyawan kasir atau gudang bisa melihat data keuangan sensitif karena tidak ada batasan hak akses.</span>
+                <span>Seluruh karyawan bisa melihat data keuangan sensitif karena tidak ada pembatasan hak akses modul.</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
-                <span>Baru tahu untung atau rugi di akhir bulan setelah pusing menghitung tumpukan nota fisik.</span>
+                <span>Perhitungan laba rugi terlambat karena harus merekap banyak nota fisik di akhir bulan.</span>
               </li>
             </ul>
           </div>
@@ -474,25 +484,25 @@ export default function LandingPage() {
               </div>
               <div>
                 <h4 className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Bersama Usaha.in</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Solusi terintegrasi serba otomatis</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sistem internal terpadu & terorganisir</p>
               </div>
             </div>
             <ul className="space-y-4 text-sm text-slate-800 dark:text-slate-100">
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Semua pesanan masuk 1 pintu:</strong> Stok terpotong otomatis di seluruh kanal penjualan.</span>
+                <span><strong>Semua pesanan terpusat:</strong> Stok berkurang secara konsisten pada buku besar persediaan.</span>
               </li>
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>AI Usaha.in Copilot:</strong> Memberikan sinyal stok kritis dan rekomendasi pembelian ke supplier.</span>
+                <span><strong>AI Usaha.in Copilot:</strong> Memberikan sinyal stok kritis dan rekomendasi pembelian bahan ke supplier.</span>
               </li>
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Hak Akses Bertingkat (RBAC):</strong> Staf gudang & kasir hanya melihat modul yang relevan.</span>
+                <span><strong>Hak Akses Bertingkat (RBAC):</strong> Karyawan hanya dapat membuka modul yang ditugaskan pemilik.</span>
               </li>
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Laba Bersih Real-Time:</strong> Margin dan HPP terhitung otomatis di setiap detik transaksi.</span>
+                <span><strong>Laba Bersih Terhitung:</strong> HPP dan potongan admin per kanal dihitung terstruktur dalam sistem.</span>
               </li>
             </ul>
           </div>
@@ -510,7 +520,7 @@ export default function LandingPage() {
               Segala kebutuhan operasional UMKM dalam satu layar
             </h3>
             <p className="mt-3 text-sm text-[hsl(var(--muted-fg))]">
-              Dirancang khusus untuk alur kerja bisnis Indonesia yang gesit dan fleksibel.
+              Dirancang khusus untuk alur kerja internal bisnis yang fleksibel dan transparan.
             </p>
           </div>
 
@@ -522,7 +532,7 @@ export default function LandingPage() {
               </div>
               <h4 className="text-base font-bold mb-2">Manajemen Penjualan 4 Kanal</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Filter transaksi berdasarkan Shopee, Tokopedia, WhatsApp, dan Kasir Offline. Lengkap dengan pencarian nomor pesanan dan pelacakan status pembayaran lunas.
+                Filter transaksi berdasarkan Marketplace A, Marketplace B, Chat, dan Toko Offline. Lengkap dengan pencarian nomor pesanan dan pelacakan status pembayaran lunas.
               </p>
             </div>
 
@@ -531,9 +541,9 @@ export default function LandingPage() {
               <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
                 <Warehouse className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold mb-2">Kartu Stok & Buku Besar Real-Time</h4>
+              <h4 className="text-base font-bold mb-2">Buku Besar Stok Terpusat</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Pantau setiap pergerakan barang masuk dari supplier dan barang keluar karena pesanan pelanggan. Akurasi 100% dengan pencatatan mutasi otomatis.
+                Pantau setiap pergerakan barang masuk dari pembelian supplier dan barang keluar dari penjualan pelanggan. Pencatatan mutasi tertib dan detail.
               </p>
             </div>
 
@@ -544,7 +554,7 @@ export default function LandingPage() {
               </div>
               <h4 className="text-base font-bold mb-2">Papan Kanban Pengiriman</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Drag-and-drop atau klik cepat untuk memindahkan status pengiriman dari Baru, Diproses, Dikemas, Dikirim, hingga Selesai dengan nomor resi kurir.
+                Klik cepat untuk memindahkan status pengiriman dari Baru, Diproses, Dikemas, Dikirim, hingga Selesai dengan pelacakan nomor pesanan.
               </p>
             </div>
 
@@ -553,9 +563,9 @@ export default function LandingPage() {
               <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
                 <Shield className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold mb-2">Hak Akses Tim & Audit Trail</h4>
+              <h4 className="text-base font-bold mb-2">Manajemen Akses Fleksibel (RBAC)</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Beri peran khusus untuk Staf Penjualan, Gudang, atau Keuangan. Seluruh tindakan karyawan tercatat rapi di log aktivitas tanpa bisa dimanipulasi.
+                Pemilik dapat membuat akun karyawan dan menugaskan modul secara fleksibel (Lihat atau Kelola). Seluruh aksi tercatat di log aktivitas.
               </p>
             </div>
 
@@ -566,7 +576,7 @@ export default function LandingPage() {
               </div>
               <h4 className="text-base font-bold mb-2">Laporan Keuangan & Margin Profit</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Lihat ringkasan laba rugi bulanan, total omzet, HPP pembelian, dan grafik saluran penjualan paling menguntungkan secara otomatis.
+                Lihat ringkasan laba rugi periodik, total pendapatan, HPP pembelian produk, dan perbandingan profitabilitas per kanal penjualan.
               </p>
             </div>
 
@@ -575,201 +585,166 @@ export default function LandingPage() {
               <div className="w-11 h-11 rounded-xl bg-pink-50 dark:bg-pink-950 text-pink-600 dark:text-pink-400 flex items-center justify-center mb-4">
                 <Bot className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold mb-2">AI Copilot dengan Skenario Nyata</h4>
+              <h4 className="text-base font-bold mb-2">AI Copilot untuk Analisis Bisnis</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Tanyakan pertanyaan bisnis seperti rekomendasi produk terlaris, barang yang perlu di-reorder, atau analisis performa kurir kepada asisten AI.
+                Tanyakan pertanyaan operasional seperti barang yang perlu di-restock, evaluasi penyebab laba turun, dan kanal dengan margin tertinggi.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 7. PERAN TIM & HAK AKSES */}
-      <section id="peran-tim" className="py-20 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 7. PEMILIK & TIM SECTION (Peran Tidak Baku: 2 Stakeholder) */}
+      <section id="pemilik-tim" className="py-20 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900 mb-3">
             <Shield className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Manajemen Hak Akses Granular (RBAC)</span>
+            <span>Manajemen Akses Fleksibel (RBAC)</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-            Dirancang Khusus untuk Setiap Peran di Bisnis Anda
+            Pemilik Mengatur, Tim Bekerja Sesuai Penugasan
           </h2>
           <p className="mt-3 text-sm text-[hsl(var(--muted-fg))]">
-            Setiap anggota tim mendapatkan antarmuka yang disesuaikan dengan tanggung jawabnya. Operasional berjalan cepat, data keuangan tetap aman terlindungi.
+            Hanya ada dua pihak dalam sistem: Pemilik Usaha sebagai pemegang akun utama dan Karyawan dengan modul yang disesuaikan penugasan.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Pemilik Usaha */}
-          <div className="p-6 rounded-2xl border-2 border-amber-200 dark:border-amber-900/50 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">👑</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                  Akses Penuh
-                </span>
-              </div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Pemilik Usaha</h4>
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mb-2">Owner / Founder</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
-                Memegang kendali penuh atas arah bisnis, laporan laba rugi, dan transparansi kinerja tim tanpa perlu hadir fisik setiap hari.
-              </p>
-              
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Ringkasan Laba Bersih & HPP</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Matriks Izin Karyawan (RBAC)</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Rekomendasi Cerdas AI Copilot</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Log Aktivitas Tim Terpusat</span>
+        {/* Dua Kartu Stakeholder Utama */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* 1. Pemilik Usaha */}
+          <div className="p-8 rounded-2xl border-2 border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 shadow-md space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">👑</span>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Pemilik Usaha</h3>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Akun Utama Sistem</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center justify-between">
-                <span>Fokus: Keputusan Strategis</span>
-                <span>★ Prioritas #1</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                Akses Penuh
               </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Memegang hak kontrol mutlak untuk mengelola struktur akun tim, melihat kesehatan finansial bisnis, dan memanfaatkan asisten AI Copilot.
+            </p>
+            <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Membuat dan mengelola akun karyawan</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Mengatur penugasan modul dan tingkat izin (Lihat/Kelola)</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Melihat laporan keuangan, HPP, & laba rugi lengkap</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Mengakses asisten AI Business Copilot</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Memantau log aktivitas audit seluruh tindakan staf</span>
+              </div>
             </div>
           </div>
 
-          {/* Staf Penjualan */}
-          <div className="p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-900/50 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">🛍️</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                  Kasir & Order
-                </span>
+          {/* 2. Karyawan */}
+          <div className="p-8 rounded-2xl border-2 border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 shadow-md space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">👥</span>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Karyawan</h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Dibuat & Diatur oleh Pemilik</p>
+                </div>
               </div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Staf Penjualan</h4>
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mb-2">Kasir & Customer Service</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
-                Proses pencatatan pesanan kilat dari toko offline maupun chat WhatsApp tanpa risiko salah hitung atau stok ganda.
-              </p>
-              
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span>Input Pesanan Cepat & POS</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span>Direktori Data Pelanggan</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span>Cek Ketersediaan Stok Real-Time</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span>Terkunci dari Data Keuangan</span>
-                </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                Akses Terbatas
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Karyawan hanya dapat melihat dan mengoperasikan modul yang ditugaskan secara eksplisit oleh pemilik usaha (tingkat Lihat atau Kelola).
+            </p>
+            <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>Hanya mengakses modul sesuai penugasan pemilik</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>Tingkat hak akses fleksibel: <strong>Lihat</strong> atau <strong>Kelola</strong></span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>Data sensitif (keuangan/log/izin) terkunci otomatis</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <Check className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>Aktivitas operasional tercatat pada riwayat audit</span>
               </div>
             </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between">
-                <span>Fokus: Pelayanan Kilat</span>
-                <span>★ Bebas Selisih</span>
-              </span>
+          </div>
+        </div>
+
+        {/* Alur 3 Langkah Penugasan */}
+        <div className="p-8 rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] space-y-6">
+          <h4 className="text-sm font-bold text-center text-[hsl(var(--foreground))]">
+            Alur Penugasan Hak Akses (3 Langkah):
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="p-4 rounded-xl bg-[hsl(var(--muted))] space-y-2">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center mx-auto">
+                1
+              </div>
+              <h5 className="text-xs font-bold">Pemilik Membuat Akun</h5>
+              <p className="text-[11px] text-[hsl(var(--muted-fg))] leading-relaxed">
+                Pemilik menginput nama, email, dan kata sandi karyawan di modul Manajemen Tim.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[hsl(var(--muted))] space-y-2">
+              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center mx-auto">
+                2
+              </div>
+              <h5 className="text-xs font-bold">Memilih Penugasan Modul</h5>
+              <p className="text-[11px] text-[hsl(var(--muted-fg))] leading-relaxed">
+                Pemilik menentukan modul apa saja yang boleh diakses dan tingkat izinnya (Lihat / Kelola).
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[hsl(var(--muted))] space-y-2">
+              <div className="w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center mx-auto">
+                3
+              </div>
+              <h5 className="text-xs font-bold">Karyawan Masuk & Bekerja</h5>
+              <p className="text-[11px] text-[hsl(var(--muted-fg))] leading-relaxed">
+                Karyawan login dan hanya melihat menu yang relevan dengan tugas harian mereka.
+              </p>
             </div>
           </div>
 
-          {/* Staf Gudang */}
-          <div className="p-6 rounded-2xl border-2 border-emerald-200 dark:border-emerald-900/50 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">📦</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Gudang & Kirim
-                </span>
-              </div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Staf Gudang</h4>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-2">Fulfillment & Inventory</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
-                Alur packing paket teratur dengan papan kanban dan penerimaan pasokan barang dari supplier yang tercatat rapi.
-              </p>
-              
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span>Papan Kanban Alur Pengiriman</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span>Input Resi & Status Ekspedisi</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span>Buku Besar Mutasi Stok Masuk/Keluar</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span>Penerimaan Pembelian Supplier</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                <span>Fokus: Ketepatan Stok</span>
-                <span>★ Zero Lost Item</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Staf Keuangan */}
-          <div className="p-6 rounded-2xl border-2 border-purple-200 dark:border-purple-900/50 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">💳</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
-                  Laba & Pembayaran
-                </span>
-              </div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Staf Keuangan</h4>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mb-2">Finance & Billing</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
-                Verifikasi pembayaran lunas dari pelanggan, pengelolaan tagihan supplier, dan pemantauan arus kas harian.
-              </p>
-              
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span>Tandai Status Pembayaran Lunas</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span>Rekapitulasi Omzet Per Kanal</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span>Monitoring Tagihan Belum Lunas</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                  <span>Rekonsiliasi Arus Kas Otomatis</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                <span>Fokus: Arus Kas Tertib</span>
-                <span>★ 100% Akurat</span>
-              </span>
-            </div>
+          {/* Chip Contoh Template Penugasan */}
+          <div className="pt-4 border-t border-[hsl(var(--border))] flex flex-wrap items-center justify-center gap-2 text-xs">
+            <span className="text-[hsl(var(--muted-fg))] font-medium">Contoh template penugasan:</span>
+            <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-semibold">
+              Penjualan
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 font-semibold">
+              Gudang
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 font-semibold">
+              Pembelian
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300 font-semibold">
+              Keuangan
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
+              Kustom
+            </span>
           </div>
         </div>
 
@@ -777,105 +752,87 @@ export default function LandingPage() {
         <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
           <div>
             <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-              Ingin mencoba langsung alur kerja dari masing-masing peran?
+              Coba langsung alur kerja pemilik dan karyawan
             </h4>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Akun demo siap pakai untuk Pemilik, Kasir, Gudang, dan Keuangan tersedia di halaman Masuk.
+              Gunakan akun contoh untuk mencoba alur kerja pemilik dan karyawan.
             </p>
           </div>
           <Link
             href="/login"
             className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           >
-            <span>Buka Halaman Masuk Demo</span>
+            <span>Buka Halaman Masuk</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
-      {/* 8. TESTIMONIALS */}
-      <section id="testimoni" className="py-20 sm:py-24 bg-[hsl(var(--muted))]/20 border-t border-[hsl(var(--border))]">
+      {/* 8. TAHAP PENGEMBANGAN BERIKUTNYA (Roadmap) */}
+      <section className="py-20 sm:py-24 bg-[hsl(var(--muted))]/20 border-t border-[hsl(var(--border))]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">
-              Kisah Sukses UMKM
+              Rencana Pengembangan
             </h2>
             <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              Dipercaya oleh ratusan pelaku usaha modern
+              Tahap Pengembangan Berikutnya
             </h3>
+            <p className="mt-3 text-sm text-[hsl(var(--muted-fg))]">
+              Fokus pengayaan fitur Usaha.in untuk melengkapi kebutuhan integrasi dan skalabilitas UMKM.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-500" />
-                  ))}
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+                  <Globe className="w-5 h-5" />
                 </div>
-                <p className="text-xs sm:text-sm text-[hsl(var(--muted-fg))] leading-relaxed italic">
-                  &ldquo;Dulu pas promo tanggal kembar di Shopee dan Tokped, stok sering bentrok dan cancel pesanan. Sejak pakai Usaha.in, stok otomatis kepotong di semua platform!&rdquo;
+                <h4 className="text-base font-bold mb-2">Integrasi API Marketplace & Chat</h4>
+                <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
+                  Penyambungan koneksi langsung API platform e-commerce dan webhook pesan instan untuk pertukaran data dua arah secara terpusat.
                 </p>
               </div>
-              <div className="flex items-center gap-3 mt-6 pt-4 border-t border-[hsl(var(--border))]">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-                  HS
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Hendra Saputra</div>
-                  <div className="text-[10px] text-[hsl(var(--muted-fg))]">Owner Keripik Tempe Barokah</div>
-                </div>
+              <div className="mt-6 pt-4 border-t border-[hsl(var(--border))] text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                Tahap 1 • Konektivitas Kanal
               </div>
             </div>
 
             <div className="p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-500" />
-                  ))}
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+                  <Cpu className="w-5 h-5" />
                 </div>
-                <p className="text-xs sm:text-sm text-[hsl(var(--muted-fg))] leading-relaxed italic">
-                  &ldquo;AI Copilotnya bener-bener ngebantu pas mau kulakan bahan. Dia ngingetin sebelum stok Sambal Roa kami kehabisan cabai rawit. Gak perlu hitung kalkulator lagi.&rdquo;
+                <h4 className="text-base font-bold mb-2">Forecasting Penjualan & Stok</h4>
+                <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
+                  Penerapan model prediksi kebutuhan restock dan analisis pola musiman penjualan untuk mencegah kekurangan pasokan barang.
                 </p>
               </div>
-              <div className="flex items-center gap-3 mt-6 pt-4 border-t border-[hsl(var(--border))]">
-                <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-xs">
-                  DR
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Dewi Ratnasari</div>
-                  <div className="text-[10px] text-[hsl(var(--muted-fg))]">Founder Sambal Nusantara</div>
-                </div>
+              <div className="mt-6 pt-4 border-t border-[hsl(var(--border))] text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+                Tahap 2 • AI Predictive Analytics
               </div>
             </div>
 
             <div className="p-6 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-500" />
-                  ))}
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+                  <Database className="w-5 h-5" />
                 </div>
-                <p className="text-xs sm:text-sm text-[hsl(var(--muted-fg))] leading-relaxed italic">
-                  &ldquo;Fitur hak aksesnya juara! Staf kasir gak bisa intip laporan laba bersih dan biaya pembelian owner. Bisnis jadi jauh lebih profesional dan aman.&rdquo;
+                <h4 className="text-base font-bold mb-2">Database Terpusat & Multi-Tenant</h4>
+                <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
+                  Arsitektur basis data cloud terpusat dengan isolasi data tingkat UMKM, enkripsi data sensitif, dan backup berkala.
                 </p>
               </div>
-              <div className="flex items-center gap-3 mt-6 pt-4 border-t border-[hsl(var(--border))]">
-                <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">
-                  AW
-                </div>
-                <div>
-                  <div className="text-xs font-bold">Agung Wicaksono</div>
-                  <div className="text-[10px] text-[hsl(var(--muted-fg))]">CEO Kopi Senja Roastery</div>
-                </div>
+              <div className="mt-6 pt-4 border-t border-[hsl(var(--border))] text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                Tahap 3 • Infrastruktur Cloud
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 9. FAQ ACCORDION */}
+      {/* 9. FAQ ACCORDION (Tanpa kata demo/simulasi) */}
       <section className="py-20 sm:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">
@@ -889,20 +846,16 @@ export default function LandingPage() {
         <div className="space-y-3">
           {[
             {
-              q: "Apakah Usaha.in bisa menyinkronkan stok pesanan Shopee & Tokopedia secara bersamaan?",
-              a: "Ya! Usaha.in memiliki sistem buku besar stok terpusat. Begitu ada pesanan masuk dari kanal mana pun (baik Shopee, Tokopedia, WhatsApp, atau kasir toko), stok produk akan langsung berkurang secara serentak."
+              q: "Bagaimana alur pesanan masuk ke sistem?",
+              a: "Pesanan dari tiap kanal penjualan dinormalkan ke satu format data terpusat, lalu secara langsung mempengaruhi pergerakan stok pada buku besar, antrean kanban pengiriman, dan laporan keuangan."
             },
             {
-              q: "Bagaimana cara kerja fitur simulasi pesanan pada versi demo ini?",
-              a: "Di dalam dashboard Usaha.in, terdapat tombol 'Simulasikan Pesanan Baru (+1)'. Ketika diklik, sistem akan membuat transaksi baru acak dari salah satu dari 4 kanal penjualan, memotong stok barang terkait, dan mencatat pergerakan mutasi di log aktivitas."
+              q: "Apakah karyawan bisa melihat laporan keuangan pemilik?",
+              a: "Tidak. Karyawan hanya bisa mengakses modul yang secara eksplisit ditugaskan oleh Pemilik Usaha. Jika modul Keuangan tidak ditugaskan, menu dan data keuangan tidak akan ditampilkan."
             },
             {
-              q: "Apakah staf gudang dan kasir bisa melihat data laporan keuangan pemilik?",
-              a: "Tidak bisa. Usaha.in menerapkan Role-Based Access Control (RBAC) granular. Staf penjualan hanya dapat mengakses modul penjualan & pelanggan, sedangkan staf gudang hanya dapat mengakses modul stok, pengiriman, dan penerimaan barang."
-            },
-            {
-              q: "Apakah data demo saya akan tersimpan jika browser ditutup?",
-              a: "Ya! Data transaksi, produk, dan pengaturan tim disimpan di local storage peramban Anda. Anda juga dapat menekan tombol 'Reset Demo' di bagian atas kapan saja untuk mengembalikan data ke kondisi awal."
+              q: "Apakah data saya tersimpan jika browser ditutup?",
+              a: "Data contoh disimpan pada penyimpanan lokal peramban Anda dan akan kembali ke kondisi awal setelah halaman dimuat ulang atau tombol reset ditekan."
             }
           ].map((item, idx) => {
             const isOpen = faqOpen === idx;
@@ -913,7 +866,7 @@ export default function LandingPage() {
               >
                 <button
                   onClick={() => setFaqOpen(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 text-left font-semibold text-xs sm:text-sm flex items-center justify-between gap-4"
+                  className="w-full p-4 sm:p-5 text-left font-semibold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer"
                 >
                   <span>{item.q}</span>
                   <ChevronRight
@@ -942,17 +895,17 @@ export default function LandingPage() {
 
           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
             <h3 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-              Siap Mengembangkan Bisnis UMKM Anda ke Level Selanjutnya?
+              Kelola Semua Kanal dari Satu Tempat
             </h3>
             <p className="text-sm sm:text-base text-white/80 leading-relaxed">
-              Jelajahi seluruh fitur Usaha.in dengan akun demo interaktif sekarang. Tanpa registrasi rumit, langsung masuk dan uji simulasi transaksinya!
+              Sistem internal terpadu untuk pemilik dan karyawan UMKM dalam memantau penjualan, stok, dan keuangan.
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/login"
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-blue-700 font-bold text-sm hover:bg-slate-100 shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Masuk ke Demo Usaha.in</span>
+                <span>Masuk ke Usaha.in</span>
                 <ArrowRight className="w-4 h-4 text-blue-700" />
               </Link>
             </div>

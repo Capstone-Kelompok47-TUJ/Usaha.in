@@ -116,11 +116,11 @@ export default function ProdukPage() {
                     <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">{p.minStock}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        {p.channels.includes("shopee") && (
-                          <span className="badge-shopee text-[10px] px-1.5 py-0.5 rounded-full font-semibold">SHP</span>
+                        {p.channels.includes("marketplace_a") && (
+                          <span className="badge-marketplace_a text-[10px] px-1.5 py-0.5 rounded-full font-semibold">MKT-A</span>
                         )}
-                        {p.channels.includes("tokopedia") && (
-                          <span className="badge-tokopedia text-[10px] px-1.5 py-0.5 rounded-full font-semibold">TKP</span>
+                        {p.channels.includes("marketplace_b") && (
+                          <span className="badge-marketplace_b text-[10px] px-1.5 py-0.5 rounded-full font-semibold">MKT-B</span>
                         )}
                       </div>
                     </td>

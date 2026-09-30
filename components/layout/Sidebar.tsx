@@ -68,7 +68,7 @@ export function Sidebar() {
           <div className="font-bold text-white text-sm leading-tight flex items-center gap-1.5">
             Usaha.in
             <span className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-400/20">
-              Demo
+              UMKM
             </span>
           </div>
           <div className="text-[10px] text-white/40 leading-tight">Manajemen UMKM</div>

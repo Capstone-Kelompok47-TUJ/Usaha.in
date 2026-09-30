@@ -26,7 +26,10 @@ const NEXT_STATUS: Record<ShipmentStatus, ShipmentStatus | null> = {
 };
 
 const CHANNEL_LABEL: Record<Channel, string> = {
-  shopee: "Shopee", tokopedia: "Tokopedia", whatsapp: "WhatsApp", offline: "Offline",
+  marketplace_a: "Marketplace A",
+  marketplace_b: "Marketplace B",
+  chat: "Chat",
+  offline: "Toko Offline",
 };
 
 function KanbanCard({ order, canManage, userId }: { order: Order; canManage: boolean; userId?: string }) {

@@ -84,7 +84,7 @@ export function AccountSwitcher() {
             </div>
           </div>
 
-          {/* Quick Demo Switcher Section */}
+          {/* Quick Account Switcher Section */}
           <div className="py-2 px-2">
             <button
               onClick={() => setShowSwitchSubmenu((v) => !v)}
@@ -92,7 +92,7 @@ export function AccountSwitcher() {
             >
               <span className="flex items-center gap-2">
                 <ArrowRightLeft className="w-3.5 h-3.5 text-blue-500" />
-                Ganti Akun Demo
+                Ganti Akun Pengguna
               </span>
               <ChevronDown className={`w-3 h-3 text-[hsl(var(--muted-fg))] transition-transform ${showSwitchSubmenu ? "rotate-180" : ""}`} />
             </button>

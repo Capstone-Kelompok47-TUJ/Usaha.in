@@ -96,9 +96,9 @@ export default function CopilotPage() {
     const weekly = calcFinanceSummary(orders, purchases, "weekly");
     const monthlySum = calcFinanceSummary(orders, purchases, "monthly");
 
-    const shopee = monthly.find((c) => c.channel === "shopee");
-    const tokopedia = monthly.find((c) => c.channel === "tokopedia");
-    const whatsapp = monthly.find((c) => c.channel === "whatsapp");
+    const marketplaceA = monthly.find((c) => c.channel === "marketplace_a");
+    const marketplaceB = monthly.find((c) => c.channel === "marketplace_b");
+    const chat = monthly.find((c) => c.channel === "chat");
     const offline = monthly.find((c) => c.channel === "offline");
 
     const productSales: Record<string, number> = {};
@@ -117,19 +117,19 @@ export default function CopilotPage() {
       weeklyProfit: weekly.netProfit,
       monthlyRevenue: monthlySum.revenue,
       monthlyProfit: monthlySum.netProfit,
-      shopeeMargin: shopee?.margin ?? 0,
-      tokopediaMargin: tokopedia?.margin ?? 0,
-      waMargin: whatsapp?.margin ?? 0,
+      marketplaceAMargin: marketplaceA?.margin ?? 0,
+      marketplaceBMargin: marketplaceB?.margin ?? 0,
+      chatMargin: chat?.margin ?? 0,
       offlineMargin: offline?.margin ?? 0,
-      shopeeRevenue: shopee?.revenue ?? 0,
-      tokopediaRevenue: tokopedia?.revenue ?? 0,
+      marketplaceARevenue: marketplaceA?.revenue ?? 0,
+      marketplaceBRevenue: marketplaceB?.revenue ?? 0,
       lowStockProducts: products.filter((p) => p.stock <= p.minStock).map((p) => p.name),
       slowProducts: sortedProducts.slice(-3).map((p) => p.name),
       topProducts: sortedProducts.slice(0, 3).map((p) => p.name),
       arabikaBuyPriceOld: 52000,
       arabikaBuyPriceNew: 62000,
-      shopeeAdminFeeOld: 5,
-      shopeeAdminFeeNew: 7.5,
+      marketplaceAAdminFeeOld: 5,
+      marketplaceAAdminFeeNew: 7.5,
     };
   }
 
@@ -146,7 +146,7 @@ export default function CopilotPage() {
     setInput("");
     setIsTyping(true);
 
-    // Simulasi delay AI
+    // Delay proses AI
     await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
 
     const ctx = buildContext();
@@ -169,7 +169,7 @@ export default function CopilotPage() {
         <div className="flex items-center gap-2 mb-3 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-900/30">
           <Sparkles className="w-4 h-4 text-blue-500" />
           <p className="text-xs text-blue-700 dark:text-blue-300">
-            <em>Jawaban dihasilkan dari data internal (mode demo).</em>
+            <em>Jawaban dianalisis langsung dari data internal penjualan, stok, dan keuangan.</em>
           </p>
         </div>
 

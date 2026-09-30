@@ -103,7 +103,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 52000,
     stock: 8, // di bawah minStock → alert
     minStock: 15,
-    channels: ["shopee", "tokopedia"],
+    channels: ["marketplace_a", "marketplace_b"],
   },
   {
     id: "prod-2",
@@ -113,7 +113,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 42000,
     stock: 34,
     minStock: 20,
-    channels: ["shopee", "tokopedia"],
+    channels: ["marketplace_a", "marketplace_b"],
   },
   {
     id: "prod-3",
@@ -123,7 +123,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 25000,
     stock: 12, // di bawah minStock → alert
     minStock: 20,
-    channels: ["tokopedia"],
+    channels: ["marketplace_b"],
   },
   {
     id: "prod-4",
@@ -133,7 +133,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 20000,
     stock: 55,
     minStock: 25,
-    channels: ["shopee"],
+    channels: ["marketplace_a"],
   },
   {
     id: "prod-5",
@@ -143,7 +143,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 35000,
     stock: 28,
     minStock: 15,
-    channels: ["shopee", "tokopedia"],
+    channels: ["marketplace_a", "marketplace_b"],
   },
   {
     id: "prod-6",
@@ -153,7 +153,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 30000,
     stock: 40,
     minStock: 15,
-    channels: ["tokopedia"],
+    channels: ["marketplace_b"],
   },
   {
     id: "prod-7",
@@ -163,7 +163,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 24000,
     stock: 60,
     minStock: 25,
-    channels: ["shopee"],
+    channels: ["marketplace_a"],
   },
   {
     id: "prod-8",
@@ -173,7 +173,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 32000,
     stock: 22,
     minStock: 10,
-    channels: ["shopee", "tokopedia"],
+    channels: ["marketplace_a", "marketplace_b"],
   },
   {
     id: "prod-9",
@@ -183,7 +183,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 12000,
     stock: 70,
     minStock: 30,
-    channels: ["shopee"],
+    channels: ["marketplace_a"],
   },
   {
     id: "prod-10",
@@ -193,7 +193,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     buyPrice: 45000,
     stock: 18,
     minStock: 10,
-    channels: ["tokopedia"],
+    channels: ["marketplace_b"],
   },
 ];
 
@@ -202,24 +202,24 @@ export const INITIAL_PRODUCTS: Product[] = [
 // ============================================================
 
 export const INITIAL_CUSTOMERS: Customer[] = [
-  { id: "cust-1", name: "Ibu Dewi Rahayu", channel: "shopee", phone: "0812-0001-0001" },
-  { id: "cust-2", name: "Bpk. Rudi Santoso", channel: "tokopedia", phone: "0813-0002-0002" },
-  { id: "cust-3", name: "Ibu Lia Purnama", channel: "whatsapp", phone: "0821-0003-0003" },
+  { id: "cust-1", name: "Ibu Dewi Rahayu", channel: "marketplace_a", phone: "0812-0001-0001" },
+  { id: "cust-2", name: "Bpk. Rudi Santoso", channel: "marketplace_b", phone: "0813-0002-0002" },
+  { id: "cust-3", name: "Ibu Lia Purnama", channel: "chat", phone: "0821-0003-0003" },
   { id: "cust-4", name: "Toko Warung Pintar", channel: "offline", phone: "0812-0004-0004" },
   { id: "cust-5", name: "Kafe Nusantara", channel: "offline", phone: "0813-0005-0005" },
-  { id: "cust-6", name: "Ibu Sinta Melani", channel: "shopee", phone: "0821-0006-0006" },
-  { id: "cust-7", name: "Bpk. Hendra Wijaya", channel: "tokopedia", phone: "0812-0007-0007" },
-  { id: "cust-8", name: "Ibu Ratna Kusuma", channel: "whatsapp", phone: "0813-0008-0008" },
-  { id: "cust-9", name: "Toko Sehat Alami", channel: "shopee", phone: "0821-0009-0009" },
-  { id: "cust-10", name: "Ibu Fitri Handayani", channel: "tokopedia", phone: "0812-0010-0010" },
-  { id: "cust-11", name: "Mas Agus Prasetyo", channel: "whatsapp", phone: "0813-0011-0011" },
+  { id: "cust-6", name: "Ibu Sinta Melani", channel: "marketplace_a", phone: "0821-0006-0006" },
+  { id: "cust-7", name: "Bpk. Hendra Wijaya", channel: "marketplace_b", phone: "0812-0007-0007" },
+  { id: "cust-8", name: "Ibu Ratna Kusuma", channel: "chat", phone: "0813-0008-0008" },
+  { id: "cust-9", name: "Toko Sehat Alami", channel: "marketplace_a", phone: "0821-0009-0009" },
+  { id: "cust-10", name: "Ibu Fitri Handayani", channel: "marketplace_b", phone: "0812-0010-0010" },
+  { id: "cust-11", name: "Mas Agus Prasetyo", channel: "chat", phone: "0813-0011-0011" },
   { id: "cust-12", name: "Warung Barokah", channel: "offline", phone: "0821-0012-0012" },
-  { id: "cust-13", name: "Ibu Maya Indah", channel: "shopee", phone: "0812-0013-0013" },
-  { id: "cust-14", name: "Bpk. Doni Kurniawan", channel: "tokopedia", phone: "0813-0014-0014" },
-  { id: "cust-15", name: "Ibu Nurul Aini", channel: "whatsapp", phone: "0821-0015-0015" },
+  { id: "cust-13", name: "Ibu Maya Indah", channel: "marketplace_a", phone: "0812-0013-0013" },
+  { id: "cust-14", name: "Bpk. Doni Kurniawan", channel: "marketplace_b", phone: "0813-0014-0014" },
+  { id: "cust-15", name: "Ibu Nurul Aini", channel: "chat", phone: "0821-0015-0015" },
   { id: "cust-16", name: "Kantin Maju Jaya", channel: "offline", phone: "0812-0016-0016" },
-  { id: "cust-17", name: "Ibu Sri Wahyuni", channel: "shopee", phone: "0813-0017-0017" },
-  { id: "cust-18", name: "Bpk. Tono Susanto", channel: "tokopedia", phone: "0821-0018-0018" },
+  { id: "cust-17", name: "Ibu Sri Wahyuni", channel: "marketplace_a", phone: "0813-0017-0017" },
+  { id: "cust-18", name: "Bpk. Tono Susanto", channel: "marketplace_b", phone: "0821-0018-0018" },
 ];
 
 // ============================================================
@@ -233,7 +233,7 @@ function daysAgo(n: number): string {
 
 // ============================================================
 // PESANAN (40–60 pesanan, tersebar 30 hari)
-// Shopee ±40%, Tokopedia ±30%, WhatsApp ±17%, Offline ±13%
+// Marketplace A ±40%, Marketplace B ±30%, Chat ±17%, Offline ±13%
 // Minggu ini (0–6 hari lalu): laba lebih rendah karena adminFee naik
 // ============================================================
 
@@ -252,60 +252,60 @@ interface RawOrder {
 }
 
 const rawOrders: RawOrder[] = [
-  // --- Shopee (22 pesanan, ~40%) ---
+  // --- Marketplace A (22 pesanan, ~40%) ---
   // Minggu ini: adminFee naik ke 7–8% (skenario laba turun)
-  { id: "ORD-001", date: daysAgo(0), channel: "shopee", customerId: "cust-1", productId: "prod-1", qty: 2, unitPrice: 85000, adminFeePct: 8, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "baru" },
-  { id: "ORD-002", date: daysAgo(1), channel: "shopee", customerId: "cust-6", productId: "prod-5", qty: 3, unitPrice: 65000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "diproses" },
-  { id: "ORD-003", date: daysAgo(2), channel: "shopee", customerId: "cust-9", productId: "prod-2", qty: 1, unitPrice: 72000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "dikemas" },
-  { id: "ORD-004", date: daysAgo(3), channel: "shopee", customerId: "cust-13", productId: "prod-7", qty: 2, unitPrice: 42000, adminFeePct: 7, shippingCost: 9000, paymentStatus: "belum", shipmentStatus: "baru" },
-  { id: "ORD-005", date: daysAgo(4), channel: "shopee", customerId: "cust-17", productId: "prod-4", qty: 4, unitPrice: 38000, adminFeePct: 7, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
-  { id: "ORD-006", date: daysAgo(5), channel: "shopee", customerId: "cust-1", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 8, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-007", date: daysAgo(6), channel: "shopee", customerId: "cust-6", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "gagal", shipmentStatus: "baru" },
+  { id: "ORD-001", date: daysAgo(0), channel: "marketplace_a", customerId: "cust-1", productId: "prod-1", qty: 2, unitPrice: 85000, adminFeePct: 8, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "baru" },
+  { id: "ORD-002", date: daysAgo(1), channel: "marketplace_a", customerId: "cust-6", productId: "prod-5", qty: 3, unitPrice: 65000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "diproses" },
+  { id: "ORD-003", date: daysAgo(2), channel: "marketplace_a", customerId: "cust-9", productId: "prod-2", qty: 1, unitPrice: 72000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "dikemas" },
+  { id: "ORD-004", date: daysAgo(3), channel: "marketplace_a", customerId: "cust-13", productId: "prod-7", qty: 2, unitPrice: 42000, adminFeePct: 7, shippingCost: 9000, paymentStatus: "belum", shipmentStatus: "baru" },
+  { id: "ORD-005", date: daysAgo(4), channel: "marketplace_a", customerId: "cust-17", productId: "prod-4", qty: 4, unitPrice: 38000, adminFeePct: 7, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
+  { id: "ORD-006", date: daysAgo(5), channel: "marketplace_a", customerId: "cust-1", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 8, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-007", date: daysAgo(6), channel: "marketplace_a", customerId: "cust-6", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 7.5, shippingCost: 9000, paymentStatus: "gagal", shipmentStatus: "baru" },
   // Minggu lalu (7–13 hari): adminFee normal 5–6%
-  { id: "ORD-008", date: daysAgo(7), channel: "shopee", customerId: "cust-9", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 6, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-009", date: daysAgo(8), channel: "shopee", customerId: "cust-13", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 6, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-010", date: daysAgo(10), channel: "shopee", customerId: "cust-17", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 5.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-011", date: daysAgo(11), channel: "shopee", customerId: "cust-1", productId: "prod-4", qty: 2, unitPrice: 38000, adminFeePct: 5.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-012", date: daysAgo(13), channel: "shopee", customerId: "cust-6", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-013", date: daysAgo(15), channel: "shopee", customerId: "cust-9", productId: "prod-9", qty: 5, unitPrice: 22000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-014", date: daysAgo(17), channel: "shopee", customerId: "cust-13", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-015", date: daysAgo(19), channel: "shopee", customerId: "cust-17", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-016", date: daysAgo(21), channel: "shopee", customerId: "cust-1", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-017", date: daysAgo(22), channel: "shopee", customerId: "cust-6", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-018", date: daysAgo(24), channel: "shopee", customerId: "cust-9", productId: "prod-4", qty: 2, unitPrice: 38000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-019", date: daysAgo(25), channel: "shopee", customerId: "cust-13", productId: "prod-8", qty: 1, unitPrice: 58000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-020", date: daysAgo(27), channel: "shopee", customerId: "cust-17", productId: "prod-9", qty: 4, unitPrice: 22000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-021", date: daysAgo(28), channel: "shopee", customerId: "cust-1", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-022", date: daysAgo(29), channel: "shopee", customerId: "cust-6", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-008", date: daysAgo(7), channel: "marketplace_a", customerId: "cust-9", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 6, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-009", date: daysAgo(8), channel: "marketplace_a", customerId: "cust-13", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 6, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-010", date: daysAgo(10), channel: "marketplace_a", customerId: "cust-17", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 5.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-011", date: daysAgo(11), channel: "marketplace_a", customerId: "cust-1", productId: "prod-4", qty: 2, unitPrice: 38000, adminFeePct: 5.5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-012", date: daysAgo(13), channel: "marketplace_a", customerId: "cust-6", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-013", date: daysAgo(15), channel: "marketplace_a", customerId: "cust-9", productId: "prod-9", qty: 5, unitPrice: 22000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-014", date: daysAgo(17), channel: "marketplace_a", customerId: "cust-13", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-015", date: daysAgo(19), channel: "marketplace_a", customerId: "cust-17", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-016", date: daysAgo(21), channel: "marketplace_a", customerId: "cust-1", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-017", date: daysAgo(22), channel: "marketplace_a", customerId: "cust-6", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-018", date: daysAgo(24), channel: "marketplace_a", customerId: "cust-9", productId: "prod-4", qty: 2, unitPrice: 38000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-019", date: daysAgo(25), channel: "marketplace_a", customerId: "cust-13", productId: "prod-8", qty: 1, unitPrice: 58000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-020", date: daysAgo(27), channel: "marketplace_a", customerId: "cust-17", productId: "prod-9", qty: 4, unitPrice: 22000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-021", date: daysAgo(28), channel: "marketplace_a", customerId: "cust-1", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-022", date: daysAgo(29), channel: "marketplace_a", customerId: "cust-6", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 5, shippingCost: 9000, paymentStatus: "lunas", shipmentStatus: "selesai" },
 
-  // --- Tokopedia (16 pesanan, ~30%) — margin lebih baik, adminFee 3–4% ---
-  { id: "ORD-023", date: daysAgo(0), channel: "tokopedia", customerId: "cust-2", productId: "prod-3", qty: 2, unitPrice: 45000, adminFeePct: 4, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "baru" },
-  { id: "ORD-024", date: daysAgo(2), channel: "tokopedia", customerId: "cust-7", productId: "prod-6", qty: 1, unitPrice: 55000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "diproses" },
-  { id: "ORD-025", date: daysAgo(3), channel: "tokopedia", customerId: "cust-10", productId: "prod-10", qty: 1, unitPrice: 78000, adminFeePct: 4, shippingCost: 7000, paymentStatus: "belum", shipmentStatus: "baru" },
-  { id: "ORD-026", date: daysAgo(5), channel: "tokopedia", customerId: "cust-14", productId: "prod-3", qty: 3, unitPrice: 45000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
-  { id: "ORD-027", date: daysAgo(7), channel: "tokopedia", customerId: "cust-18", productId: "prod-6", qty: 2, unitPrice: 55000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-028", date: daysAgo(9), channel: "tokopedia", customerId: "cust-2", productId: "prod-8", qty: 1, unitPrice: 58000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-029", date: daysAgo(11), channel: "tokopedia", customerId: "cust-7", productId: "prod-10", qty: 2, unitPrice: 78000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-030", date: daysAgo(13), channel: "tokopedia", customerId: "cust-10", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-031", date: daysAgo(15), channel: "tokopedia", customerId: "cust-14", productId: "prod-6", qty: 2, unitPrice: 55000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-032", date: daysAgo(17), channel: "tokopedia", customerId: "cust-18", productId: "prod-3", qty: 1, unitPrice: 45000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-033", date: daysAgo(19), channel: "tokopedia", customerId: "cust-2", productId: "prod-10", qty: 1, unitPrice: 78000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-034", date: daysAgo(21), channel: "tokopedia", customerId: "cust-7", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-035", date: daysAgo(23), channel: "tokopedia", customerId: "cust-10", productId: "prod-2", qty: 1, unitPrice: 72000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-036", date: daysAgo(25), channel: "tokopedia", customerId: "cust-14", productId: "prod-6", qty: 3, unitPrice: 55000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-037", date: daysAgo(27), channel: "tokopedia", customerId: "cust-18", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-038", date: daysAgo(29), channel: "tokopedia", customerId: "cust-2", productId: "prod-3", qty: 2, unitPrice: 45000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  // --- Marketplace B (16 pesanan, ~30%) — margin lebih baik, adminFee 3–4% ---
+  { id: "ORD-023", date: daysAgo(0), channel: "marketplace_b", customerId: "cust-2", productId: "prod-3", qty: 2, unitPrice: 45000, adminFeePct: 4, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "baru" },
+  { id: "ORD-024", date: daysAgo(2), channel: "marketplace_b", customerId: "cust-7", productId: "prod-6", qty: 1, unitPrice: 55000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "diproses" },
+  { id: "ORD-025", date: daysAgo(3), channel: "marketplace_b", customerId: "cust-10", productId: "prod-10", qty: 1, unitPrice: 78000, adminFeePct: 4, shippingCost: 7000, paymentStatus: "belum", shipmentStatus: "baru" },
+  { id: "ORD-026", date: daysAgo(5), channel: "marketplace_b", customerId: "cust-14", productId: "prod-3", qty: 3, unitPrice: 45000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
+  { id: "ORD-027", date: daysAgo(7), channel: "marketplace_b", customerId: "cust-18", productId: "prod-6", qty: 2, unitPrice: 55000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-028", date: daysAgo(9), channel: "marketplace_b", customerId: "cust-2", productId: "prod-8", qty: 1, unitPrice: 58000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-029", date: daysAgo(11), channel: "marketplace_b", customerId: "cust-7", productId: "prod-10", qty: 2, unitPrice: 78000, adminFeePct: 3.5, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-030", date: daysAgo(13), channel: "marketplace_b", customerId: "cust-10", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-031", date: daysAgo(15), channel: "marketplace_b", customerId: "cust-14", productId: "prod-6", qty: 2, unitPrice: 55000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-032", date: daysAgo(17), channel: "marketplace_b", customerId: "cust-18", productId: "prod-3", qty: 1, unitPrice: 45000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-033", date: daysAgo(19), channel: "marketplace_b", customerId: "cust-2", productId: "prod-10", qty: 1, unitPrice: 78000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-034", date: daysAgo(21), channel: "marketplace_b", customerId: "cust-7", productId: "prod-8", qty: 2, unitPrice: 58000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-035", date: daysAgo(23), channel: "marketplace_b", customerId: "cust-10", productId: "prod-2", qty: 1, unitPrice: 72000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-036", date: daysAgo(25), channel: "marketplace_b", customerId: "cust-14", productId: "prod-6", qty: 3, unitPrice: 55000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-037", date: daysAgo(27), channel: "marketplace_b", customerId: "cust-18", productId: "prod-5", qty: 1, unitPrice: 65000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-038", date: daysAgo(29), channel: "marketplace_b", customerId: "cust-2", productId: "prod-3", qty: 2, unitPrice: 45000, adminFeePct: 3, shippingCost: 7000, paymentStatus: "lunas", shipmentStatus: "selesai" },
 
-  // --- WhatsApp (9 pesanan, ~17%) ---
-  { id: "ORD-039", date: daysAgo(1), channel: "whatsapp", customerId: "cust-3", productId: "prod-2", qty: 3, unitPrice: 72000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "dikemas" },
-  { id: "ORD-040", date: daysAgo(4), channel: "whatsapp", customerId: "cust-8", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "belum", shipmentStatus: "baru" },
-  { id: "ORD-041", date: daysAgo(6), channel: "whatsapp", customerId: "cust-11", productId: "prod-4", qty: 6, unitPrice: 38000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
-  { id: "ORD-042", date: daysAgo(10), channel: "whatsapp", customerId: "cust-15", productId: "prod-9", qty: 10, unitPrice: 22000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-043", date: daysAgo(14), channel: "whatsapp", customerId: "cust-3", productId: "prod-5", qty: 2, unitPrice: 65000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-044", date: daysAgo(18), channel: "whatsapp", customerId: "cust-8", productId: "prod-7", qty: 4, unitPrice: 42000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-045", date: daysAgo(21), channel: "whatsapp", customerId: "cust-11", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-046", date: daysAgo(25), channel: "whatsapp", customerId: "cust-15", productId: "prod-4", qty: 5, unitPrice: 38000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
-  { id: "ORD-047", date: daysAgo(28), channel: "whatsapp", customerId: "cust-3", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  // --- Chat (9 pesanan, ~17%) ---
+  { id: "ORD-039", date: daysAgo(1), channel: "chat", customerId: "cust-3", productId: "prod-2", qty: 3, unitPrice: 72000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "dikemas" },
+  { id: "ORD-040", date: daysAgo(4), channel: "chat", customerId: "cust-8", productId: "prod-1", qty: 1, unitPrice: 85000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "belum", shipmentStatus: "baru" },
+  { id: "ORD-041", date: daysAgo(6), channel: "chat", customerId: "cust-11", productId: "prod-4", qty: 6, unitPrice: 38000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "dikirim" },
+  { id: "ORD-042", date: daysAgo(10), channel: "chat", customerId: "cust-15", productId: "prod-9", qty: 10, unitPrice: 22000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-043", date: daysAgo(14), channel: "chat", customerId: "cust-3", productId: "prod-5", qty: 2, unitPrice: 65000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-044", date: daysAgo(18), channel: "chat", customerId: "cust-8", productId: "prod-7", qty: 4, unitPrice: 42000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-045", date: daysAgo(21), channel: "chat", customerId: "cust-11", productId: "prod-2", qty: 2, unitPrice: 72000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-046", date: daysAgo(25), channel: "chat", customerId: "cust-15", productId: "prod-4", qty: 5, unitPrice: 38000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
+  { id: "ORD-047", date: daysAgo(28), channel: "chat", customerId: "cust-3", productId: "prod-7", qty: 3, unitPrice: 42000, adminFeePct: 0, shippingCost: 15000, paymentStatus: "lunas", shipmentStatus: "selesai" },
 
   // --- Offline (7 pesanan, ~13%) ---
   { id: "ORD-048", date: daysAgo(0), channel: "offline", customerId: "cust-4", productId: "prod-4", qty: 10, unitPrice: 35000, adminFeePct: 0, shippingCost: 0, paymentStatus: "lunas", shipmentStatus: "selesai" },
@@ -414,7 +414,7 @@ export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
     id: "LOG-004",
     userId: "emp-sari",
     userName: "Sari",
-    action: "menambah pesanan #ORD-001 dari Shopee",
+    action: "menambah pesanan #ORD-001 dari Marketplace A",
     module: "penjualan",
     timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
   },

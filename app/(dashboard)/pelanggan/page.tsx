@@ -8,7 +8,10 @@ import { redirect } from "next/navigation";
 import type { Channel } from "@/types";
 
 const CHANNEL_LABEL: Record<Channel, string> = {
-  shopee: "Shopee", tokopedia: "Tokopedia", whatsapp: "WhatsApp", offline: "Offline",
+  marketplace_a: "Marketplace A",
+  marketplace_b: "Marketplace B",
+  chat: "Chat",
+  offline: "Toko Offline",
 };
 
 export default function PelangganPage() {

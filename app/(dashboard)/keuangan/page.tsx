@@ -12,7 +12,10 @@ import type { Channel } from "@/types";
 type Period = "daily" | "weekly" | "monthly";
 
 const CHANNEL_LABEL: Record<Channel, string> = {
-  shopee: "Shopee", tokopedia: "Tokopedia", whatsapp: "WhatsApp", offline: "Offline",
+  marketplace_a: "Marketplace A",
+  marketplace_b: "Marketplace B",
+  chat: "Chat",
+  offline: "Toko Offline",
 };
 
 function SummaryRow({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: "positive" | "negative" | "neutral" }) {

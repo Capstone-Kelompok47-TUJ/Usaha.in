@@ -58,15 +58,15 @@ export function Header({ title, subtitle }: HeaderProps) {
           {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        {/* Reset Demo */}
+        {/* Reset Data */}
         <button
           onClick={() => {
-            if (confirm("Reset semua data demo ke kondisi awal?")) {
+            if (confirm("Reset semua data ke kondisi awal?")) {
               resetToInitial();
             }
           }}
-          id="reset-demo-btn"
-          title="Reset Data Demo"
+          id="reset-data-btn"
+          title="Reset Data"
           className="p-2 rounded-lg hover:bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] transition-colors"
         >
           <RotateCcw className="w-4 h-4" />

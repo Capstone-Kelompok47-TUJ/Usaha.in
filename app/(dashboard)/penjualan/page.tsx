@@ -15,7 +15,10 @@ import type { Channel, PaymentStatus, ShipmentStatus, Order } from "@/types";
 
 // ---- Badge helpers ----
 const CHANNEL_LABEL: Record<Channel, string> = {
-  shopee: "Shopee", tokopedia: "Tokopedia", whatsapp: "WhatsApp", offline: "Offline",
+  marketplace_a: "Marketplace A",
+  marketplace_b: "Marketplace B",
+  chat: "Chat",
+  offline: "Toko Offline",
 };
 const PAYMENT_LABEL: Record<PaymentStatus, string> = {
   lunas: "Lunas", belum: "Belum Lunas", gagal: "Gagal",
@@ -139,8 +142,8 @@ function OrderDetailDrawer({
   );
 }
 
-// ---- Simulate Button ----
-function SimulateOrderButton({ userId }: { userId: string }) {
+// ---- Add Example Order Button ----
+function AddExampleOrderButton({ userId }: { userId: string }) {
   const simulateOrder = useStore((s) => s.simulateOrder);
   const [loading, setLoading] = useState(false);
 
@@ -152,13 +155,13 @@ function SimulateOrderButton({ userId }: { userId: string }) {
 
   return (
     <button
-      id="simulate-order-btn"
+      id="add-order-example-btn"
       onClick={handleClick}
       disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 cursor-pointer"
     >
       <Plus className="w-4 h-4" />
-      {loading ? "Memproses..." : "Simulasikan Pesanan Masuk"}
+      {loading ? "Memproses..." : "Tambah Pesanan Contoh"}
     </button>
   );
 }
@@ -191,7 +194,7 @@ export default function PenjualanPage() {
     return matchSearch && matchChannel && matchPayment && matchShipment;
   });
 
-  const CHANNELS: Channel[] = ["shopee", "tokopedia", "whatsapp", "offline"];
+  const CHANNELS: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
   const PAYMENTS: PaymentStatus[] = ["lunas", "belum", "gagal"];
   const SHIPMENTS: ShipmentStatus[] = ["baru", "diproses", "dikemas", "dikirim", "selesai"];
 
@@ -242,7 +245,7 @@ export default function PenjualanPage() {
           {SHIPMENTS.map((s) => <option key={s} value={s}>{SHIPMENT_LABEL[s]}</option>)}
         </select>
 
-        {canManage && user && <SimulateOrderButton userId={user.id} />}
+        {canManage && user && <AddExampleOrderButton userId={user.id} />}
       </div>
 
       {/* Table */}

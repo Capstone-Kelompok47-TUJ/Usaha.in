@@ -82,7 +82,7 @@ function genId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-const CHANNELS: Channel[] = ["shopee", "tokopedia", "whatsapp", "offline"];
+const CHANNELS: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
 const SHIPMENT_STATUSES: ShipmentStatus[] = [
   "baru", "diproses", "dikemas", "dikirim", "selesai",
 ];
@@ -249,12 +249,19 @@ export const useStore = create<AppStore>()(
         const channelRand = Math.random();
         const channel: Channel =
           channelRand < 0.4
-            ? "shopee"
+            ? "marketplace_a"
             : channelRand < 0.7
-              ? "tokopedia"
+              ? "marketplace_b"
               : channelRand < 0.87
-                ? "whatsapp"
+                ? "chat"
                 : "offline";
+
+        const channelLabelMap: Record<Channel, string> = {
+          marketplace_a: "Marketplace A",
+          marketplace_b: "Marketplace B",
+          chat: "Chat",
+          offline: "Toko Offline",
+        };
 
         // Pilih produk yang tersedia (stok > 0)
         const availableProducts = products.filter((p) => p.stock > 0);
@@ -274,20 +281,20 @@ export const useStore = create<AppStore>()(
 
         // Admin fee sesuai kanal
         const adminFeePct =
-          channel === "shopee" ? 7.5 : channel === "tokopedia" ? 3.5 : 0;
+          channel === "marketplace_a" ? 7.5 : channel === "marketplace_b" ? 3.5 : 0;
         const shippingCost =
-          channel === "shopee"
+          channel === "marketplace_a"
             ? 9000
-            : channel === "tokopedia"
+            : channel === "marketplace_b"
               ? 7000
-              : channel === "whatsapp"
+              : channel === "chat"
                 ? 15000
                 : 0;
 
         const subtotal = finalQty * product.sellPrice;
         const adminFee = Math.round((subtotal * adminFeePct) / 100);
 
-        const newOrderId = `ORD-SIM-${Date.now()}`;
+        const newOrderId = `ORD-EX-${Date.now()}`;
 
         const newOrder: Order = {
           id: newOrderId,
@@ -324,7 +331,7 @@ export const useStore = create<AppStore>()(
           id: genId("LOG"),
           userId: triggeredByUserId,
           userName: actor?.name ?? "Sistem",
-          action: `menambah pesanan ${newOrderId} dari ${channel} — ${product.name} ×${finalQty}`,
+          action: `menambah pesanan ${newOrderId} dari ${channelLabelMap[channel]} — ${product.name} ×${finalQty}`,
           module: "penjualan",
           timestamp: new Date().toISOString(),
         };
@@ -340,7 +347,7 @@ export const useStore = create<AppStore>()(
 
         // Toast notifikasi
         get().addToast(
-          `Pesanan baru dari ${channel.toUpperCase()} — ${product.name} ×${finalQty}`,
+          `Pesanan baru dari ${channelLabelMap[channel]} — ${product.name} ×${finalQty}`,
           "success"
         );
 
@@ -449,7 +456,7 @@ export const useStore = create<AppStore>()(
       // ----- RESET -----
       resetToInitial: () => {
         set({ ...INITIAL_STATE, toasts: [] });
-        get().addToast("Data demo berhasil direset ke kondisi awal", "info");
+        get().addToast("Data berhasil direset ke kondisi awal", "info");
       },
     }),
     {

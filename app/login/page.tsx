@@ -79,8 +79,8 @@ export default function LoginPage() {
             Kembali ke Beranda
           </Link>
           <div className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Versi Demo</span>
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Sistem Internal UMKM</span>
           </div>
         </div>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
               Selamat datang kembali
             </h1>
             <p className="text-sm text-[hsl(var(--muted-fg))] mt-1.5">
-              Masuk untuk mengelola seluruh kanal penjualan, stok barang, dan keuangan UMKM Anda.
+              Masuk untuk mengelola seluruh kanal penjualan, stok barang, dan keuangan internal usaha Anda.
             </p>
           </div>
 
@@ -139,8 +139,8 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert("Untuk mode demo, gunakan kata sandi yang tertera pada kartu akun di bawah.")}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  onClick={() => alert("Gunakan pilihan Akun Contoh di bawah untuk langsung mencoba alur kerja.")}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
                   Lupa sandi?
                 </button>
@@ -197,15 +197,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Instant Role Access — NO credentials or passwords exposed */}
+          {/* Akun Contoh — 1-Klik Masuk */}
           <div className="mt-8 pt-6 border-t border-[hsl(var(--border))]">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                Uji Coba Peran Demo (1-Klik Masuk):
+                Pilihan Akun Contoh (1-Klik Masuk):
               </span>
               <span className="text-[11px] text-[hsl(var(--muted-fg))]">
-                Pilih peran untuk langsung mencoba
+                Pilih akun untuk mencoba alur kerja
               </span>
             </div>
             
@@ -219,10 +219,10 @@ export default function LoginPage() {
                   <span className="text-lg">👑</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors truncate">
-                      Pemilik Usaha
+                      Pak Ahmad
                     </div>
                     <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Akses Penuh & Finansial
+                      Pemilik (Akses Penuh)
                     </div>
                   </div>
                 </div>
@@ -237,10 +237,10 @@ export default function LoginPage() {
                   <span className="text-lg">🛍️</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-blue-600 transition-colors truncate">
-                      Staf Penjualan
+                      Sari
                     </div>
                     <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Kasir, Order & Pelanggan
+                      Karyawan (Template Penjualan)
                     </div>
                   </div>
                 </div>
@@ -255,10 +255,10 @@ export default function LoginPage() {
                   <span className="text-lg">📦</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-emerald-600 transition-colors truncate">
-                      Staf Gudang
+                      Budi
                     </div>
                     <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Stok, Kirim & Supplier
+                      Karyawan (Template Gudang)
                     </div>
                   </div>
                 </div>
@@ -273,10 +273,10 @@ export default function LoginPage() {
                   <span className="text-lg">💳</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-purple-600 transition-colors truncate">
-                      Staf Keuangan
+                      Rina
                     </div>
                     <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Pembayaran & Laba Rugi
+                      Karyawan (Template Keuangan)
                     </div>
                   </div>
                 </div>
@@ -300,17 +300,17 @@ export default function LoginPage() {
         {/* Top Feature Pill */}
         <div className="relative z-10 flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Solusi Manajemen UMKM Terintegrasi</span>
+          <span>Sistem Manajemen Internal Terintegrasi</span>
         </div>
 
         {/* Center Content & Glass Card */}
         <div className="relative z-10 my-auto max-w-lg space-y-8">
           <div>
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
-              Semua kanal jualan tersinkronisasi rapi tanpa pusing stok selisih.
+              Semua kanal jualan tersinkronisasi rapi dalam satu sistem internal.
             </h2>
             <p className="text-white/70 text-sm mt-3 leading-relaxed">
-              Mulai dari Shopee, Tokopedia, pesanan WhatsApp hingga kasir toko fisik terintegrasi otomatis dengan sistem reorder cerdas berbasis AI.
+              Pesanan dari marketplace, chat, dan toko offline terhubung langsung dengan stok barang, keuangan, dan asisten AI Copilot.
             </p>
           </div>
 
@@ -321,8 +321,8 @@ export default function LoginPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">Integrasi 4 Kanal Sekaligus</h4>
-                <p className="text-xs text-white/60">Shopee, Tokopedia, WhatsApp, & Kasir Offline real-time.</p>
+                <h4 className="text-sm font-semibold">4 Kanal Penjualan Terpusat</h4>
+                <p className="text-xs text-white/60">Marketplace A, Marketplace B, Chat, & Toko Offline.</p>
               </div>
             </div>
 
@@ -331,8 +331,8 @@ export default function LoginPage() {
                 <Bot className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">Asisten AI Usaha.in Copilot</h4>
-                <p className="text-xs text-white/60">Rekomendasi stok menipis & saran reorder otomatis.</p>
+                <h4 className="text-sm font-semibold">AI Business Copilot</h4>
+                <p className="text-xs text-white/60">Rekomendasi stok menipis & analisis margin kanal.</p>
               </div>
             </div>
 
@@ -341,7 +341,7 @@ export default function LoginPage() {
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">Laporan Laba Rugi Otomatis</h4>
+                <h4 className="text-sm font-semibold">Laporan Keuangan & HPP Terpusat</h4>
                 <p className="text-xs text-white/60">Margin keuntungan bersih per produk & kanal jualan.</p>
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function LoginPage() {
           <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <span>Platform demo aman dengan dataset 54 transaksi & 10 produk UMKM.</span>
+          <span>Sistem internal UMKM untuk pemilik dan karyawan dengan hak akses fleksibel.</span>
         </div>
       </div>
     </div>

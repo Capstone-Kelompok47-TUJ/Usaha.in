@@ -9,17 +9,17 @@ import { formatRp } from "@/lib/finance";
 import type { Channel } from "@/types";
 
 const CHANNEL_COLORS: Record<Channel, string> = {
-  shopee:    "#f97316",
-  tokopedia: "#22c55e",
-  whatsapp:  "#10b981",
-  offline:   "#94a3b8",
+  marketplace_a: "#f97316",
+  marketplace_b: "#22c55e",
+  chat:          "#10b981",
+  offline:       "#94a3b8",
 };
 
 const CHANNEL_LABELS: Record<Channel, string> = {
-  shopee:    "Shopee",
-  tokopedia: "Tokopedia",
-  whatsapp:  "WhatsApp",
-  offline:   "Offline",
+  marketplace_a: "Marketplace A",
+  marketplace_b: "Marketplace B",
+  chat:          "Chat",
+  offline:       "Toko Offline",
 };
 
 // ====== Sales Line Chart ======
@@ -87,7 +87,7 @@ export function SalesLineChart() {
 export function ChannelChart() {
   const orders = useStore((s) => s.orders);
 
-  const channels: Channel[] = ["shopee", "tokopedia", "whatsapp", "offline"];
+  const channels: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
   const data = channels.map((ch) => {
     const chOrders = orders.filter(
       (o) => o.channel === ch && o.paymentStatus === "lunas"

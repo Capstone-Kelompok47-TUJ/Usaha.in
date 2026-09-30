@@ -14,19 +14,19 @@ export interface CopilotContext {
   weeklyProfit: number;
   monthlyRevenue: number;
   monthlyProfit: number;
-  shopeeMargin: number;
-  tokopediaMargin: number;
-  waMargin: number;
+  marketplaceAMargin: number;
+  marketplaceBMargin: number;
+  chatMargin: number;
   offlineMargin: number;
-  shopeeRevenue: number;
-  tokopediaRevenue: number;
+  marketplaceARevenue: number;
+  marketplaceBRevenue: number;
   lowStockProducts: string[];
   slowProducts: string[];
   topProducts: string[];
   arabikaBuyPriceOld: number;
   arabikaBuyPriceNew: number;
-  shopeeAdminFeeOld: number;
-  shopeeAdminFeeNew: number;
+  marketplaceAAdminFeeOld: number;
+  marketplaceAAdminFeeNew: number;
 }
 
 export const COPILOT_SCENARIOS: CopilotScenario[] = [
@@ -43,30 +43,30 @@ Dua penyebab utama:
    - Sekarang: ${formatRp(ctx.arabikaBuyPriceNew)}/unit
    - Kenaikan HPP: **+${formatRp(ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld)}/unit** (~${Math.round(((ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld) / ctx.arabikaBuyPriceOld) * 100)}%)
 
-2. **Potongan admin Shopee naik**
-   - Minggu lalu: ${ctx.shopeeAdminFeeOld}%
-   - Sekarang: ${ctx.shopeeAdminFeeNew}%
-   - Shopee menyumbang ~40% dari total pesanan, sehingga dampaknya signifikan.
+2. **Potongan admin Marketplace A naik**
+   - Minggu lalu: ${ctx.marketplaceAAdminFeeOld}%
+   - Sekarang: ${ctx.marketplaceAAdminFeeNew}%
+   - Marketplace A menyumbang ~40% dari total pesanan, sehingga dampaknya signifikan.
 
-💡 **Rekomendasi:** Pertimbangkan menaikkan harga jual Kopi Arabika sebesar Rp 5.000–10.000, atau pindahkan sebagian listing ke Tokopedia yang biaya adminnya lebih rendah (${ctx.tokopediaMargin}% margin vs Shopee ${ctx.shopeeMargin}% margin).`,
+💡 **Rekomendasi:** Pertimbangkan menaikkan harga jual Kopi Arabika sebesar Rp 5.000–10.000, atau alokasikan lebih banyak stok ke Marketplace B yang biaya adminnya lebih rendah (${ctx.marketplaceBMargin}% margin vs Marketplace A ${ctx.marketplaceAMargin}% margin).`,
   },
   {
-    triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik"],
+    triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik", "margin tertinggi"],
     response: (ctx) => `📊 **Perbandingan Profitabilitas per Kanal (Bulan Ini)**
 
 | Kanal | Omzet | Margin |
 |---|---|---|
-| 🟠 Shopee | ${formatRp(ctx.shopeeRevenue)} | ${ctx.shopeeMargin}% |
-| 🟢 Tokopedia | ${formatRp(ctx.tokopediaRevenue)} | ${ctx.tokopediaMargin}% |
-| 💬 WhatsApp | — | ${ctx.waMargin}% |
-| 🏪 Offline | — | ${ctx.offlineMargin}% |
+| 🟠 Marketplace A | ${formatRp(ctx.marketplaceARevenue)} | ${ctx.marketplaceAMargin}% |
+| 🟢 Marketplace B | ${formatRp(ctx.marketplaceBRevenue)} | ${ctx.marketplaceBMargin}% |
+| 💬 Chat | — | ${ctx.chatMargin}% |
+| 🏪 Toko Offline | — | ${ctx.offlineMargin}% |
 
 **Kesimpulan:**
-- **Tokopedia** = margin tertinggi (${ctx.tokopediaMargin}%) karena biaya admin hanya 3–4%.
-- **Shopee** = omzet tertinggi (${formatRp(ctx.shopeeRevenue)}) tetapi margin lebih tipis (${ctx.shopeeMargin}%) karena admin fee 5–8%.
-- **WhatsApp & Offline** = margin ${ctx.waMargin}%–${ctx.offlineMargin}% karena tidak ada potongan platform, tetapi volume lebih kecil.
+- **Marketplace B** = margin tertinggi (${ctx.marketplaceBMargin}%) karena biaya admin hanya 3–4%.
+- **Marketplace A** = omzet tertinggi (${formatRp(ctx.marketplaceARevenue)}) tetapi margin lebih tipis (${ctx.marketplaceAMargin}%) karena admin fee 5–8%.
+- **Chat & Toko Offline** = margin ${ctx.chatMargin}%–${ctx.offlineMargin}% karena tidak ada potongan perantara platform, namun volume transaksi bertahap.
 
-💡 **Rekomendasi:** Fokus pertumbuhan di Tokopedia untuk meningkatkan profitabilitas keseluruhan.`,
+💡 **Rekomendasi:** Fokus peningkatan penjualan di Marketplace B untuk meningkatkan profitabilitas keseluruhan.`,
   },
   {
     triggers: ["restock", "stok menipis", "produk habis", "perlu restock"],
@@ -75,9 +75,9 @@ Dua penyebab utama:
 ${ctx.lowStockProducts.map((p, i) => `${i + 1}. ⚠️ **${p}** — stok di bawah minimum`).join("\n")}
 
 **Saran tindakan:**
-- Hubungi supplier segera untuk produk-produk di atas.
-- Prioritaskan Kopi Arabika karena merupakan produk terlaris dan harganya sedang naik — pertimbangkan beli lebih banyak sebelum harga naik lagi.
-- Pastikan pembelian masuk ke sistem agar stok otomatis terupdate.`,
+- Hubungi supplier untuk produk-produk di atas.
+- Prioritaskan Kopi Arabika karena merupakan produk dengan perputaran tinggi dan harga beli sedang naik.
+- Pastikan pencatatan pembelian masuk ke sistem agar stok terintegrasi otomatis.`,
   },
   {
     triggers: ["kurang laku", "produk lambat", "slow moving", "tidak laku"],
@@ -87,12 +87,12 @@ ${ctx.slowProducts.map((p, i) => `${i + 1}. 🔴 **${p}**`).join("\n")}
 
 **Analisis:**
 - Produk-produk ini memiliki perputaran stok paling lambat dalam 30 hari terakhir.
-- Kemungkinan penyebab: harga kurang kompetitif, listing belum optimal, atau kurang promosi.
+- Kemungkinan penyebab: harga kurang kompetitif, penataan katalog, atau promosi perlu ditingkatkan.
 
 💡 **Rekomendasi:**
-- Coba buat bundling dengan produk terlaris.
-- Aktifkan di semua kanal yang tersedia.
-- Pertimbangkan diskon flash sale di Shopee/Tokopedia.`,
+- Buat paket bundling dengan produk terlaris.
+- Aktifkan ketersediaan di seluruh 4 kanal penjualan.
+- Pertimbangkan program diskon khusus.`,
   },
   {
     triggers: ["ringkas bulan", "performa bulan", "summary bulan", "laporan bulan"],
@@ -109,16 +109,16 @@ ${ctx.topProducts.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 **⚠️ Perhatian:**
 - ${ctx.lowStockProducts.length} produk stok menipis perlu di-restock.
 - Laba minggu terakhir turun ~12% (detail: tanya "Kenapa laba turun minggu ini?").
-- Tokopedia adalah kanal paling menguntungkan bulan ini (margin ${ctx.tokopediaMargin}%).
+- Marketplace B adalah kanal paling menguntungkan bulan ini (margin ${ctx.marketplaceBMargin}%).
 
 **📈 Tren:**
-- Shopee tetap menyumbang omzet terbesar (~40% dari total).
-- WhatsApp menunjukkan pertumbuhan stabil dari pelanggan repeat order.`,
+- Marketplace A menyumbang volume omzet terbesar (~40% dari total).
+- Chat menunjukkan transaksi stabil dari pelanggan tetap.`,
   },
 ];
 
 export const FALLBACK_RESPONSE =
-  "Pertanyaan ini akan didukung pada versi lengkap Usaha.in yang terhubung dengan data real-time dan AI sesungguhnya. 🚀";
+  "Pertanyaan ini dapat diajukan sesuai modul data penjualan, stok, dan keuangan internal yang tersedia di Usaha.in.";
 
 /**
  * Cari respons yang cocok berdasarkan input user.
