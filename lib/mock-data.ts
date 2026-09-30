@@ -4,6 +4,7 @@
 // ============================================================
 
 import {
+  Tenant,
   User,
   Product,
   StockMovement,
@@ -19,15 +20,39 @@ import {
 import { FULL_ACCESS, TEMPLATES, NO_ACCESS } from "@/lib/permissions";
 
 // ============================================================
+// TENANT CONTOH
+// ============================================================
+
+export const INITIAL_TENANTS: Tenant[] = [
+  {
+    id: "tenant-tokosejahtera",
+    name: "Toko Sejahtera",
+    slug: "tokosejahtera",
+    businessType: "Kuliner & F&B",
+    city: "Bandung",
+    province: "Jawa Barat",
+    address: "Jl. Riau No. 45, Bandung",
+    phone: "0812-3456-7890",
+    channels: ["marketplace", "chat", "offline"],
+    nib: "1234567890123",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+];
+
+// ============================================================
 // PENGGUNA
 // ============================================================
 
 export const INITIAL_USERS: User[] = [
   {
     id: "owner-1",
-    name: "Pak Ahmad (Pemilik)",
-    email: "ahmad@usaha.in",
+    tenantId: "tenant-tokosejahtera",
+    username: "ahmad",
+    loginEmail: "ahmad@tokosejahtera.usaha.in",
+    contactEmail: "ahmad@gmail.com",
+    phone: "0812-3456-7890",
     password: "owner123",
+    name: "Pak Ahmad (Pemilik)",
     isOwner: true,
     active: true,
     template: "Kustom",
@@ -35,9 +60,13 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "emp-sari",
-    name: "Sari",
-    email: "sari@usaha.in",
+    tenantId: "tenant-tokosejahtera",
+    username: "sari",
+    loginEmail: "sari@tokosejahtera.usaha.in",
+    contactEmail: "sari@gmail.com",
+    phone: "0813-4567-8901",
     password: "sari123",
+    name: "Sari",
     isOwner: false,
     active: true,
     template: "Staf Penjualan",
@@ -45,9 +74,13 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "emp-budi",
-    name: "Budi",
-    email: "budi@usaha.in",
+    tenantId: "tenant-tokosejahtera",
+    username: "budi",
+    loginEmail: "budi@tokosejahtera.usaha.in",
+    contactEmail: "budi@gmail.com",
+    phone: "0814-5678-9012",
     password: "budi123",
+    name: "Budi",
     isOwner: false,
     active: true,
     template: "Staf Gudang",
@@ -55,9 +88,13 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: "emp-rina",
-    name: "Rina",
-    email: "rina@usaha.in",
+    tenantId: "tenant-tokosejahtera",
+    username: "rina",
+    loginEmail: "rina@tokosejahtera.usaha.in",
+    contactEmail: "rina@gmail.com",
+    phone: "0815-6789-0123",
     password: "rina123",
+    name: "Rina",
     isOwner: false,
     active: true,
     template: "Staf Keuangan",
@@ -427,3 +464,164 @@ export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
     timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
   },
 ];
+
+// ============================================================
+// GENERATOR DATA AWAL UNTUK TENANT BARU
+// ============================================================
+
+export function createInitialTenantData(tenant: Tenant, owner: User) {
+  const tId = tenant.id;
+  const now = new Date().toISOString();
+
+  const products: Product[] = [
+    {
+      id: `prod-${tId}-1`,
+      tenantId: tId,
+      sku: "PRD-001",
+      name: `Produk Unggulan ${tenant.name}`,
+      sellPrice: 75000,
+      buyPrice: 45000,
+      stock: 50,
+      minStock: 10,
+      channels: ["marketplace_a", "chat", "offline"],
+    },
+    {
+      id: `prod-${tId}-2`,
+      tenantId: tId,
+      sku: "PRD-002",
+      name: `Paket Hemat ${tenant.name}`,
+      sellPrice: 120000,
+      buyPrice: 80000,
+      stock: 35,
+      minStock: 5,
+      channels: ["marketplace_a", "marketplace_b", "chat"],
+    },
+    {
+      id: `prod-${tId}-3`,
+      tenantId: tId,
+      sku: "PRD-003",
+      name: `Varian Spesial ${tenant.name}`,
+      sellPrice: 45000,
+      buyPrice: 25000,
+      stock: 20,
+      minStock: 5,
+      channels: ["chat", "offline"],
+    },
+  ];
+
+  const suppliers: Supplier[] = [
+    {
+      id: `sup-${tId}-1`,
+      tenantId: tId,
+      name: "Supplier Utama Mitra UMKM",
+      contact: "0812-8888-9999",
+      address: `Sentra Bahan Baku, ${tenant.city}`,
+    },
+  ];
+
+  const customers: Customer[] = [
+    {
+      id: `cust-${tId}-1`,
+      tenantId: tId,
+      name: "Pelanggan Setia 1",
+      channel: "marketplace_a",
+      phone: "0812-3333-4444",
+      email: "pelanggan1@gmail.com",
+    },
+    {
+      id: `cust-${tId}-2`,
+      tenantId: tId,
+      name: "Pelanggan Langsung 2",
+      channel: "chat",
+      phone: "0813-5555-6666",
+      email: "pelanggan2@gmail.com",
+    },
+  ];
+
+  const orders: Order[] = [
+    {
+      id: `ORD-${tId}-101`,
+      tenantId: tId,
+      date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      channel: "marketplace_a",
+      customerId: `cust-${tId}-1`,
+      items: [{ productId: `prod-${tId}-1`, qty: 2, unitPrice: 75000 }],
+      subtotal: 150000,
+      adminFee: 7500,
+      shippingCost: 15000,
+      paymentStatus: "lunas",
+      shipmentStatus: "diproses",
+    },
+    {
+      id: `ORD-${tId}-102`,
+      tenantId: tId,
+      date: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+      channel: "chat",
+      customerId: `cust-${tId}-2`,
+      items: [{ productId: `prod-${tId}-2`, qty: 1, unitPrice: 120000 }],
+      subtotal: 120000,
+      adminFee: 0,
+      shippingCost: 10000,
+      paymentStatus: "lunas",
+      shipmentStatus: "baru",
+    },
+  ];
+
+  const purchases: Purchase[] = [
+    {
+      id: `pur-${tId}-1`,
+      tenantId: tId,
+      supplierId: `sup-${tId}-1`,
+      productId: `prod-${tId}-1`,
+      qty: 60,
+      buyPrice: 45000,
+      date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      paid: true,
+    },
+  ];
+
+  const stockMovements: StockMovement[] = [
+    {
+      id: `sm-${tId}-1`,
+      tenantId: tId,
+      productId: `prod-${tId}-1`,
+      type: "purchase",
+      qty: 60,
+      date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      refId: `pur-${tId}-1`,
+      note: "Stok awal pembelian",
+    },
+    {
+      id: `sm-${tId}-2`,
+      tenantId: tId,
+      productId: `prod-${tId}-1`,
+      type: "sale",
+      qty: -2,
+      date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      refId: `ORD-${tId}-101`,
+      note: "Penjualan order ORD-101",
+    },
+  ];
+
+  const activityLogs: ActivityLog[] = [
+    {
+      id: `log-${tId}-1`,
+      tenantId: tId,
+      userId: owner.id,
+      userName: owner.name,
+      action: `mendaftarkan UMKM ${tenant.name} dan mengaktifkan akun pemilik`,
+      module: "registrasi",
+      timestamp: now,
+    },
+  ];
+
+  return {
+    products,
+    suppliers,
+    customers,
+    orders,
+    purchases,
+    stockMovements,
+    activityLogs,
+  };
+}

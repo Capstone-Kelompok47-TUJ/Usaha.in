@@ -5,21 +5,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
-  User, Product, StockMovement, Order, Purchase,
+  Tenant, User, Product, StockMovement, Order, Purchase,
   Supplier, Customer, ActivityLog, Toast,
   Channel, ShipmentStatus, ModuleKey, Level, TemplateKey,
 } from "@/types";
 import {
-  INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_STOCK_MOVEMENTS,
+  INITIAL_TENANTS, INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_STOCK_MOVEMENTS,
   INITIAL_ORDERS, INITIAL_PURCHASES, INITIAL_SUPPLIERS,
-  INITIAL_CUSTOMERS, INITIAL_ACTIVITY_LOGS,
+  INITIAL_CUSTOMERS, INITIAL_ACTIVITY_LOGS, createInitialTenantData,
 } from "@/lib/mock-data";
+import { FULL_ACCESS } from "@/lib/permissions";
 
 // ============================================================
 // STATE SHAPE
 // ============================================================
 
 interface AppStore {
+  // Multi-Tenant
+  tenants: Tenant[];
+  activeTenantId: string;
+
   // Data
   users: User[];
   currentUserId: string;
@@ -32,17 +37,30 @@ interface AppStore {
   activityLogs: ActivityLog[];
   toasts: Toast[];
 
-  // Auth
+  // Auth & Registration
   isAuthenticated: boolean;
   login: (email: string, password: string) => { success: boolean; message?: string };
   logout: () => void;
+  registerTenant: (
+    tenantData: Omit<Tenant, "id" | "createdAt">,
+    ownerData: {
+      name: string;
+      username: string;
+      contactEmail: string;
+      phone: string;
+      password: string;
+    }
+  ) => { success: boolean; message?: string; user?: User; tenant?: Tenant };
+  checkSlugAvailability: (slug: string) => { available: boolean; reason?: string };
 
   // --- GETTERS ---
   getCurrentUser: () => User | null;
+  getActiveTenant: () => Tenant | null;
+  getTenantUsers: () => User[];
 
   // --- USER ACTIONS ---
   setCurrentUser: (userId: string) => void;
-  addUser: (user: User) => void;
+  addUser: (user: Partial<User> & { name: string; password: string }) => { success: boolean; message?: string };
   updateUserPermissions: (
     userId: string,
     permissions: Record<ModuleKey, Level>,
@@ -92,6 +110,8 @@ const SHIPMENT_STATUSES: ShipmentStatus[] = [
 // ============================================================
 
 const INITIAL_STATE = {
+  tenants: INITIAL_TENANTS,
+  activeTenantId: "tenant-tokosejahtera",
   users: INITIAL_USERS,
   currentUserId: "owner-1",
   isAuthenticated: false,
@@ -114,27 +134,163 @@ export const useStore = create<AppStore>()(
     (set, get) => ({
       ...INITIAL_STATE,
 
+      // ----- SLUG CHECK -----
+      checkSlugAvailability: (rawSlug: string) => {
+        const clean = rawSlug.trim().toLowerCase();
+        if (!clean) {
+          return { available: false, reason: "Kode UMKM wajib diisi." };
+        }
+        if (clean.length < 3 || clean.length > 30) {
+          return {
+            available: false,
+            reason: "Kode UMKM harus terdiri dari 3 hingga 30 karakter.",
+          };
+        }
+        if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(clean)) {
+          return {
+            available: false,
+            reason: "Hanya gunakan huruf kecil, angka, dan tanda hubung (-). Tidak boleh diawali atau diakhiri tanda hubung.",
+          };
+        }
+        const reserved = [
+          "admin", "www", "api", "app", "mail",
+          "login", "daftar", "support", "usaha",
+        ];
+        if (reserved.includes(clean)) {
+          return {
+            available: false,
+            reason: `'${clean}' adalah kata terlarang sistem yang tidak dapat digunakan.`,
+          };
+        }
+        const { tenants } = get();
+        if (tenants.some((t) => t.slug.toLowerCase() === clean)) {
+          return {
+            available: false,
+            reason: `Kode UMKM '${clean}' sudah digunakan oleh unit usaha lain.`,
+          };
+        }
+        return { available: true };
+      },
+
+      // ----- REGISTER TENANT & OWNER -----
+      registerTenant: (tenantData, ownerData) => {
+        const slug = tenantData.slug.trim().toLowerCase();
+        const check = get().checkSlugAvailability(slug);
+        if (!check.available) {
+          return { success: false, message: check.reason };
+        }
+
+        const cleanUsername = ownerData.username.trim().toLowerCase();
+        if (!/^[a-z0-9._]{3,30}$/.test(cleanUsername)) {
+          return {
+            success: false,
+            message: "Nama pengguna pemilik harus 3-30 karakter (huruf kecil, angka, titik, garis bawah).",
+          };
+        }
+
+        const tenantId = `tenant-${slug}-${Date.now()}`;
+        const newTenant: Tenant = {
+          ...tenantData,
+          id: tenantId,
+          slug,
+          createdAt: new Date().toISOString(),
+        };
+
+        const ownerId = `owner-${Date.now()}`;
+        const loginEmail = `${cleanUsername}@${slug}.usaha.in`;
+        const newOwner: User = {
+          id: ownerId,
+          tenantId: newTenant.id,
+          username: cleanUsername,
+          loginEmail,
+          contactEmail: ownerData.contactEmail.trim().toLowerCase(),
+          phone: ownerData.phone,
+          password: ownerData.password,
+          name: ownerData.name,
+          isOwner: true,
+          active: true,
+          template: "Kustom",
+          permissions: FULL_ACCESS,
+        };
+
+        // Generate initial data for this tenant
+        const seeded = createInitialTenantData(newTenant, newOwner);
+
+        set((s) => ({
+          tenants: [...s.tenants, newTenant],
+          users: [...s.users, newOwner],
+          products: [...s.products, ...seeded.products],
+          suppliers: [...s.suppliers, ...seeded.suppliers],
+          customers: [...s.customers, ...seeded.customers],
+          orders: [...s.orders, ...seeded.orders],
+          purchases: [...s.purchases, ...seeded.purchases],
+          stockMovements: [...s.stockMovements, ...seeded.stockMovements],
+          activityLogs: [...seeded.activityLogs, ...s.activityLogs],
+          activeTenantId: newTenant.id,
+          currentUserId: newOwner.id,
+          isAuthenticated: true,
+        }));
+
+        get().addToast(`Selamat datang di Usaha.in, ${newOwner.name}! UMKM ${newTenant.name} berhasil didaftarkan.`, "success");
+        return { success: true, user: newOwner, tenant: newTenant };
+      },
+
       // ----- AUTH ACTIONS -----
-      login: (email, password) => {
-        const { users } = get();
-        const user = users.find(
-          (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()
+      login: (rawEmail, password) => {
+        const trimmed = rawEmail.trim().toLowerCase();
+        
+        // Pola: nama@kodeumkm.usaha.in ATAU nama@kodeumkm
+        const regex = /^([a-z0-9._]+)@([a-z0-9-]+)(\.usaha\.in)?$/i;
+        const match = trimmed.match(regex);
+
+        if (!match) {
+          return {
+            success: false,
+            message: "Format email login salah. Gunakan format: nama@kodeumkm.usaha.in",
+          };
+        }
+
+        const inputUsername = match[1].toLowerCase();
+        const inputSlug = match[2].toLowerCase();
+
+        const { tenants, users } = get();
+        const targetTenant = tenants.find(
+          (t) => t.slug.toLowerCase() === inputSlug
         );
-        if (!user) {
-          return { success: false, message: "Email tidak terdaftar dalam sistem." };
+
+        if (!targetTenant) {
+          return {
+            success: false,
+            message: `UMKM dengan kode '${inputSlug}' tidak ditemukan. Pastikan kode UMKM sudah terdaftar.`,
+          };
         }
-        if (user.password !== password) {
-          return { success: false, message: "Kata sandi salah. Silakan coba lagi." };
+
+        const expectedLoginEmail = `${inputUsername}@${inputSlug}.usaha.in`;
+        const user = users.find(
+          (u) =>
+            u.tenantId === targetTenant.id &&
+            (u.loginEmail?.toLowerCase() === expectedLoginEmail ||
+             u.username?.toLowerCase() === inputUsername ||
+             (u as any).email?.toLowerCase() === expectedLoginEmail)
+        );
+
+        if (!user || user.password !== password) {
+          return {
+            success: false,
+            message: "Nama pengguna atau kata sandi salah.",
+          };
         }
+
         if (!user.active) {
           return {
             success: false,
-            message: "Akun ini dinonaktifkan. Hubungi pemilik usaha.",
+            message: "Akun ini dinonaktifkan oleh Pemilik Usaha. Hubungi pemilik untuk mengaktifkan kembali.",
           };
         }
 
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: targetTenant.id,
           userId: user.id,
           userName: user.name,
           action: "berhasil masuk ke sistem (login)",
@@ -144,6 +300,7 @@ export const useStore = create<AppStore>()(
 
         set((s) => ({
           isAuthenticated: true,
+          activeTenantId: targetTenant.id,
           currentUserId: user.id,
           activityLogs: [log, ...s.activityLogs],
         }));
@@ -157,6 +314,7 @@ export const useStore = create<AppStore>()(
         if (currentUser) {
           const log: ActivityLog = {
             id: genId("LOG"),
+            tenantId: currentUser.tenantId,
             userId: currentUser.id,
             userName: currentUser.name,
             action: "keluar dari sistem (logout)",
@@ -177,26 +335,80 @@ export const useStore = create<AppStore>()(
         return users.find((u) => u.id === currentUserId) ?? null;
       },
 
-      // ----- USER ACTIONS -----
-      setCurrentUser: (userId) => {
-        set({ currentUserId: userId });
+      getActiveTenant: () => {
+        const { tenants, activeTenantId } = get();
+        return tenants.find((t) => t.id === activeTenantId) ?? tenants[0] ?? null;
       },
 
-      addUser: (user) => {
-        const { activityLogs, getCurrentUser } = get();
+      getTenantUsers: () => {
+        const { users, activeTenantId } = get();
+        return users.filter((u) => !u.tenantId || u.tenantId === activeTenantId);
+      },
+
+      // ----- USER ACTIONS -----
+      setCurrentUser: (userId) => {
+        const target = get().users.find((u) => u.id === userId);
+        if (target) {
+          set({
+            currentUserId: userId,
+            activeTenantId: target.tenantId || get().activeTenantId,
+          });
+        }
+      },
+
+      addUser: (userInput) => {
+        const { activityLogs, getCurrentUser, getActiveTenant, users, activeTenantId } = get();
         const actor = getCurrentUser();
+        const activeTenant = getActiveTenant();
+        const tenantId = activeTenantId || activeTenant?.id || "tenant-tokosejahtera";
+        const slug = activeTenant?.slug || "tokosejahtera";
+
+        const cleanUsername = (userInput.username || userInput.name.toLowerCase().replace(/\s+/g, "")).trim().toLowerCase();
+
+        // Cek keunikan username dalam tenant
+        const isDuplicate = users.some(
+          (u) => u.tenantId === tenantId && (u.username?.toLowerCase() === cleanUsername || u.loginEmail?.toLowerCase() === `${cleanUsername}@${slug}.usaha.in`)
+        );
+
+        if (isDuplicate) {
+          return {
+            success: false,
+            message: `Nama pengguna '${cleanUsername}' sudah digunakan karyawan lain di UMKM ini.`,
+          };
+        }
+
+        const newUser: User = {
+          id: `emp-${Date.now()}`,
+          tenantId,
+          username: cleanUsername,
+          loginEmail: `${cleanUsername}@${slug}.usaha.in`,
+          contactEmail: (userInput as any).contactEmail || `${cleanUsername}@${slug}.usaha.in`,
+          phone: (userInput as any).phone || "",
+          name: userInput.name,
+          password: userInput.password,
+          isOwner: false,
+          active: true,
+          template: userInput.template || "Staf Penjualan",
+          permissions: userInput.permissions || ({} as any),
+        };
+
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId,
           userId: actor?.id ?? "owner-1",
           userName: actor?.name ?? "Pemilik",
-          action: `menambahkan akun karyawan baru: ${user.name}`,
+          action: `menambahkan akun karyawan baru: ${newUser.name} (${newUser.loginEmail})`,
           module: "manajemen_tim",
           timestamp: new Date().toISOString(),
         };
+
         set((s) => ({
-          users: [...s.users, user],
+          users: [...s.users, newUser],
           activityLogs: [log, ...activityLogs],
         }));
+
+        get().addToast(`Karyawan ${newUser.name} berhasil ditambahkan!`, "success");
+        return { success: true };
       },
 
       updateUserPermissions: (userId, permissions, template) => {
@@ -205,6 +417,7 @@ export const useStore = create<AppStore>()(
         const target = get().users.find((u) => u.id === userId);
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: target?.tenantId,
           userId: actor?.id ?? "owner-1",
           userName: actor?.name ?? "Pemilik",
           action: `mengubah penugasan ${target?.name ?? userId} ke template ${template}`,
@@ -226,6 +439,7 @@ export const useStore = create<AppStore>()(
         const newActive = !target?.active;
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: target?.tenantId,
           userId: actor?.id ?? "owner-1",
           userName: actor?.name ?? "Pemilik",
           action: `${newActive ? "mengaktifkan" : "menonaktifkan"} akun ${target?.name ?? userId}`,
@@ -463,6 +677,8 @@ export const useStore = create<AppStore>()(
       name: "usaha-in-store",
       // Persist semua kecuali toasts
       partialize: (s) => ({
+        tenants: s.tenants,
+        activeTenantId: s.activeTenantId,
         users: s.users,
         currentUserId: s.currentUserId,
         isAuthenticated: s.isAuthenticated,

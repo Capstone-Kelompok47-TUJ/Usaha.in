@@ -55,7 +55,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     setTimeout(() => {
-      const res = login(targetUser.email, targetUser.password);
+      const res = login(targetUser.loginEmail, targetUser.password);
       if (res.success) {
         router.push("/dashboard");
       } else {
@@ -116,20 +116,23 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[hsl(var(--foreground))] mb-1.5">
-                Alamat Email
+                Alamat Email Sistem
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-[hsl(var(--muted-fg))] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@usaha.in"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="nama@kodeumkm.usaha.in"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm font-mono rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   id="login-email-input"
                 />
               </div>
+              <p className="text-[11px] text-[hsl(var(--muted-fg))] mt-1">
+                Format: <span className="font-mono text-blue-600">nama@kodeumkm.usaha.in</span>
+              </p>
             </div>
 
             <div>
@@ -139,7 +142,7 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert("Gunakan pilihan Akun Contoh di bawah untuk langsung mencoba alur kerja.")}
+                  onClick={() => alert("Gunakan pilihan Akun Contoh di bawah atau hubungi pemilik usaha untuk reset kata sandi.")}
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
                   Lupa sandi?
@@ -166,7 +169,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-xs pt-1">
               <label className="flex items-center gap-2 cursor-pointer select-none text-[hsl(var(--muted-fg))]">
                 <input
                   type="checkbox"
@@ -197,19 +200,27 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Link to Register */}
+          <div className="mt-5 text-center text-xs text-[hsl(var(--muted-fg))]">
+            Belum punya akun UMKM?{" "}
+            <Link href="/daftar" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+              Daftar Sekarang
+            </Link>
+          </div>
+
           {/* Akun Contoh — 1-Klik Masuk */}
           <div className="mt-8 pt-6 border-t border-[hsl(var(--border))]">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                Pilihan Akun Contoh (1-Klik Masuk):
+                Pilihan Akun Contoh (Toko Sejahtera):
               </span>
               <span className="text-[11px] text-[hsl(var(--muted-fg))]">
-                Pilih akun untuk mencoba alur kerja
+                1-Klik Masuk
               </span>
             </div>
             
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => handleRoleLogin("owner-1")}
@@ -219,10 +230,10 @@ export default function LoginPage() {
                   <span className="text-lg">👑</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors truncate">
-                      Pak Ahmad
+                      Pak Ahmad (Pemilik)
                     </div>
-                    <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Pemilik (Akses Penuh)
+                    <div className="text-[10.5px] font-mono text-amber-600 dark:text-amber-400 truncate">
+                      ahmad@tokosejahtera.usaha.in
                     </div>
                   </div>
                 </div>
@@ -237,10 +248,10 @@ export default function LoginPage() {
                   <span className="text-lg">🛍️</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-blue-600 transition-colors truncate">
-                      Sari
+                      Sari (Staf Penjualan)
                     </div>
-                    <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Karyawan (Template Penjualan)
+                    <div className="text-[10.5px] font-mono text-blue-600 dark:text-blue-400 truncate">
+                      sari@tokosejahtera.usaha.in
                     </div>
                   </div>
                 </div>
@@ -255,10 +266,10 @@ export default function LoginPage() {
                   <span className="text-lg">📦</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-emerald-600 transition-colors truncate">
-                      Budi
+                      Budi (Staf Gudang)
                     </div>
-                    <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Karyawan (Template Gudang)
+                    <div className="text-[10.5px] font-mono text-emerald-600 dark:text-emerald-400 truncate">
+                      budi@tokosejahtera.usaha.in
                     </div>
                   </div>
                 </div>
@@ -273,10 +284,10 @@ export default function LoginPage() {
                   <span className="text-lg">💳</span>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-purple-600 transition-colors truncate">
-                      Rina
+                      Rina (Staf Keuangan)
                     </div>
-                    <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-                      Karyawan (Template Keuangan)
+                    <div className="text-[10.5px] font-mono text-purple-600 dark:text-purple-400 truncate">
+                      rina@tokosejahtera.usaha.in
                     </div>
                   </div>
                 </div>

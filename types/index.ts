@@ -2,6 +2,24 @@
 // USAHA.IN — Central Type Definitions
 // ============================================================
 
+// --- TENANT (UMKM) ---
+
+export type BusinessChannel = "marketplace" | "chat" | "offline";
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string; // e.g. "tokosejahtera"
+  businessType: string;
+  city: string;
+  province: string;
+  address?: string;
+  phone: string;
+  channels: BusinessChannel[];
+  nib?: string;
+  createdAt: string;
+}
+
 // --- AKSES & PENGGUNA ---
 
 export type Level = "none" | "view" | "manage";
@@ -28,9 +46,13 @@ export type TemplateKey =
 
 export interface User {
   id: string;
+  tenantId: string;
+  username: string; // e.g. "ahmad"
+  loginEmail: string; // e.g. "ahmad@tokosejahtera.usaha.in"
+  contactEmail: string; // e.g. "ahmad@gmail.com"
+  phone?: string;
+  password: string; // state memori
   name: string;
-  email: string;
-  password: string;
   isOwner: boolean;
   active: boolean;
   template: TemplateKey | string;
@@ -54,6 +76,7 @@ export type ShipmentStatus =
 
 export interface Product {
   id: string;
+  tenantId?: string;
   sku: string;
   name: string;
   sellPrice: number;
@@ -67,6 +90,7 @@ export type StockMovementType = "sale" | "purchase" | "adjustment";
 
 export interface StockMovement {
   id: string;
+  tenantId?: string;
   productId: string;
   type: StockMovementType;
   qty: number; // negatif = keluar, positif = masuk
@@ -85,6 +109,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  tenantId?: string;
   date: string;
   channel: Channel;
   customerId: string;
@@ -100,6 +125,7 @@ export interface Order {
 
 export interface Purchase {
   id: string;
+  tenantId?: string;
   supplierId: string;
   productId: string;
   qty: number;
@@ -112,6 +138,7 @@ export interface Purchase {
 
 export interface Supplier {
   id: string;
+  tenantId?: string;
   name: string;
   contact: string;
   address: string;
@@ -121,6 +148,7 @@ export interface Supplier {
 
 export interface Customer {
   id: string;
+  tenantId?: string;
   name: string;
   channel: Channel;
   phone?: string;
@@ -131,6 +159,7 @@ export interface Customer {
 
 export interface ActivityLog {
   id: string;
+  tenantId?: string;
   userId: string;
   userName: string;
   action: string;
@@ -171,6 +200,10 @@ export interface CopilotMessage {
 // --- STORE STATE ---
 
 export interface AppState {
+  // Multi-Tenant
+  tenants: Tenant[];
+  activeTenantId: string;
+
   // Pengguna
   users: User[];
   currentUserId: string;

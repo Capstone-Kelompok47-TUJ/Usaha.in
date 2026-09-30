@@ -109,10 +109,10 @@ export default function LandingPage() {
                   Masuk
                 </Link>
                 <Link
-                  href="/login"
+                  href="/daftar"
                   className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-500/20 hover:shadow-lg transition-all"
                 >
-                  <span>Coba Sekarang</span>
+                  <span>Daftar</span>
                   <Sparkles className="w-3.5 h-3.5" />
                 </Link>
               </>
@@ -160,19 +160,18 @@ export default function LandingPage() {
           {/* Dual CTA */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <Link
-              href="/login"
+              href="/daftar"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
             >
-              <span>Jelajahi Sistem</span>
+              <span>Daftar UMKM Baru</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <a
-              href="#fitur"
+            <Link
+              href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
-              <Layers className="w-4 h-4 text-blue-500" />
-              <span>Lihat Fitur & Alur Kerja</span>
-            </a>
+              <span>Masuk (Akun Contoh)</span>
+            </Link>
           </div>
 
           {/* Core structural points */}
@@ -913,11 +912,17 @@ export default function LandingPage() {
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                href="/login"
+                href="/daftar"
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-blue-700 font-bold text-sm hover:bg-slate-100 shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Masuk ke Usaha.in</span>
+                <span>Daftar UMKM Baru</span>
                 <ArrowRight className="w-4 h-4 text-blue-700" />
+              </Link>
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-white/30 bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Masuk ke Usaha.in</span>
               </Link>
             </div>
           </div>
