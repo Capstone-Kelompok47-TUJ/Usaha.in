@@ -9,7 +9,7 @@ import {
   BarChart3, Bot, ArrowRight, CheckCircle2, Sparkles, Shield,
   Layers, Zap, Clock, TrendingUp, ChevronRight, Moon, Sun,
   Smartphone, Store, HelpCircle, ArrowDown, Database, Cpu, Globe,
-  UserCheck, Lock, RefreshCw, Check
+  UserCheck, Lock, RefreshCw, Check, Info
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -127,13 +127,13 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-blue-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-          {/* Kalimat Peringatan Demo (Desain Banner Kartu dengan Aksen Kiri & Badge) */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 sm:px-4 sm:py-2.5 rounded-xl border border-amber-200 dark:border-amber-800/80 border-l-[5px] border-l-amber-500 bg-gradient-to-r from-amber-50/90 via-amber-50/40 to-amber-50/10 dark:from-amber-950/40 dark:via-amber-950/20 dark:to-transparent shadow-xs mb-5 animate-fade-in max-w-3xl text-left w-full">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold tracking-wider uppercase bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 shrink-0">
-              <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400 fill-amber-500" />
-              <span>TAHAP PENGEMBANGAN</span>
+          {/* Kalimat Peringatan Demo (Desain Banner Kartu dengan Aksen Kiri & Badge Brand Blue/Indigo) */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 sm:px-4 sm:py-2.5 rounded-xl border border-blue-200/90 dark:border-blue-900/60 border-l-[5px] border-l-blue-600 dark:border-l-blue-500 bg-gradient-to-r from-blue-50/80 via-blue-50/40 to-slate-50/20 dark:from-blue-950/40 dark:via-blue-950/20 dark:to-transparent shadow-xs mb-5 animate-fade-in max-w-3xl text-left w-full">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold tracking-wider uppercase bg-blue-100/90 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 shrink-0">
+              <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>VERSI DEMO</span>
             </div>
-            <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-normal">
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
               Usaha.in masih dalam tahap demo. Data yang ditampilkan adalah data contoh dan integrasi marketplace belum aktif.
             </p>
           </div>
