@@ -62,7 +62,7 @@ export function Sidebar() {
         href="/dashboard"
         className="flex items-center gap-2.5 px-5 h-16 border-b border-white/5 shrink-0 hover:bg-white/5 transition-colors group"
       >
-        <LogoIcon className="w-8 h-8 group-hover:scale-105 transition-transform" />
+        <LogoIcon className="w-9 h-9 group-hover:scale-105 transition-transform" />
         <div>
           <div className="font-bold text-white text-sm leading-tight flex items-center gap-1.5">
             Usaha.in
