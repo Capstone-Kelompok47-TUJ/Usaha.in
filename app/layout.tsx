@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   description:
     "Sistem internal manajemen UMKM yang mengintegrasikan pesanan marketplace, chat, dan offline dalam satu sistem terpadu.",
   keywords: ["UMKM", "manajemen toko", "dashboard bisnis", "stok", "penjualan"],
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
