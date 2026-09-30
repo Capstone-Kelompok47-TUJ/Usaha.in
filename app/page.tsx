@@ -11,6 +11,7 @@ import {
   Smartphone, Store, HelpCircle, ArrowDown, Database, Cpu, Globe,
   UserCheck, Lock, RefreshCw, Check, Info
 } from "lucide-react";
+import { LogoIcon } from "@/components/ui/Logo";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -48,9 +49,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform">
-              U
-            </div>
+            <LogoIcon className="w-9 h-9 group-hover:scale-105 transition-transform" />
             <div>
               <div className="font-extrabold text-base tracking-tight leading-tight flex items-center gap-1.5">
                 Usaha.in
@@ -170,7 +169,7 @@ export default function LandingPage() {
               href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
-              <span>Masuk ke Akun</span>
+              <span>Masuk (Akun Contoh)</span>
             </Link>
           </div>
 
@@ -206,42 +205,38 @@ export default function LandingPage() {
               <div className="flex items-center gap-1 bg-[hsl(var(--card))] p-0.5 rounded-lg border border-[hsl(var(--border))] text-xs font-medium">
                 <button
                   onClick={() => setActiveTab("omnichannel")}
-                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    activeTab === "omnichannel"
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${activeTab === "omnichannel"
                       ? "bg-blue-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                  }`}
+                    }`}
                 >
                   Alur Multi-Kanal
                 </button>
                 <button
                   onClick={() => setActiveTab("copilot")}
-                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 cursor-pointer ${
-                    activeTab === "copilot"
+                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 cursor-pointer ${activeTab === "copilot"
                       ? "bg-purple-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                  }`}
+                    }`}
                 >
                   <Bot className="w-3 h-3" />
                   AI Copilot
                 </button>
                 <button
                   onClick={() => setActiveTab("kanban")}
-                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    activeTab === "kanban"
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${activeTab === "kanban"
                       ? "bg-emerald-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                  }`}
+                    }`}
                 >
                   Kanban Kirim
                 </button>
                 <button
                   onClick={() => setActiveTab("finance")}
-                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    activeTab === "finance"
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${activeTab === "finance"
                       ? "bg-amber-600 text-white font-semibold shadow-xs"
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                  }`}
+                    }`}
                 >
                   Laba Rugi
                 </button>
@@ -765,7 +760,7 @@ export default function LandingPage() {
               Coba langsung alur kerja pemilik dan karyawan
             </h4>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Masuk dan kelola seluruh alur operasional bisnis UMKM Anda dengan mudah.
+              Gunakan akun contoh untuk mencoba alur kerja pemilik dan karyawan.
             </p>
           </div>
           <Link
@@ -880,9 +875,8 @@ export default function LandingPage() {
                 >
                   <span>{item.q}</span>
                   <ChevronRight
-                    className={`w-4 h-4 text-[hsl(var(--muted-fg))] shrink-0 transition-transform ${
-                      isOpen ? "rotate-90 text-blue-600" : ""
-                    }`}
+                    className={`w-4 h-4 text-[hsl(var(--muted-fg))] shrink-0 transition-transform ${isOpen ? "rotate-90 text-blue-600" : ""
+                      }`}
                   />
                 </button>
                 {isOpen && (
@@ -933,9 +927,7 @@ export default function LandingPage() {
       <footer className="border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] py-12 text-xs text-[hsl(var(--muted-fg))]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm">
-              U
-            </div>
+            <LogoIcon className="w-7 h-7" />
             <span className="font-bold text-sm text-[hsl(var(--foreground))]">Usaha.in</span>
             <span>— Platform Manajemen UMKM Terpadu Multi-Kanal</span>
           </div>

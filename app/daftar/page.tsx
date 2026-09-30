@@ -9,6 +9,7 @@ import {
   Sparkles, Shield, AlertCircle, Eye, EyeOff, Store,
   Check, Phone, Mail, MapPin, Layers, Lock, Sun, Moon, Info
 } from "lucide-react";
+import { LogoIcon } from "@/components/ui/Logo";
 import type { BusinessChannel } from "@/types";
 
 export default function DaftarPage() {
@@ -297,9 +298,7 @@ export default function DaftarPage() {
       <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-              U
-            </div>
+            <LogoIcon className="w-8 h-8 group-hover:scale-105 transition-transform" />
             <div>
               <span className="font-bold text-sm tracking-tight group-hover:text-blue-600 transition-colors">Usaha.in</span>
               <span className="text-[10px] block text-[hsl(var(--muted-fg))] leading-none">Registrasi UMKM</span>

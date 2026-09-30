@@ -11,6 +11,7 @@ import {
   ShoppingBag, CreditCard, Truck, Users, BarChart3,
   FileText, Bot, UsersRound, Activity, ChevronRight, LogOut,
 } from "lucide-react";
+import { LogoIcon } from "@/components/ui/Logo";
 import type { ModuleKey } from "@/types";
 
 interface NavItem {
@@ -59,15 +60,13 @@ export function Sidebar() {
       {/* Logo */}
       <Link
         href="/dashboard"
-        className="flex items-center gap-2.5 px-5 h-16 border-b border-white/5 shrink-0 hover:bg-white/5 transition-colors"
+        className="flex items-center gap-2.5 px-5 h-16 border-b border-white/5 shrink-0 hover:bg-white/5 transition-colors group"
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
-          <span className="text-white font-black text-sm">U</span>
-        </div>
+        <LogoIcon className="w-8 h-8 group-hover:scale-105 transition-transform" />
         <div>
           <div className="font-bold text-white text-sm leading-tight flex items-center gap-1.5">
             Usaha.in
-            <span className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-400/20">
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/20">
               UMKM
             </span>
           </div>
