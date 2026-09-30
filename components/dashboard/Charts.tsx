@@ -62,7 +62,7 @@ export function SalesLineChart() {
             tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
           />
           <Tooltip
-            formatter={(v: number) => [formatRp(v), "Pendapatan"]}
+            formatter={(v: any) => [formatRp(Number(v) || 0), "Pendapatan"]}
             contentStyle={{
               fontSize: 12,
               borderRadius: "8px",
@@ -121,7 +121,7 @@ export function ChannelChart() {
               ))}
             </Pie>
             <Tooltip
-              formatter={(v: number) => [formatRp(v), "Omzet"]}
+              formatter={(v: any) => [formatRp(Number(v) || 0), "Omzet"]}
               contentStyle={{ fontSize: 12, borderRadius: "8px" }}
             />
           </PieChart>
@@ -179,7 +179,7 @@ export function TopProductsChart() {
             width={110}
           />
           <Tooltip
-            formatter={(v: number) => [`${v} unit`, "Terjual"]}
+            formatter={(v: any) => [`${Number(v) || 0} unit`, "Terjual"]}
             contentStyle={{ fontSize: 12, borderRadius: "8px" }}
           />
           <Bar dataKey="qty" fill="hsl(224 76% 52%)" radius={[0, 4, 4, 0]} barSize={14} />
