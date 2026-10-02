@@ -209,89 +209,44 @@ export default function LoginPage() {
 
           {/* Akun Contoh — 1-Klik Masuk */}
           <div className="mt-8 pt-6 border-t border-[hsl(var(--border))]">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                Pilihan Akun Contoh (Toko Sejahtera):
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Akun Demo Contoh (Toko Sejahtera):
               </span>
-              <span className="text-[11px] text-[hsl(var(--muted-fg))]">
+              <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
                 1-Klik Masuk
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("owner-1")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">👑</span>
+            <button
+              type="button"
+              onClick={() => handleRoleLogin("owner-1")}
+              className="w-full p-3.5 rounded-xl border border-amber-200/90 dark:border-amber-900/40 bg-gradient-to-r from-amber-50/70 via-orange-50/30 to-transparent dark:from-amber-950/30 dark:via-orange-950/20 dark:to-transparent hover:border-amber-400 hover:shadow-md hover:shadow-amber-500/10 text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg shrink-0">
+                    👑
+                  </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors truncate">
-                      Pak Ahmad (Pemilik)
+                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors flex items-center gap-1.5">
+                      Pak Ahmad <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">Pemilik / Owner</span>
                     </div>
-                    <div className="text-[10.5px] font-mono text-amber-600 dark:text-amber-400 truncate">
+                    <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 truncate">
                       ahmad@tokosejahtera.usaha.in
                     </div>
                   </div>
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-sari")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🛍️</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-blue-600 transition-colors truncate">
-                      Sari (Staf Penjualan)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-blue-600 dark:text-blue-400 truncate">
-                      sari@tokosejahtera.usaha.in
-                    </div>
-                  </div>
+                <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 shrink-0 group-hover:translate-x-0.5 transition-transform">
+                  <span>Masuk Demo</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-budi")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">📦</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-emerald-600 transition-colors truncate">
-                      Budi (Staf Gudang)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-emerald-600 dark:text-emerald-400 truncate">
-                      budi@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleLogin("emp-rina")}
-                className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-left transition-all group cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">💳</span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-purple-600 transition-colors truncate">
-                      Rina (Staf Keuangan)
-                    </div>
-                    <div className="text-[10.5px] font-mono text-purple-600 dark:text-purple-400 truncate">
-                      rina@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
+              </div>
+            </button>
+            <p className="text-[10.5px] text-[hsl(var(--muted-fg))] mt-2.5 text-center">
+              *Role staf (Kasir, Gudang, Keuangan) dapat diganti langsung melalui switcher di dalam Dashboard.
+            </p>
           </div>
         </div>
 
@@ -320,7 +275,7 @@ export default function LoginPage() {
               Semua kanal jualan tersinkronisasi rapi dalam satu sistem internal.
             </h2>
             <p className="text-white/70 text-sm mt-3 leading-relaxed">
-              Pesanan dari marketplace, chat, dan toko offline terhubung langsung dengan stok barang, keuangan, dan asisten AI Copilot.
+              Pesanan dari Shopee, Tokopedia, WhatsApp, dan toko offline terhubung langsung dengan stok barang, keuangan, dan asisten AI Copilot.
             </p>
           </div>
 
@@ -332,7 +287,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold">4 Kanal Penjualan Terpusat</h4>
-                <p className="text-xs text-white/60">Marketplace A, Marketplace B, Chat, & Toko Offline.</p>
+                <p className="text-xs text-white/60">Shopee, Tokopedia, WhatsApp, & Toko Offline.</p>
               </div>
             </div>
 

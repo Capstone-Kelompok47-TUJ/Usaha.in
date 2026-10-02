@@ -7,10 +7,12 @@ import { formatRp } from "@/lib/finance";
 import { redirect } from "next/navigation";
 import type { Channel } from "@/types";
 
-const CHANNEL_LABEL: Record<Channel, string> = {
-  marketplace_a: "Marketplace A",
-  marketplace_b: "Marketplace B",
-  chat: "Chat",
+const CHANNEL_LABEL: Record<string, string> = {
+  shopee: "Shopee",
+  marketplace_a: "Shopee",
+  tokopedia: "Tokopedia",
+  marketplace_b: "Tokopedia",
+  chat: "WhatsApp",
   offline: "Toko Offline",
 };
 

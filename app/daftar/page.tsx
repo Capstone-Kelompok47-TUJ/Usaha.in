@@ -571,8 +571,8 @@ export default function DaftarPage() {
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { id: "marketplace" as BusinessChannel, label: "Marketplace Online", desc: "Toko e-commerce" },
-                    { id: "chat" as BusinessChannel, label: "Pemesanan via Chat", desc: "Pesan instan" },
+                    { id: "marketplace" as BusinessChannel, label: "Marketplace Online", desc: "Shopee & Tokopedia" },
+                    { id: "chat" as BusinessChannel, label: "Pemesanan via WhatsApp", desc: "Pesan instan WhatsApp" },
                     { id: "offline" as BusinessChannel, label: "Toko Offline", desc: "Gerai fisik / Kasir" },
                   ].map((ch) => {
                     const checked = channels.includes(ch.id);

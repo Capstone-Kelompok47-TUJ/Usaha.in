@@ -43,30 +43,30 @@ Dua penyebab utama:
    - Sekarang: ${formatRp(ctx.arabikaBuyPriceNew)}/unit
    - Kenaikan HPP: **+${formatRp(ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld)}/unit** (~${Math.round(((ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld) / ctx.arabikaBuyPriceOld) * 100)}%)
 
-2. **Potongan admin Marketplace A naik**
+2. **Potongan admin Shopee naik**
    - Minggu lalu: ${ctx.marketplaceAAdminFeeOld}%
    - Sekarang: ${ctx.marketplaceAAdminFeeNew}%
-   - Marketplace A menyumbang ~40% dari total pesanan, sehingga dampaknya signifikan.
+   - Shopee menyumbang ~40% dari total pesanan, sehingga dampaknya signifikan.
 
-💡 **Rekomendasi:** Pertimbangkan menaikkan harga jual Kopi Arabika sebesar Rp 5.000–10.000, atau alokasikan lebih banyak stok ke Marketplace B yang biaya adminnya lebih rendah (${ctx.marketplaceBMargin}% margin vs Marketplace A ${ctx.marketplaceAMargin}% margin).`,
+💡 **Rekomendasi:** Pertimbangkan menaikkan harga jual Kopi Arabika sebesar Rp 5.000–10.000, atau alokasikan lebih banyak stok ke Tokopedia yang biaya adminnya lebih rendah (${ctx.marketplaceBMargin}% margin vs Shopee ${ctx.marketplaceAMargin}% margin).`,
   },
   {
-    triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik", "margin tertinggi"],
+    triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik", "margin tertinggi", "shopee atau tokopedia"],
     response: (ctx) => `📊 **Perbandingan Profitabilitas per Kanal (Bulan Ini)**
 
 | Kanal | Omzet | Margin |
 |---|---|---|
-| 🟠 Marketplace A | ${formatRp(ctx.marketplaceARevenue)} | ${ctx.marketplaceAMargin}% |
-| 🟢 Marketplace B | ${formatRp(ctx.marketplaceBRevenue)} | ${ctx.marketplaceBMargin}% |
-| 💬 Chat | — | ${ctx.chatMargin}% |
+| 🟠 Shopee | ${formatRp(ctx.marketplaceARevenue)} | ${ctx.marketplaceAMargin}% |
+| 🟢 Tokopedia | ${formatRp(ctx.marketplaceBRevenue)} | ${ctx.marketplaceBMargin}% |
+| 💬 WhatsApp | — | ${ctx.chatMargin}% |
 | 🏪 Toko Offline | — | ${ctx.offlineMargin}% |
 
 **Kesimpulan:**
-- **Marketplace B** = margin tertinggi (${ctx.marketplaceBMargin}%) karena biaya admin hanya 3–4%.
-- **Marketplace A** = omzet tertinggi (${formatRp(ctx.marketplaceARevenue)}) tetapi margin lebih tipis (${ctx.marketplaceAMargin}%) karena admin fee 5–8%.
-- **Chat & Toko Offline** = margin ${ctx.chatMargin}%–${ctx.offlineMargin}% karena tidak ada potongan perantara platform, namun volume transaksi bertahap.
+- **Tokopedia** = margin tertinggi (${ctx.marketplaceBMargin}%) karena biaya admin hanya 3–4%.
+- **Shopee** = omzet tertinggi (${formatRp(ctx.marketplaceARevenue)}) tetapi margin lebih tipis (${ctx.marketplaceAMargin}%) karena admin fee 5–8%.
+- **WhatsApp & Toko Offline** = margin ${ctx.chatMargin}%–${ctx.offlineMargin}% karena tidak ada potongan perantara platform, namun volume transaksi bertahap.
 
-💡 **Rekomendasi:** Fokus peningkatan penjualan di Marketplace B untuk meningkatkan profitabilitas keseluruhan.`,
+💡 **Rekomendasi:** Fokus peningkatan penjualan di Tokopedia untuk meningkatkan profitabilitas keseluruhan.`,
   },
   {
     triggers: ["restock", "stok menipis", "produk habis", "perlu restock"],
@@ -91,7 +91,7 @@ ${ctx.slowProducts.map((p, i) => `${i + 1}. 🔴 **${p}**`).join("\n")}
 
 💡 **Rekomendasi:**
 - Buat paket bundling dengan produk terlaris.
-- Aktifkan ketersediaan di seluruh 4 kanal penjualan.
+- Aktifkan ketersediaan di seluruh 4 kanal penjualan (Shopee, Tokopedia, WhatsApp, Offline).
 - Pertimbangkan program diskon khusus.`,
   },
   {
@@ -109,11 +109,11 @@ ${ctx.topProducts.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 **⚠️ Perhatian:**
 - ${ctx.lowStockProducts.length} produk stok menipis perlu di-restock.
 - Laba minggu terakhir turun ~12% (detail: tanya "Kenapa laba turun minggu ini?").
-- Marketplace B adalah kanal paling menguntungkan bulan ini (margin ${ctx.marketplaceBMargin}%).
+- Tokopedia adalah kanal paling menguntungkan bulan ini (margin ${ctx.marketplaceBMargin}%).
 
 **📈 Tren:**
-- Marketplace A menyumbang volume omzet terbesar (~40% dari total).
-- Chat menunjukkan transaksi stabil dari pelanggan tetap.`,
+- Shopee menyumbang volume omzet terbesar (~40% dari total).
+- WhatsApp menunjukkan transaksi stabil dari pelanggan tetap.`,
   },
 ];
 

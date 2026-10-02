@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | Usaha.in",
   },
   description:
-    "Sistem internal manajemen UMKM yang mengintegrasikan pesanan marketplace, chat, dan offline dalam satu sistem terpadu.",
+    "Sistem internal manajemen UMKM yang mengintegrasikan pesanan Shopee, Tokopedia, WhatsApp, dan toko offline dalam satu sistem terpadu.",
   keywords: ["UMKM", "manajemen toko", "dashboard bisnis", "stok", "penjualan"],
   icons: {
     icon: [

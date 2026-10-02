@@ -13,11 +13,12 @@ import {
 import { useState, useRef } from "react";
 import type { Channel, PaymentStatus, ShipmentStatus, Order } from "@/types";
 
-// ---- Badge helpers ----
-const CHANNEL_LABEL: Record<Channel, string> = {
-  marketplace_a: "Marketplace A",
-  marketplace_b: "Marketplace B",
-  chat: "Chat",
+const CHANNEL_LABEL: Record<string, string> = {
+  shopee: "Shopee",
+  marketplace_a: "Shopee",
+  tokopedia: "Tokopedia",
+  marketplace_b: "Tokopedia",
+  chat: "WhatsApp",
   offline: "Toko Offline",
 };
 const PAYMENT_LABEL: Record<PaymentStatus, string> = {

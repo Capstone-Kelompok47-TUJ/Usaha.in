@@ -8,17 +8,21 @@ import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
 import type { Channel } from "@/types";
 
-const CHANNEL_COLORS: Record<Channel, string> = {
-  marketplace_a: "#f97316",
-  marketplace_b: "#22c55e",
+const CHANNEL_COLORS: Record<string, string> = {
+  shopee:        "#ee4d2d",
+  marketplace_a: "#ee4d2d",
+  tokopedia:     "#03ac0e",
+  marketplace_b: "#03ac0e",
   chat:          "#10b981",
   offline:       "#94a3b8",
 };
 
-const CHANNEL_LABELS: Record<Channel, string> = {
-  marketplace_a: "Marketplace A",
-  marketplace_b: "Marketplace B",
-  chat:          "Chat",
+const CHANNEL_LABELS: Record<string, string> = {
+  shopee:        "Shopee",
+  marketplace_a: "Shopee",
+  tokopedia:     "Tokopedia",
+  marketplace_b: "Tokopedia",
+  chat:          "WhatsApp",
   offline:       "Toko Offline",
 };
 

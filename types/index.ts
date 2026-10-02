@@ -61,7 +61,13 @@ export interface User {
 
 // --- KANAL & STATUS ---
 
-export type Channel = "marketplace_a" | "marketplace_b" | "chat" | "offline";
+export type Channel =
+  | "shopee"
+  | "tokopedia"
+  | "marketplace_a"
+  | "marketplace_b"
+  | "chat"
+  | "offline";
 
 export type PaymentStatus = "lunas" | "belum" | "gagal";
 

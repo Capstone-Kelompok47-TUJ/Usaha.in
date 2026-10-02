@@ -115,16 +115,19 @@
   }
 
   /* Channel badge colors */
+  .badge-shopee,
   .badge-marketplace_a {
     background-color: hsl(24 100% 93%);
     color: hsl(24 100% 35%);
     border: 1px solid hsl(24 100% 82%);
   }
+  .badge-tokopedia,
   .badge-marketplace_b {
     background-color: hsl(142 72% 92%);
     color: hsl(142 72% 25%);
     border: 1px solid hsl(142 72% 78%);
   }
+  .badge-whatsapp,
   .badge-chat {
     background-color: hsl(152 68% 92%);
     color: hsl(152 68% 25%);
@@ -137,16 +140,19 @@
   }
 
   /* Dark mode badge styles */
+  .dark .badge-shopee,
   .dark .badge-marketplace_a {
     background-color: hsl(24 100% 12%);
     color: hsl(24 100% 70%);
     border: 1px solid hsl(24 100% 25%);
   }
+  .dark .badge-tokopedia,
   .dark .badge-marketplace_b {
     background-color: hsl(142 72% 12%);
     color: hsl(142 72% 70%);
     border: 1px solid hsl(142 72% 25%);
   }
+  .dark .badge-whatsapp,
   .dark .badge-chat {
     background-color: hsl(152 68% 12%);
     color: hsl(152 68% 70%);

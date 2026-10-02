@@ -115,14 +115,12 @@ export default function ProdukPage() {
                     <td className={`px-4 py-3 font-bold ${isLow ? "text-red-500" : ""}`}>{p.stock}</td>
                     <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">{p.minStock}</td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        {p.channels.includes("marketplace_a") && (
-                          <span className="badge-marketplace_a text-[10px] px-1.5 py-0.5 rounded-full font-semibold">MKT-A</span>
+                        {(p.channels.includes("marketplace_a") || (p.channels as any).includes("shopee")) && (
+                          <span className="badge-shopee text-[10px] px-1.5 py-0.5 rounded-full font-semibold">Shopee</span>
                         )}
-                        {p.channels.includes("marketplace_b") && (
-                          <span className="badge-marketplace_b text-[10px] px-1.5 py-0.5 rounded-full font-semibold">MKT-B</span>
+                        {(p.channels.includes("marketplace_b") || (p.channels as any).includes("tokopedia")) && (
+                          <span className="badge-tokopedia text-[10px] px-1.5 py-0.5 rounded-full font-semibold">Tokopedia</span>
                         )}
-                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {isLow ? (

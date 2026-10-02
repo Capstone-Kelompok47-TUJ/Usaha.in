@@ -451,7 +451,7 @@ export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
     id: "LOG-004",
     userId: "emp-sari",
     userName: "Sari",
-    action: "menambah pesanan #ORD-001 dari Marketplace A",
+    action: "menambah pesanan #ORD-001 dari Shopee",
     module: "penjualan",
     timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
   },

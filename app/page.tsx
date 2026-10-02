@@ -153,7 +153,7 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <p className="mt-6 text-base sm:text-lg text-[hsl(var(--muted-fg))] max-w-2xl mx-auto leading-relaxed">
-            Kelola pesanan dari marketplace, chat, dan toko offline dalam satu sistem internal. Stok, keuangan, dan laporan terpusat, dilengkapi AI Copilot.
+            Kelola pesanan dari Shopee, Tokopedia, WhatsApp, dan toko offline dalam satu sistem internal. Stok, keuangan, dan laporan terpusat, dilengkapi AI Copilot.
           </p>
 
           {/* Dual CTA */}
@@ -272,10 +272,10 @@ export default function LandingPage() {
                       </div>
                       <div className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-white dark:bg-slate-900 flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Pemesanan via Chat</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pencatatan pesanan dari perpesanan langsung</div>
+                          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Pemesanan via WhatsApp</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400">Pencatatan pesanan dari WhatsApp langsung</div>
                         </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0 ml-2">Pesan Langsung</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold shrink-0 ml-2">WhatsApp</span>
                       </div>
                       <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between">
                         <div>
@@ -370,7 +370,7 @@ export default function LandingPage() {
                     </div>
                     <div className="p-3 rounded-xl border border-purple-200 dark:border-purple-900 bg-white dark:bg-slate-900 shadow-sm">
                       <div className="font-bold text-purple-600 dark:text-purple-400">Dikemas</div>
-                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-003 (Chat)</div>
+                      <div className="mt-2 text-[11px] p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 font-medium">ORD-003 (WhatsApp)</div>
                     </div>
                     <div className="p-3 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-white dark:bg-slate-900 shadow-sm">
                       <div className="font-bold text-indigo-600 dark:text-indigo-400">Dikirim</div>
@@ -390,7 +390,7 @@ export default function LandingPage() {
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 shadow-sm">
                       <div className="text-xs text-blue-600 dark:text-blue-400 font-bold">Total Pendapatan</div>
                       <div className="text-sm font-semibold mt-1 text-slate-700 dark:text-slate-300">Akumulasi seluruh transaksi kanal</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Marketplace, Chat, & Toko Offline</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Shopee, Tokopedia, WhatsApp, & Toko Offline</div>
                     </div>
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 shadow-sm">
                       <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Laba Bersih</div>
@@ -417,7 +417,7 @@ export default function LandingPage() {
             <div>
               <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400">Multi-Kanal</div>
               <div className="text-xs sm:text-sm font-semibold text-[hsl(var(--foreground))] mt-1">Penjualan Terintegrasi</div>
-              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Marketplace, Chat, & Offline</div>
+              <div className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">Shopee, Tokopedia, WhatsApp, & Offline</div>
             </div>
             <div>
               <div className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">11 Modul</div>
@@ -464,7 +464,7 @@ export default function LandingPage() {
             <ul className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
-                <span>Pesanan dari marketplace, chat, dan offline dicatat manual di buku atau spreadsheet terpisah.</span>
+                <span>Pesanan dari Shopee, Tokopedia, WhatsApp, dan toko offline dicatat manual di buku atau spreadsheet terpisah.</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-2"></span>
@@ -537,7 +537,7 @@ export default function LandingPage() {
               </div>
               <h4 className="text-base font-bold mb-2">Manajemen Penjualan 4 Kanal</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Filter transaksi berdasarkan Marketplace A, Marketplace B, Chat, dan Toko Offline. Lengkap dengan pencarian nomor pesanan dan pelacakan status pembayaran lunas.
+                Filter transaksi berdasarkan Shopee, Tokopedia, WhatsApp, dan Toko Offline. Lengkap dengan pencarian nomor pesanan dan pelacakan status pembayaran lunas.
               </p>
             </div>
 
@@ -794,9 +794,9 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
                   <Globe className="w-5 h-5" />
                 </div>
-                <h4 className="text-base font-bold mb-2">Integrasi API Marketplace & Chat</h4>
+                <h4 className="text-base font-bold mb-2">Integrasi API Marketplace & WhatsApp</h4>
                 <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                  Penyambungan koneksi langsung API platform e-commerce dan webhook pesan instan untuk pertukaran data dua arah secara terpusat.
+                  Penyambungan koneksi langsung API platform e-commerce dan webhook WhatsApp / perpesanan untuk pertukaran data dua arah secara terpusat.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[hsl(var(--border))] text-[11px] font-semibold text-blue-600 dark:text-blue-400">

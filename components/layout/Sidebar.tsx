@@ -8,14 +8,14 @@ import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package, Warehouse,
-  ShoppingBag, CreditCard, Truck, Users, BarChart3,
+  ShoppingBag, CreditCard, Truck, Users, BarChart3, Cable,
   FileText, Bot, UsersRound, Activity, ChevronRight, LogOut,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
 import type { ModuleKey } from "@/types";
 
 interface NavItem {
-  key: ModuleKey | "manajemen_tim" | "log_aktivitas";
+  key: ModuleKey | "manajemen_tim" | "log_aktivitas" | "integrasi_kanal";
   label: string;
   href: string;
   icon: React.ReactNode;
@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "keuangan",    label: "Keuangan",        href: "/keuangan",      icon: <BarChart3 className="w-4 h-4" /> },
   { key: "laporan",     label: "Laporan",         href: "/laporan",       icon: <FileText className="w-4 h-4" /> },
   { key: "copilot",     label: "AI Copilot",      href: "/copilot",       icon: <Bot className="w-4 h-4" /> },
+  { key: "integrasi_kanal", label: "Integrasi Kanal", href: "/integrasi", icon: <Cable className="w-4 h-4" />, ownerOnly: true },
   { key: "manajemen_tim", label: "Manajemen Tim", href: "/tim",           icon: <UsersRound className="w-4 h-4" />, ownerOnly: true },
   { key: "log_aktivitas", label: "Log Aktivitas", href: "/tim/log",       icon: <Activity className="w-4 h-4" />, ownerOnly: true, parentKey: "manajemen_tim" },
 ];
