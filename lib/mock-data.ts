@@ -16,8 +16,72 @@ import {
   Channel,
   PaymentStatus,
   ShipmentStatus,
+  ExpenseCategory,
+  Expense,
 } from "@/types";
 import { FULL_ACCESS, TEMPLATES, NO_ACCESS } from "@/lib/permissions";
+
+// ============================================================
+// KATEGORI PENGELUARAN DEFAULT (Tipe: Dagang)
+// ============================================================
+
+export const INITIAL_EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  { id: "cat-bahan-baku",     name: "Bahan Baku / Pembelian Stok", group: "cogs",      active: true, isStockRelated: true },
+  { id: "cat-kemasan",        name: "Kemasan",                    group: "cogs",      active: true },
+  { id: "cat-fee-marketplace",name: "Fee Marketplace",            group: "selling",   active: true },
+  { id: "cat-iklan",          name: "Iklan & Promosi",            group: "selling",   active: true },
+  { id: "cat-ongkir",         name: "Ongkir Ditanggung Penjual",  group: "selling",   active: true },
+  { id: "cat-sewa",           name: "Sewa",                       group: "operating", active: true },
+  { id: "cat-gaji",           name: "Gaji & Upah",               group: "operating", active: true },
+  { id: "cat-listrik",        name: "Listrik / Air / Internet",   group: "operating", active: true },
+  { id: "cat-transportasi",   name: "Transportasi",               group: "operating", active: true },
+  { id: "cat-admin-bank",     name: "Biaya Admin Bank",           group: "other",     active: true },
+  { id: "cat-lainnya",        name: "Lainnya",                    group: "other",     active: true },
+  { id: "cat-prive",          name: "Prive (Penarikan Owner)",    group: "non_expense", active: true },
+];
+
+export const INITIAL_EXPENSES: Expense[] = [
+  {
+    id: "exp-001",
+    tenantId: "tenant-tokosejahtera",
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    categoryId: "cat-gaji",
+    amount: 2500000,
+    paid: true,
+    vendor: "Karyawan Toko",
+    note: "Gaji bulanan Oktober 2026",
+  },
+  {
+    id: "exp-002",
+    tenantId: "tenant-tokosejahtera",
+    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    categoryId: "cat-listrik",
+    amount: 450000,
+    paid: true,
+    note: "Tagihan listrik Oktober",
+  },
+  {
+    id: "exp-003",
+    tenantId: "tenant-tokosejahtera",
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    categoryId: "cat-kemasan",
+    amount: 350000,
+    paid: false,
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    vendor: "CV Kemasan Jaya",
+    note: "Pembelian kardus & bubble wrap",
+  },
+  {
+    id: "exp-004",
+    tenantId: "tenant-tokosejahtera",
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    categoryId: "cat-sewa",
+    amount: 1500000,
+    paid: false,
+    dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    note: "Sewa toko Oktober",
+  },
+];
 
 // ============================================================
 // TENANT CONTOH
@@ -29,6 +93,15 @@ export const INITIAL_TENANTS: Tenant[] = [
     name: "Toko Sejahtera",
     slug: "tokosejahtera",
     businessType: "Kuliner & F&B",
+    businessSettings: {
+      businessType: "dagang",
+      useStock: true,
+      useProduction: false,
+      useShipping: true,
+      useCredit: true,
+      defaultShopeeFeePct: 7.5,
+      defaultTokopediaFeePct: 3.5,
+    },
     city: "Bandung",
     province: "Jawa Barat",
     address: "Jl. Riau No. 45, Bandung",
@@ -52,7 +125,7 @@ export const INITIAL_USERS: User[] = [
     contactEmail: "ahmad@gmail.com",
     phone: "0812-3456-7890",
     password: "owner123",
-    name: "Pak Ahmad (Pemilik)",
+    name: "Pak Ahmad",
     isOwner: true,
     active: true,
     template: "Kustom",

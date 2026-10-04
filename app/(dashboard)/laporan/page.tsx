@@ -12,7 +12,7 @@ import type { Channel } from "@/types";
 type Period = "daily" | "weekly" | "monthly";
 
 export default function LaporanPage() {
-  const { canView } = usePermission("laporan");
+  const { canView } = usePermission("laporan_periodik");
   const orders = useStore((s) => s.orders);
   const purchases = useStore((s) => s.purchases);
   const [period, setPeriod] = useState<Period>("monthly");

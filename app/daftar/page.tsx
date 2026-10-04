@@ -58,6 +58,7 @@ export default function DaftarPage() {
   const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
   const [slugStatus, setSlugStatus] = useState<{ available: boolean; message: string } | null>(null);
   const [businessType, setBusinessType] = useState("Kuliner & F&B");
+  const [businessTypeSystem, setBusinessTypeSystem] = useState<"dagang" | "produksi" | "jasa">("dagang");
   const [cityProvince, setCityProvince] = useState("");
   const [address, setAddress] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
@@ -265,6 +266,15 @@ export default function DaftarPage() {
           name: name.trim(),
           slug: slug.trim().toLowerCase(),
           businessType,
+          businessSettings: {
+            businessType: businessTypeSystem,
+            useStock: businessTypeSystem !== "jasa",
+            useProduction: businessTypeSystem === "produksi",
+            useShipping: businessTypeSystem !== "jasa",
+            useCredit: true,
+            defaultShopeeFeePct: 7.5,
+            defaultTokopediaFeePct: 3.5,
+          },
           city,
           province,
           address: address.trim() || undefined,
@@ -360,7 +370,7 @@ export default function DaftarPage() {
                 {step > 2 ? <Check className="w-4 h-4" /> : "2"}
               </div>
               <span className="text-[11px] font-semibold mt-1.5 text-slate-700 dark:text-slate-300">
-                Akun Pemilik
+                Akun Owner
               </span>
             </div>
 
@@ -514,6 +524,47 @@ export default function DaftarPage() {
                 </div>
               </div>
 
+              {/* Tipe Usaha Sistem */}
+              <div>
+                <label className="block text-xs font-semibold mb-2 text-[hsl(var(--foreground))]">
+                  Tipe Usaha <span className="text-red-500">*</span>
+                  <span className="ml-2 text-[11px] font-normal text-[hsl(var(--muted-fg))]">
+                    — menentukan fitur aktif (stok, produksi, pengiriman)
+                  </span>
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {([
+                    { value: "dagang", label: "Dagang", icon: "🛒", desc: "Beli dan jual barang. Stok & pengiriman aktif." },
+                    { value: "produksi", label: "Produksi", icon: "🏭", desc: "Buat produk dari bahan baku. Resep & produksi aktif." },
+                    { value: "jasa", label: "Jasa", icon: "🤝", desc: "Layanan tanpa stok fisik. Cocok untuk salon, konsultan, dll." },
+                  ] as const).map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setBusinessTypeSystem(t.value)}
+                      className={`relative p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                        businessTypeSystem === t.value
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40"
+                          : "border-[hsl(var(--border))] hover:border-blue-300 bg-[hsl(var(--background))]"
+                      }`}
+                    >
+                      {businessTypeSystem === t.value && (
+                        <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </span>
+                      )}
+                      <div className="text-xl mb-1.5">{t.icon}</div>
+                      <div className={`text-xs font-bold ${businessTypeSystem === t.value ? "text-blue-700 dark:text-blue-300" : "text-[hsl(var(--foreground))]"}`}>
+                        {t.label}
+                      </div>
+                      <div className="text-[10px] text-[hsl(var(--muted-fg))] mt-0.5 leading-snug">
+                        {t.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Alamat Usaha (Opsional) */}
               <div>
                 <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
@@ -611,7 +662,7 @@ export default function DaftarPage() {
                   type="submit"
                   className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
                 >
-                  <span>Lanjut ke Akun Pemilik</span>
+                  <span>Lanjut ke Akun Owner</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -625,7 +676,7 @@ export default function DaftarPage() {
         {step === 2 && (
           <div className="bg-[hsl(var(--card))] rounded-2xl border border-[hsl(var(--border))] shadow-xl p-6 sm:p-8 animate-fade-in">
             <div className="mb-6 pb-4 border-b border-[hsl(var(--border))]">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight">Akun Pemilik Utama</h1>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight">Akun Owner (Pemilik Usaha)</h1>
               <p className="text-xs sm:text-sm text-[hsl(var(--muted-fg))] mt-1">
                 Akun ini memiliki hak kontrol mutlak untuk mengelola struktur tim dan akses sistem.
               </p>
@@ -636,7 +687,7 @@ export default function DaftarPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
-                    Nama Lengkap Pemilik <span className="text-red-500">*</span>
+                    Nama Lengkap Owner <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -947,7 +998,7 @@ export default function DaftarPage() {
                 <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-fg))] flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-indigo-500" />
-                    <span>Pemilik Utama</span>
+                    <span>Owner</span>
                   </h3>
                   <button
                     onClick={() => setStep(2)}
@@ -958,7 +1009,7 @@ export default function DaftarPage() {
                 </div>
                 <div className="space-y-2 text-xs">
                   <div>
-                    <span className="text-[hsl(var(--muted-fg))]">Nama Pemilik:</span>
+                    <span className="text-[hsl(var(--muted-fg))]">Nama Owner:</span>
                     <p className="font-semibold text-sm">{ownerName}</p>
                   </div>
                   <div>
@@ -975,7 +1026,7 @@ export default function DaftarPage() {
                   </div>
                   <div>
                     <span className="text-[hsl(var(--muted-fg))]">Hak Akses:</span>
-                    <p className="font-semibold text-amber-600 dark:text-amber-400">👑 Pemilik Usaha (Akses Penuh)</p>
+                    <p className="font-semibold text-amber-600 dark:text-amber-400">👑 Owner (Akses Penuh)</p>
                   </div>
                 </div>
               </div>

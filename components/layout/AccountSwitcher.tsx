@@ -63,7 +63,7 @@ export function AccountSwitcher() {
             {currentUser?.name ?? "—"}
           </div>
           <div className="text-[10px] text-[hsl(var(--muted-fg))] leading-tight">
-            {currentUser?.isOwner ? "Pemilik" : currentUser?.template}
+            {currentUser?.isOwner ? "Owner" : currentUser?.template}
           </div>
         </div>
         <ChevronDown
@@ -85,7 +85,7 @@ export function AccountSwitcher() {
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     <Shield className="w-2.5 h-2.5" />
-                    {currentUser?.isOwner ? "Pemilik (Akses Penuh)" : currentUser?.template}
+                    {currentUser?.isOwner ? "Owner (Akses Penuh)" : currentUser?.template}
                   </span>
                   {activeTenant && (
                     <span className="text-[10px] text-[hsl(var(--muted-fg))] font-medium">

@@ -1,5 +1,5 @@
 // ============================================================
-// USAHA.IN — AI Copilot Scenarios (Canned Responses)
+// USAHA.IN — AI Copilot Scenarios (Dynamic Analytics-Driven)
 // ============================================================
 
 import { formatRp } from "@/lib/finance";
@@ -23,110 +23,137 @@ export interface CopilotContext {
   lowStockProducts: string[];
   slowProducts: string[];
   topProducts: string[];
-  arabikaBuyPriceOld: number;
-  arabikaBuyPriceNew: number;
-  marketplaceAAdminFeeOld: number;
-  marketplaceAAdminFeeNew: number;
+  safeWithdrawAmount: number;
+  currentCash: number;
+  mandatoryExpenses30: number;
+  cashReserve: number;
+  overdueReceivables: Array<{ customerName: string; amount: number; days: number }>;
+  topExpenseCategories: Array<{ name: string; amount: number; limit?: number; pctOfLimit?: number }>;
+  healthScore: number;
+  healthStatus: string;
 }
 
 export const COPILOT_SCENARIOS: CopilotScenario[] = [
   {
-    triggers: ["laba turun", "kenapa laba", "profit turun", "kenapa profit"],
-    response: (ctx) => `📉 **Analisis Penurunan Laba Minggu Ini**
+    triggers: ["uang yang aman", "uang aman", "ambil uang", "prive", "tarik uang", "tarik laba", "tarik modal"],
+    response: (ctx) => `💵 **Estimasi Uang Aman Ditarik (Prive)**
 
-Laba bersih minggu ini sebesar **${formatRp(ctx.weeklyProfit)}**, turun sekitar **12%** dibanding minggu lalu.
+Berdasarkan kalkulasi posisi kas dan kewajiban 30 hari ke depan:
 
-Dua penyebab utama:
+- **Estimasi Saldo Kas Saat Ini:** ${formatRp(ctx.currentCash)}
+- **Biaya Wajib 30 Hari (Operasional + Utang):** -${formatRp(ctx.mandatoryExpenses30)}
+- **Cadangan Dana Darurat (10% Omzet 30 Hari):** -${formatRp(ctx.cashReserve)}
 
-1. **Harga beli Kopi Arabika naik**
-   - Minggu lalu: ${formatRp(ctx.arabikaBuyPriceOld)}/unit
-   - Sekarang: ${formatRp(ctx.arabikaBuyPriceNew)}/unit
-   - Kenaikan HPP: **+${formatRp(ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld)}/unit** (~${Math.round(((ctx.arabikaBuyPriceNew - ctx.arabikaBuyPriceOld) / ctx.arabikaBuyPriceOld) * 100)}%)
+👉 **Uang yang AMAN Anda Tarik Sekarang:**
+# **${formatRp(ctx.safeWithdrawAmount)}**
 
-2. **Potongan admin Shopee naik**
-   - Minggu lalu: ${ctx.marketplaceAAdminFeeOld}%
-   - Sekarang: ${ctx.marketplaceAAdminFeeNew}%
-   - Shopee menyumbang ~40% dari total pesanan, sehingga dampaknya signifikan.
+${
+  ctx.safeWithdrawAmount > 0
+    ? "✅ Mengambil nominal ini tidak akan mengganggu kelancaran gaji, sewa, restock barang pokok, maupun pembayaran utang jatuh tempo."
+    : "⚠️ Posisi kas saat ini berada di bawah batas aman kewajiban operasional. Sangat disarankan menunda penarikan dana pribadi (prive) hingga piutang tertagih atau omzet bertambah."
+}`,
+  },
+  {
+    triggers: ["paling boros", "biaya mana", "kategori biaya", "boros", "pengeluaran terbesar"],
+    response: (ctx) => `📊 **Analisis Pengeluaran & Kategori Biaya Terbesar (30 Hari Terakhir)**
 
-💡 **Rekomendasi:** Pertimbangkan menaikkan harga jual Kopi Arabika sebesar Rp 5.000–10.000, atau alokasikan lebih banyak stok ke Tokopedia yang biaya adminnya lebih rendah (${ctx.marketplaceBMargin}% margin vs Shopee ${ctx.marketplaceAMargin}% margin).`,
+${ctx.topExpenseCategories.length > 0
+  ? ctx.topExpenseCategories
+      .map((cat, i) => {
+        const isExceeded = (cat.pctOfLimit ?? 0) > 100;
+        return `${i + 1}. **${cat.name}**: ${formatRp(cat.amount)}${
+          cat.limit
+            ? ` (Batas: ${formatRp(cat.limit)} → ${cat.pctOfLimit}% ${isExceeded ? "🔴 *MELEBIHI BATAS*" : "🟢 *Aman*"})`
+            : ""
+        }`;
+      })
+      .join("\n")
+  : "Belum ada pengeluaran yang tercatat dalam 30 hari terakhir."}
+
+💡 **Rekomendasi Tindakan:**
+- Kategori dengan tanda 🔴 perlu segera diaudit kwitansi dan ditinjau ulang kontrak dengan vendor/supplier.
+- Atur batas pengeluaran bulanan di menu **Pengaturan → Batas Pengeluaran** agar mendapat notifikasi real-time jika mendekati batas.`,
+  },
+  {
+    triggers: ["piutang", "jatuh tempo", "belum lunas", "menunggak", "tagihan", "penagihan"],
+    response: (ctx) => `⏰ **Daftar Piutang & Tagihan yang Lewat Jatuh Tempo**
+
+${ctx.overdueReceivables.length > 0
+  ? `Ditemukan **${ctx.overdueReceivables.length} tagihan** yang perlu segera ditagih:
+
+${ctx.overdueReceivables
+  .map((rec, i) => `${i + 1}. 🔴 **${rec.customerName}** — ${formatRp(rec.amount)} (Terlambat ${rec.days} hari)`)
+  .join("\n")}
+
+**Total Piutang Tertunggak:** **${formatRp(
+      ctx.overdueReceivables.reduce((s, r) => s + r.amount, 0)
+    )}**`
+  : "✅ **Semua piutang pelanggan tercatat lancar!** Tidak ada tagihan yang melewati batas tanggal jatuh tempo."}
+
+💡 **Saran Penagihan:**
+Buka menu **Pembayaran & Piutang** atau klik **Hubungi Pelanggan** untuk mengirimkan ringkasan tagihan ramah melalui WhatsApp.`,
+  },
+  {
+    triggers: ["laba turun", "kenapa laba", "profit turun", "kenapa profit", "penurunan laba"],
+    response: (ctx) => `📉 **Diagnosis Profitabilitas Bisnis**
+
+- **Omzet 30 Hari Terakhir:** ${formatRp(ctx.monthlyRevenue)}
+- **Laba Bersih 30 Hari:** ${formatRp(ctx.monthlyProfit)}
+- **Margin Bersih Aktual:** ${ctx.monthlyRevenue > 0 ? Math.round((ctx.monthlyProfit / ctx.monthlyRevenue) * 100) : 0}%
+
+**Penyebab Utama Penekanan Margin:**
+1. Potongan biaya admin marketplace (terutama Shopee ~7.5%).
+2. Fluktuasi harga beli bahan/stok dari supplier.
+3. Kenaikan biaya operasional di kategori beban penjualan.
+
+💡 **Rekomendasi:** Cek menu **Analitik → Diagnosis Laba (PVM)** untuk melihat dekomposisi efek harga, volume, dan bauran produk per SKU secara presisi.`,
   },
   {
     triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik", "margin tertinggi", "shopee atau tokopedia"],
-    response: (ctx) => `📊 **Perbandingan Profitabilitas per Kanal (Bulan Ini)**
+    response: (ctx) => `📊 **Perbandingan Profitabilitas per Kanal Penjualan**
 
-| Kanal | Omzet | Margin |
+| Kanal | Omzet | Margin Bersih |
 |---|---|---|
 | 🟠 Shopee | ${formatRp(ctx.marketplaceARevenue)} | ${ctx.marketplaceAMargin}% |
 | 🟢 Tokopedia | ${formatRp(ctx.marketplaceBRevenue)} | ${ctx.marketplaceBMargin}% |
-| 💬 WhatsApp | — | ${ctx.chatMargin}% |
+| 💬 WhatsApp / Chat | — | ${ctx.chatMargin}% |
 | 🏪 Toko Offline | — | ${ctx.offlineMargin}% |
 
 **Kesimpulan:**
-- **Tokopedia** = margin tertinggi (${ctx.marketplaceBMargin}%) karena biaya admin hanya 3–4%.
-- **Shopee** = omzet tertinggi (${formatRp(ctx.marketplaceARevenue)}) tetapi margin lebih tipis (${ctx.marketplaceAMargin}%) karena admin fee 5–8%.
-- **WhatsApp & Toko Offline** = margin ${ctx.chatMargin}%–${ctx.offlineMargin}% karena tidak ada potongan perantara platform, namun volume transaksi bertahap.
-
-💡 **Rekomendasi:** Fokus peningkatan penjualan di Tokopedia untuk meningkatkan profitabilitas keseluruhan.`,
+- **Tokopedia** memberikan persentase margin tertinggi karena biaya admin lebih rendah.
+- **Shopee** menyumbang volume perputaran terbesar, namun margin terpotong biaya layanan & fee promo.
+- **WhatsApp & Offline** adalah kanal dengan margin terbersih tanpa potongan pihak ketiga.`,
   },
   {
-    triggers: ["restock", "stok menipis", "produk habis", "perlu restock"],
+    triggers: ["restock", "stok menipis", "produk habis", "perlu restock", "kritis"],
     response: (ctx) => `📦 **Produk yang Perlu Di-Restock Segera**
 
-${ctx.lowStockProducts.map((p, i) => `${i + 1}. ⚠️ **${p}** — stok di bawah minimum`).join("\n")}
+${ctx.lowStockProducts.length > 0
+  ? ctx.lowStockProducts.map((p, i) => `${i + 1}. ⚠️ **${p}** — stok berada di bawah batas minimum`).join("\n")
+  : "✅ Semua stok produk saat ini berada di atas batas minimum aman."}
 
 **Saran tindakan:**
-- Hubungi supplier untuk produk-produk di atas.
-- Prioritaskan Kopi Arabika karena merupakan produk dengan perputaran tinggi dan harga beli sedang naik.
-- Pastikan pencatatan pembelian masuk ke sistem agar stok terintegrasi otomatis.`,
+- Buat Purchase Order (PO) ke supplier utama untuk produk-produk di atas.
+- Catat pembelian di menu **Pembelian** agar HPP rata-rata (Moving Average) terbarui otomatis.`,
   },
   {
-    triggers: ["kurang laku", "produk lambat", "slow moving", "tidak laku"],
-    response: (ctx) => `📉 **Produk dengan Penjualan Terendah (Bulan Ini)**
+    triggers: ["skor kesehatan", "kondisi bisnis", "kesehatan usaha", "sehat"],
+    response: (ctx) => `🩺 **Skor Kesehatan Usaha Anda: ${ctx.healthScore}/100 (${ctx.healthStatus})**
 
-${ctx.slowProducts.map((p, i) => `${i + 1}. 🔴 **${p}**`).join("\n")}
+Skor ini dinilai dari:
+1. **Margin Bersih:** ${ctx.monthlyRevenue > 0 ? ((ctx.monthlyProfit / ctx.monthlyRevenue) * 100).toFixed(1) : 0}%
+2. **Ketersediaan Kas:** ${formatRp(ctx.currentCash)}
+3. **Kelancaran Piutang:** ${ctx.overdueReceivables.length === 0 ? "Sangat Baik" : `${ctx.overdueReceivables.length} invoice tertunda`}
+4. **Perputaran Stok:** ${ctx.lowStockProducts.length === 0 ? "Terkendali" : `${ctx.lowStockProducts.length} SKU kritis`}
 
-**Analisis:**
-- Produk-produk ini memiliki perputaran stok paling lambat dalam 30 hari terakhir.
-- Kemungkinan penyebab: harga kurang kompetitif, penataan katalog, atau promosi perlu ditingkatkan.
-
-💡 **Rekomendasi:**
-- Buat paket bundling dengan produk terlaris.
-- Aktifkan ketersediaan di seluruh 4 kanal penjualan (Shopee, Tokopedia, WhatsApp, Offline).
-- Pertimbangkan program diskon khusus.`,
-  },
-  {
-    triggers: ["ringkas bulan", "performa bulan", "summary bulan", "laporan bulan"],
-    response: (ctx) => `📋 **Ringkasan Performa Bulan Ini**
-
-**💰 Keuangan:**
-- Total Omzet: **${formatRp(ctx.monthlyRevenue)}**
-- Laba Bersih: **${formatRp(ctx.monthlyProfit)}**
-- Margin rata-rata: **${Math.round((ctx.monthlyProfit / ctx.monthlyRevenue) * 100)}%**
-
-**🏆 Produk Terlaris:**
-${ctx.topProducts.map((p, i) => `${i + 1}. ${p}`).join("\n")}
-
-**⚠️ Perhatian:**
-- ${ctx.lowStockProducts.length} produk stok menipis perlu di-restock.
-- Laba minggu terakhir turun ~12% (detail: tanya "Kenapa laba turun minggu ini?").
-- Tokopedia adalah kanal paling menguntungkan bulan ini (margin ${ctx.marketplaceBMargin}%).
-
-**📈 Tren:**
-- Shopee menyumbang volume omzet terbesar (~40% dari total).
-- WhatsApp menunjukkan transaksi stabil dari pelanggan tetap.`,
+Kunjungi menu **Analitik → Skor Kesehatan** untuk membaca grafik rincian per pilar!`,
   },
 ];
 
 export const FALLBACK_RESPONSE =
-  "Pertanyaan ini dapat diajukan sesuai modul data penjualan, stok, dan keuangan internal yang tersedia di Usaha.in.";
+  "Saya memahami pertanyaan Anda. Berdasarkan data internal Usaha.in, Anda dapat melihat rincian performa di menu Dashboard, Laporan Keuangan, dan Analitik. Ada hal spesifik tentang kas, laba, stok, atau piutang yang ingin Anda ketahui?";
 
-/**
- * Cari respons yang cocok berdasarkan input user.
- */
-export function findCopilotResponse(
-  input: string,
-  ctx: CopilotContext
-): string {
+export function findCopilotResponse(input: string, ctx: CopilotContext): string {
   const lower = input.toLowerCase();
   for (const scenario of COPILOT_SCENARIOS) {
     if (scenario.triggers.some((t) => lower.includes(t))) {
@@ -137,9 +164,9 @@ export function findCopilotResponse(
 }
 
 export const QUICK_QUESTIONS = [
-  "Kenapa laba turun minggu ini?",
+  "Berapa uang yang aman saya ambil?",
+  "Kategori biaya mana paling boros?",
+  "Piutang mana yang jatuh tempo?",
   "Marketplace mana yang paling untung?",
   "Produk apa yang harus di-restock?",
-  "Produk mana yang kurang laku?",
-  "Ringkas performa bulan ini",
 ];

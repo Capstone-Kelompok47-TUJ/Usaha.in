@@ -4,83 +4,97 @@
 
 import type { Level, ModuleKey, TemplateKey, User } from "@/types";
 
-// Semua modul yang bisa ditugaskan
+// Modul yang bisa didelegasikan ke Karyawan
 export const ALL_MODULES: { key: ModuleKey; label: string }[] = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "penjualan", label: "Penjualan" },
-  { key: "produk", label: "Produk" },
-  { key: "stok", label: "Stok" },
-  { key: "pembelian", label: "Pembelian" },
-  { key: "pembayaran", label: "Pembayaran" },
-  { key: "pengiriman", label: "Pengiriman" },
-  { key: "pelanggan", label: "Pelanggan" },
-  { key: "keuangan", label: "Keuangan" },
-  { key: "laporan", label: "Laporan" },
-  { key: "copilot", label: "AI Copilot" },
+  { key: "dashboard",        label: "Dashboard" },
+  { key: "penjualan",        label: "Penjualan" },
+  { key: "produk",           label: "Produk" },
+  { key: "stok",             label: "Stok" },
+  { key: "pengeluaran",      label: "Pengeluaran" },
+  { key: "pembayaran",       label: "Pembayaran & Piutang" },
+  { key: "pengiriman",       label: "Pengiriman" },
+  { key: "pelanggan",        label: "Pelanggan" },
+  { key: "laporan_keuangan", label: "Laporan Keuangan" },
+  { key: "laporan_periodik", label: "Laporan Periodik" },
+  // analitik & copilot adalah OWNER_ONLY — tidak muncul di sini
 ];
 
-// Semua module none
+// Fitur eksklusif Owner (tidak bisa didelegasikan ke Karyawan)
+export const OWNER_ONLY_FEATURES = [
+  "pengaturan",
+  "manajemen_tim",
+  "log_aktivitas",
+  "analitik",
+  "copilot",
+  "uang_aman",
+  "batas_pengeluaran_edit",
+] as const;
+
+// Semua modul none
 export const NO_ACCESS: Record<ModuleKey, Level> = {
-  dashboard: "none",
-  penjualan: "none",
-  produk: "none",
-  stok: "none",
-  pembelian: "none",
-  pembayaran: "none",
-  pengiriman: "none",
-  pelanggan: "none",
-  keuangan: "none",
-  laporan: "none",
-  copilot: "none",
+  dashboard:        "none",
+  penjualan:        "none",
+  produk:           "none",
+  stok:             "none",
+  pengeluaran:      "none",
+  pembayaran:       "none",
+  pengiriman:       "none",
+  pelanggan:        "none",
+  laporan_keuangan: "none",
+  laporan_periodik: "none",
+  analitik:         "none",
+  copilot:          "none",
 };
 
-// Akses penuh (Pemilik)
+// Akses penuh (Owner)
 export const FULL_ACCESS: Record<ModuleKey, Level> = {
-  dashboard: "manage",
-  penjualan: "manage",
-  produk: "manage",
-  stok: "manage",
-  pembelian: "manage",
-  pembayaran: "manage",
-  pengiriman: "manage",
-  pelanggan: "manage",
-  keuangan: "manage",
-  laporan: "manage",
-  copilot: "manage",
+  dashboard:        "manage",
+  penjualan:        "manage",
+  produk:           "manage",
+  stok:             "manage",
+  pengeluaran:      "manage",
+  pembayaran:       "manage",
+  pengiriman:       "manage",
+  pelanggan:        "manage",
+  laporan_keuangan: "manage",
+  laporan_periodik: "manage",
+  analitik:         "manage",
+  copilot:          "manage",
 };
 
 // Template penugasan jabatan
 export const TEMPLATES: Record<TemplateKey, Record<ModuleKey, Level>> = {
   "Staf Penjualan": {
     ...NO_ACCESS,
-    dashboard: "view",
-    penjualan: "manage",
-    pelanggan: "manage",
-    produk: "view",
+    dashboard:  "view",
+    penjualan:  "manage",
+    pelanggan:  "manage",
+    produk:     "view",
     pembayaran: "view",
   },
   "Staf Gudang": {
     ...NO_ACCESS,
-    dashboard: "view",
-    stok: "manage",
-    produk: "view",
+    dashboard:  "view",
+    stok:       "manage",
+    produk:     "view",
     pengiriman: "manage",
-    penjualan: "view",
+    penjualan:  "view",
   },
   "Staf Pembelian": {
     ...NO_ACCESS,
-    dashboard: "view",
-    pembelian: "manage",
-    stok: "view",
-    produk: "view",
+    dashboard:   "view",
+    pengeluaran: "manage",
+    stok:        "view",
+    produk:      "view",
   },
   "Staf Keuangan": {
     ...NO_ACCESS,
-    dashboard: "view",
-    pembayaran: "manage",
-    keuangan: "view",
-    laporan: "view",
-    penjualan: "view",
+    dashboard:        "view",
+    pembayaran:       "manage",
+    pengeluaran:      "manage",
+    laporan_keuangan: "view",
+    laporan_periodik: "view",
+    penjualan:        "view",
   },
   Kustom: {
     ...NO_ACCESS,
@@ -89,7 +103,7 @@ export const TEMPLATES: Record<TemplateKey, Record<ModuleKey, Level>> = {
 
 /**
  * Fungsi utama pengecekan hak akses.
- * Pemilik selalu mendapat akses penuh.
+ * Owner selalu mendapat akses penuh.
  */
 export function can(
   user: User | null,
@@ -117,3 +131,4 @@ export function getVisibleModules(user: User | null): ModuleKey[] {
     can(user, key, "view")
   );
 }
+

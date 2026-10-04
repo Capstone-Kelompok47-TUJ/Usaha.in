@@ -231,7 +231,7 @@ export default function LoginPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors flex items-center gap-1.5">
-                      Pak Ahmad <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">Pemilik / Owner</span>
+                      Pak Ahmad <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">Owner</span>
                     </div>
                     <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 truncate">
                       ahmad@tokosejahtera.usaha.in

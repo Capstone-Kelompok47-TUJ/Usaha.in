@@ -8,13 +8,19 @@ import type {
   Tenant, User, Product, StockMovement, Order, Purchase,
   Supplier, Customer, ActivityLog, Toast,
   Channel, ShipmentStatus, ModuleKey, Level, TemplateKey,
+  BusinessType, BusinessSettings,
+  Expense, ExpenseCategory,
+  SalePayment, ProductType,
 } from "@/types";
 import {
   INITIAL_TENANTS, INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_STOCK_MOVEMENTS,
   INITIAL_ORDERS, INITIAL_PURCHASES, INITIAL_SUPPLIERS,
   INITIAL_CUSTOMERS, INITIAL_ACTIVITY_LOGS, createInitialTenantData,
+  INITIAL_EXPENSE_CATEGORIES, INITIAL_EXPENSES,
 } from "@/lib/mock-data";
 import { FULL_ACCESS } from "@/lib/permissions";
+import { formatRp } from "@/lib/finance";
+
 
 // ============================================================
 // STATE SHAPE
@@ -36,6 +42,11 @@ interface AppStore {
   customers: Customer[];
   activityLogs: ActivityLog[];
   toasts: Toast[];
+
+  // Pengeluaran
+  expenses: Expense[];
+  expenseCategories: ExpenseCategory[];
+  budgets: Record<string, number>; // categoryId -> batas nominal
 
   // Auth & Registration
   isAuthenticated: boolean;
@@ -74,6 +85,28 @@ interface AppStore {
   // --- PURCHASE ---
   addPurchase: (purchase: Omit<Purchase, "id">) => void;
 
+  // --- PENGELUARAN ---
+  addExpense: (expense: Omit<Expense, "id">) => void;
+  markExpensePaid: (expenseId: string) => void;
+  setBudget: (categoryId: string, amount: number) => void;
+  getExpenseSumByCategory: (categoryId: string, monthYear?: string) => number;
+  addExpenseCategory: (cat: Omit<ExpenseCategory, "id">) => void;
+  toggleExpenseCategoryActive: (categoryId: string) => void;
+  updateTenantSettings: (
+    name: string,
+    businessType: BusinessType,
+    settings?: Partial<BusinessSettings>
+  ) => void;
+
+  // --- ORDER (Manual input & void) ---
+  addOrder: (order: Omit<Order, "id">) => void;
+  voidOrder: (orderId: string) => void;
+
+  // --- PRODUCT & STOCK ---
+  addProduct: (product: Omit<Product, "id">) => void;
+  updateProduct: (productId: string, updates: Partial<Product>) => void;
+  adjustStock: (productId: string, delta: number, note: string) => void;
+
   // --- SHIPMENT ---
   moveShipmentStatus: (
     orderId: string,
@@ -83,6 +116,7 @@ interface AppStore {
 
   // --- PAYMENT ---
   markPaymentPaid: (orderId: string, userId: string) => void;
+  recordPayment: (orderId: string, amount: number, note?: string) => void;
 
   // --- TOAST ---
   addToast: (message: string, type: Toast["type"]) => void;
@@ -123,6 +157,9 @@ const INITIAL_STATE = {
   customers: INITIAL_CUSTOMERS,
   activityLogs: INITIAL_ACTIVITY_LOGS,
   toasts: [] as Toast[],
+  expenses: INITIAL_EXPENSES,
+  expenseCategories: INITIAL_EXPENSE_CATEGORIES,
+  budgets: {} as Record<string, number>,
 };
 
 // ============================================================
@@ -189,10 +226,24 @@ export const useStore = create<AppStore>()(
         }
 
         const tenantId = `tenant-${slug}-${Date.now()}`;
+
+        // Generate businessSettings berdasarkan businessType yang dipilih
+        const bType: BusinessType = tenantData.businessSettings?.businessType ?? "dagang";
+        const autoSettings: BusinessSettings = {
+          businessType: bType,
+          useStock: bType !== "jasa",
+          useProduction: bType === "produksi",
+          useShipping: bType !== "jasa",
+          useCredit: true,
+          defaultShopeeFeePct: 7.5,
+          defaultTokopediaFeePct: 3.5,
+        };
+
         const newTenant: Tenant = {
           ...tenantData,
           id: tenantId,
           slug,
+          businessSettings: autoSettings,
           createdAt: new Date().toISOString(),
         };
 
@@ -612,6 +663,331 @@ export const useStore = create<AppStore>()(
         get().addToast("Pembelian berhasil ditambahkan", "success");
       },
 
+      // ----- PENGELUARAN -----
+      addExpense: (expenseData) => {
+        const { getCurrentUser, activityLogs, products, expenseCategories } = get();
+        const actor = getCurrentUser();
+        const newExpense: Expense = {
+          ...expenseData,
+          id: genId("EXP"),
+          tenantId: get().activeTenantId,
+        };
+
+        // Jika ada items stok, update stok produk (moving average sederhana)
+        const stockUpdates: Record<string, { stock: number; buyPrice: number }> = {};
+        const newMovements: StockMovement[] = [];
+        if (expenseData.items && expenseData.items.length > 0) {
+          for (const item of expenseData.items) {
+            const product = products.find((p) => p.id === item.productId);
+            if (product) {
+              const currentStock = stockUpdates[item.productId]?.stock ?? product.stock;
+              stockUpdates[item.productId] = {
+                stock: currentStock + item.qty,
+                buyPrice: item.unitCost,
+              };
+              newMovements.push({
+                id: genId("SM-EXP"),
+                productId: item.productId,
+                type: "purchase",
+                qty: item.qty,
+                date: expenseData.date,
+                refId: newExpense.id,
+              });
+            }
+          }
+        }
+
+        const cat = expenseCategories.find((c) => c.id === expenseData.categoryId);
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `menambah pengeluaran ${newExpense.id} — ${cat?.name ?? expenseData.categoryId} Rp${expenseData.amount.toLocaleString()}`,
+          module: "pengeluaran",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          expenses: [newExpense, ...s.expenses],
+          activityLogs: [log, ...s.activityLogs],
+          products: Object.keys(stockUpdates).length > 0
+            ? s.products.map((p) =>
+                stockUpdates[p.id]
+                  ? { ...p, stock: stockUpdates[p.id].stock, buyPrice: stockUpdates[p.id].buyPrice }
+                  : p
+              )
+            : s.products,
+          stockMovements: newMovements.length > 0
+            ? [...newMovements, ...s.stockMovements]
+            : s.stockMovements,
+        }));
+
+        get().addToast(`Pengeluaran berhasil disimpan${expenseData.paid ? "" : " (Belum Lunas)"}`, "success");
+      },
+
+      markExpensePaid: (expenseId) => {
+        const { getCurrentUser } = get();
+        const actor = getCurrentUser();
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `melunasi pengeluaran ${expenseId}`,
+          module: "pengeluaran",
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          expenses: s.expenses.map((e) =>
+            e.id === expenseId
+              ? { ...e, paid: true, paidDate: new Date().toISOString().split("T")[0] }
+              : e
+          ),
+          activityLogs: [log, ...s.activityLogs],
+        }));
+        get().addToast("Pengeluaran ditandai lunas", "success");
+      },
+
+      setBudget: (categoryId, amount) => {
+        set((s) => ({
+          budgets: { ...s.budgets, [categoryId]: amount },
+        }));
+      },
+
+      getExpenseSumByCategory: (categoryId, monthYear) => {
+        const { expenses } = get();
+        return expenses
+          .filter((e) => {
+            if (e.categoryId !== categoryId) return false;
+            if (monthYear) {
+              return e.date.startsWith(monthYear);
+            }
+            const now = new Date();
+            const currentMY = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+            return e.date.startsWith(currentMY);
+          })
+          .reduce((sum, e) => sum + e.amount, 0);
+      },
+
+      addExpenseCategory: (categoryData) => {
+        const newCat: ExpenseCategory = {
+          ...categoryData,
+          id: genId("CAT"),
+        };
+        set((s) => ({
+          expenseCategories: [...s.expenseCategories, newCat],
+        }));
+        get().addToast(`Kategori biaya "${newCat.name}" berhasil ditambahkan`, "success");
+      },
+
+      toggleExpenseCategoryActive: (categoryId) => {
+        set((s) => ({
+          expenseCategories: s.expenseCategories.map((c) =>
+            c.id === categoryId ? { ...c, active: !c.active } : c
+          ),
+        }));
+        get().addToast("Status kategori berhasil diperbarui", "info");
+      },
+
+      updateTenantSettings: (name, businessType, settings) => {
+        const { activeTenantId, tenants, getCurrentUser } = get();
+        const actor = getCurrentUser();
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `memperbarui pengaturan usaha: ${name} (${businessType})`,
+          module: "pengaturan",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          tenants: s.tenants.map((t) =>
+            t.id === activeTenantId
+              ? {
+                  ...t,
+                  name,
+                  businessSettings: {
+                    ...(t.businessSettings ?? {
+                      businessType,
+                      useStock: true,
+                      useShipping: true,
+                      useCredit: true,
+                    }),
+                    businessType,
+                    ...settings,
+                  },
+                }
+              : t
+          ),
+          activityLogs: [log, ...s.activityLogs],
+        }));
+        get().addToast("Pengaturan usaha berhasil disimpan", "success");
+      },
+
+
+      // ----- ADD ORDER (Manual Input) -----
+      addOrder: (orderData) => {
+        const { getCurrentUser, activityLogs, products } = get();
+        const actor = getCurrentUser();
+        const newOrderId = genId("ORD-MAN");
+        const newOrder: Order = {
+          ...orderData,
+          id: newOrderId,
+          tenantId: get().activeTenantId,
+        };
+
+        // Kurangi stok untuk setiap item
+        const newMovements: StockMovement[] = orderData.items.map((item) => ({
+          id: genId("SM-SALE"),
+          productId: item.productId,
+          type: "sale" as const,
+          qty: -item.qty,
+          date: orderData.date,
+          refId: newOrderId,
+        }));
+
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `menginput penjualan manual ${newOrderId} — ${orderData.items.length} item, total ${formatRp(orderData.subtotal)}`,
+          module: "penjualan",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          orders: [newOrder, ...s.orders],
+          stockMovements: [...newMovements, ...s.stockMovements],
+          products: s.products.map((p) => {
+            const item = orderData.items.find((i) => i.productId === p.id);
+            return item ? { ...p, stock: Math.max(0, p.stock - item.qty) } : p;
+          }),
+          activityLogs: [log, ...s.activityLogs],
+        }));
+
+        get().addToast(`Penjualan ${newOrderId} berhasil disimpan`, "success");
+      },
+
+      // ----- VOID ORDER -----
+      voidOrder: (orderId) => {
+        const { getCurrentUser, activityLogs, orders, products } = get();
+        const actor = getCurrentUser();
+        const order = orders.find((o) => o.id === orderId);
+        if (!order || order.voided) return;
+
+        // Kembalikan stok
+        const returnMovements: StockMovement[] = order.items.map((item) => ({
+          id: genId("SM-VOID"),
+          productId: item.productId,
+          type: "adjustment" as const,
+          qty: item.qty,
+          date: new Date().toISOString().split("T")[0],
+          refId: orderId,
+          note: "Pembatalan pesanan",
+        }));
+
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `membatalkan pesanan ${orderId}`,
+          module: "penjualan",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          orders: s.orders.map((o) =>
+            o.id === orderId
+              ? { ...o, voided: true, voidedAt: new Date().toISOString() }
+              : o
+          ),
+          stockMovements: [...returnMovements, ...s.stockMovements],
+          products: s.products.map((p) => {
+            const item = order.items.find((i) => i.productId === p.id);
+            return item ? { ...p, stock: p.stock + item.qty } : p;
+          }),
+          activityLogs: [log, ...s.activityLogs],
+        }));
+
+        get().addToast(`Pesanan ${orderId} dibatalkan, stok dikembalikan`, "warning");
+      },
+
+      // ----- PRODUCT: ADD -----
+      addProduct: (productData) => {
+        const { getCurrentUser } = get();
+        const actor = getCurrentUser();
+        const newProduct: Product = {
+          ...productData,
+          id: genId("PROD"),
+          tenantId: get().activeTenantId,
+          avgCost: productData.buyPrice,
+          trackStock: productData.trackStock ?? true,
+        };
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `menambah produk baru: ${newProduct.name} (${newProduct.sku})`,
+          module: "produk",
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          products: [...s.products, newProduct],
+          activityLogs: [log, ...s.activityLogs],
+        }));
+        get().addToast(`Produk ${newProduct.name} berhasil ditambahkan`, "success");
+      },
+
+      // ----- PRODUCT: UPDATE -----
+      updateProduct: (productId, updates) => {
+        set((s) => ({
+          products: s.products.map((p) =>
+            p.id === productId ? { ...p, ...updates } : p
+          ),
+        }));
+      },
+
+      // ----- STOCK ADJUSTMENT (E3: catatan wajib) -----
+      adjustStock: (productId, delta, note) => {
+        const { getCurrentUser, activityLogs, products } = get();
+        const actor = getCurrentUser();
+        const product = products.find((p) => p.id === productId);
+        if (!product) return;
+
+        const movement: StockMovement = {
+          id: genId("SM-ADJ"),
+          productId,
+          type: "adjustment",
+          qty: delta,
+          date: new Date().toISOString().split("T")[0],
+          refId: genId("ADJ"),
+          note,
+        };
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `penyesuaian stok ${product.name}: ${delta > 0 ? "+" : ""}${delta} (${note})`,
+          module: "stok",
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          products: s.products.map((p) =>
+            p.id === productId ? { ...p, stock: p.stock + delta } : p
+          ),
+          stockMovements: [movement, ...s.stockMovements],
+          activityLogs: [log, ...s.activityLogs],
+        }));
+        get().addToast(`Stok ${product.name} disesuaikan ${delta > 0 ? "+" : ""}${delta}`, "success");
+      },
+
       // ----- SHIPMENT -----
       moveShipmentStatus: (orderId, newStatus, userId) => {
         const { activityLogs, users } = get();
@@ -653,6 +1029,54 @@ export const useStore = create<AppStore>()(
         get().addToast("Pembayaran ditandai lunas", "success");
       },
 
+      // ----- RECORD PARTIAL PAYMENT -----
+      recordPayment: (orderId, amount, note) => {
+        const { getCurrentUser, activityLogs, orders } = get();
+        const actor = getCurrentUser();
+        const order = orders.find((o) => o.id === orderId);
+        if (!order) return;
+
+        const amountDue = order.subtotal - (order.discount ?? 0) - order.adminFee - order.shippingCost;
+        const existingPaid = (order.payments ?? []).reduce((s, p) => s + p.amount, 0);
+        const newTotalPaid = existingPaid + amount;
+
+        const newPayment: SalePayment = {
+          id: genId("PAY"),
+          date: new Date().toISOString().split("T")[0],
+          amount,
+          note,
+        };
+
+        const newStatus: "lunas" | "sebagian" | "belum" =
+          newTotalPaid >= amountDue ? "lunas" : newTotalPaid > 0 ? "sebagian" : "belum";
+
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: get().activeTenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Owner",
+          action: `mencatat pembayaran ${formatRp(amount)} untuk pesanan ${orderId} → status ${newStatus}`,
+          module: "pembayaran",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          orders: s.orders.map((o) =>
+            o.id === orderId
+              ? { ...o, paymentStatus: newStatus, payments: [...(o.payments ?? []), newPayment] }
+              : o
+          ),
+          activityLogs: [log, ...activityLogs],
+        }));
+
+        get().addToast(
+          newStatus === "lunas"
+            ? "Pembayaran lunas! ✓"
+            : `Pembayaran ${formatRp(amount)} dicatat. Sisa: ${formatRp(amountDue - newTotalPaid)}`,
+          newStatus === "lunas" ? "success" : "info"
+        );
+      },
+
       // ----- TOAST -----
       addToast: (message, type) => {
         const id = genId("TOAST");
@@ -691,6 +1115,9 @@ export const useStore = create<AppStore>()(
         suppliers: s.suppliers,
         customers: s.customers,
         activityLogs: s.activityLogs,
+        expenses: s.expenses,
+        expenseCategories: s.expenseCategories,
+        budgets: s.budgets,
       }),
     }
   )

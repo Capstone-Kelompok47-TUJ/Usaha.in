@@ -6,11 +6,24 @@
 
 export type BusinessChannel = "marketplace" | "chat" | "offline";
 
+export type BusinessType = "dagang" | "produksi" | "jasa";
+
+export interface BusinessSettings {
+  businessType: BusinessType;
+  useStock: boolean;
+  useProduction: boolean;
+  useShipping: boolean;
+  useCredit: boolean;
+  defaultShopeeFeePct: number;   // default 7.5 (untuk simulasi demo)
+  defaultTokopediaFeePct: number; // default 3.5 (untuk simulasi demo)
+}
+
 export interface Tenant {
   id: string;
   name: string;
   slug: string; // e.g. "tokosejahtera"
-  businessType: string;
+  businessType: string; // deskripsi bebas (kuliner, fashion, dll.)
+  businessSettings: BusinessSettings;
   city: string;
   province: string;
   address?: string;
@@ -29,12 +42,13 @@ export type ModuleKey =
   | "penjualan"
   | "produk"
   | "stok"
-  | "pembelian"
+  | "pengeluaran"
   | "pembayaran"
   | "pengiriman"
   | "pelanggan"
-  | "keuangan"
-  | "laporan"
+  | "laporan_keuangan"
+  | "laporan_periodik"
+  | "analitik"
   | "copilot";
 
 export type TemplateKey =
@@ -69,7 +83,7 @@ export type Channel =
   | "chat"
   | "offline";
 
-export type PaymentStatus = "lunas" | "belum" | "gagal";
+export type PaymentStatus = "lunas" | "sebagian" | "belum" | "gagal";
 
 export type ShipmentStatus =
   | "baru"
@@ -80,13 +94,18 @@ export type ShipmentStatus =
 
 // --- PRODUK & STOK ---
 
+export type ProductType = "dagang" | "produksi" | "jasa";
+
 export interface Product {
   id: string;
   tenantId?: string;
   sku: string;
   name: string;
+  productType?: ProductType;  // E1: Jenis produk
+  trackStock?: boolean;       // E1: Lacak stok (default true)
   sellPrice: number;
   buyPrice: number;
+  avgCost?: number;           // E2: Moving average HPP
   stock: number;
   minStock: number;
   channels: Channel[];
@@ -111,6 +130,14 @@ export interface OrderItem {
   productId: string;
   qty: number;
   unitPrice: number;
+  cogsUnit?: number; // snapshot HPP saat penjualan
+}
+
+export interface SalePayment {
+  id: string;
+  date: string;
+  amount: number;
+  note?: string;
 }
 
 export interface Order {
@@ -121,10 +148,17 @@ export interface Order {
   customerId: string;
   items: OrderItem[];
   subtotal: number;
+  discount?: number;
   adminFee: number;
   shippingCost: number;
   paymentStatus: PaymentStatus;
   shipmentStatus: ShipmentStatus;
+  dueDate?: string;
+  note?: string;
+  externalOrderId?: string;
+  voided?: boolean;
+  voidedAt?: string;
+  payments?: SalePayment[]; // riwayat pembayaran
 }
 
 // --- PEMBELIAN ---
@@ -138,6 +172,45 @@ export interface Purchase {
   buyPrice: number;
   date: string;
   paid: boolean;
+}
+
+// --- PENGELUARAN ---
+
+export type ExpenseCategoryGroup =
+  | "cogs"        // Harga Pokok (Bahan Baku, Stok)
+  | "selling"     // Beban Penjualan (Fee, Iklan, Ongkir)
+  | "operating"   // Beban Operasional (Sewa, Gaji, Listrik)
+  | "other"       // Beban Lain-lain
+  | "non_expense"; // Tidak masuk L/R (Prive)
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  group: ExpenseCategoryGroup;
+  active: boolean;
+  isStockRelated?: boolean; // true = tampilkan item stok saat input
+}
+
+export interface ExpenseItem {
+  productId: string;
+  qty: number;
+  unitCost: number;
+}
+
+export interface Expense {
+  id: string;
+  tenantId?: string;
+  date: string;
+  categoryId: string;
+  amount: number;
+  paid: boolean;          // true = Lunas, false = Belum
+  dueDate?: string;       // tanggal jatuh tempo jika belum lunas
+  vendor?: string;        // pemasok/vendor (opsional)
+  note?: string;
+  items?: ExpenseItem[];  // hanya jika isStockRelated
+  budgetExceedReason?: string; // alasan jika melebihi batas
+  isPrive?: boolean;      // true = tab Prive
+  paidDate?: string;      // tanggal dilunasi
 }
 
 // --- SUPPLIER ---
