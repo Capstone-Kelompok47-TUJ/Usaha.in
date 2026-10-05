@@ -216,7 +216,7 @@ export default function KeuanganPage() {
         <div className="flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-xl">
           {([
             { key: "labarugi", label: "Laba/Rugi" },
-            { key: "neraca", label: "Neraca" },
+            { key: "neraca", label: "Posisi Keuangan (Neraca)" },
             { key: "aruskas", label: "Arus Kas" },
           ] as { key: Tab; label: string }[]).map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -239,11 +239,11 @@ export default function KeuanganPage() {
                 <FinRow label="(-) Diskon & Retur" value={`−${formatRp(data.totalDiscount)}`} indent highlight="neg" />
               )}
               <FinRow label="= Pendapatan Bersih" value={data.netRevenue} bold separator />
-              <FinRow label="(-) HPP (Harga Pokok Penjualan)" value={`−${formatRp(data.cogs)}`} sub="Berdasarkan avg cost produk" indent highlight="neg" />
+              <FinRow label="(-) HPP (Harga Pokok Penjualan)" value={`−${formatRp(data.cogs)}`} sub="Berdasarkan modal per barang (avg cost)" indent highlight="neg" />
               <FinRow label="= Laba Kotor" value={data.grossProfit} bold separator
                 highlight={data.grossProfit >= 0 ? "pos" : "neg"} />
               <FinRow label="(-) Beban Penjualan" value={`−${formatRp(data.totalSelling)}`}
-                sub="Fee marketplace + ongkir + beban penjualan lain" indent highlight="neg" />
+                sub="Potongan marketplace + ongkir + beban penjualan lain" indent highlight="neg" />
               <FinRow label="(-) Beban Operasional" value={`−${formatRp(data.operatingExpense)}`}
                 sub="Gaji, sewa, utilitas, dll." indent highlight="neg" />
               {data.otherExpense > 0 && (
@@ -272,52 +272,48 @@ export default function KeuanganPage() {
           {tab === "neraca" && (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-sm">Neraca (estimasi)</h3>
+                <h3 className="font-bold text-sm">Posisi Keuangan (Neraca)</h3>
                 {data.isBalanced
-                  ? <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40"><CheckCircle2 className="w-3 h-3" /> Seimbang</span>
-                  : <span className="flex items-center gap-1 text-xs font-bold text-amber-600 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40"><AlertTriangle className="w-3 h-3" /> Tidak Seimbang</span>
+                  ? <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40"><CheckCircle2 className="w-3.5 h-3.5" /> Seimbang</span>
+                  : <span className="flex items-center gap-1 text-xs font-bold text-amber-600 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/40"><AlertTriangle className="w-3.5 h-3.5" /> Perlu Penyesuaian</span>
                 }
               </div>
 
-              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mb-2">ASET</p>
-              <FinRow label="Kas (estimasi)" value={data.kasEstimate} indent highlight={data.kasEstimate >= 0 ? "pos" : "neg"} />
-              <FinRow label="Piutang Dagang" value={data.piutang} indent />
-              <FinRow label="Persediaan Barang" value={data.persediaan} sub="Stok × avg cost" indent />
+              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mb-2">ASET (HARTA)</p>
+              <FinRow label="Kas Usaha" value={data.kasEstimate} indent highlight={data.kasEstimate >= 0 ? "pos" : "neg"} />
+              <FinRow label="Tagihan Belum Dibayar (Piutang)" value={data.piutang} indent />
+              <FinRow label="Persediaan Barang (Stok)" value={data.persediaan} sub="Kuantitas stok × modal per barang" indent />
               <FinRow label="Total Aset" value={data.totalAset} bold separator highlight="pos" />
 
-              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">LIABILITAS</p>
-              <FinRow label="Utang Usaha" value={data.utangUsaha} indent highlight={data.utangUsaha > 0 ? "neg" : "neutral"} />
+              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">LIABILITAS (KEWAJIBAN)</p>
+              <FinRow label="Utang yang Harus Dibayar" value={data.utangUsaha} indent highlight={data.utangUsaha > 0 ? "neg" : "neutral"} />
               <FinRow label="Total Liabilitas" value={data.utangUsaha} bold separator highlight="neg" />
 
-              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">EKUITAS</p>
-              <FinRow label="Ekuitas Pemilik" value={data.ekuitas} indent highlight={data.ekuitas >= 0 ? "pos" : "neg"} />
+              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">EKUITAS (MODAL BERSIH)</p>
+              <FinRow label="Modal Bersih Pemilik Usaha" value={data.ekuitas} indent highlight={data.ekuitas >= 0 ? "pos" : "neg"} />
               <FinRow label="Total Ekuitas" value={data.ekuitas} bold separator highlight={data.ekuitas >= 0 ? "pos" : "neg"} />
 
               <div className="mt-4 pt-3 border-t-2 border-[hsl(var(--border))] flex items-center justify-between">
-                <span className="font-bold">Liabilitas + Ekuitas</span>
+                <span className="font-bold">Total Liabilitas + Ekuitas</span>
                 <span className="font-bold text-base">{formatRp(data.utangUsaha + data.ekuitas)}</span>
               </div>
-
-              <p className="text-[11px] text-[hsl(var(--muted-fg))] mt-3 italic">
-                * Kas merupakan estimasi berdasarkan pendapatan vs pengeluaran tercatat, bukan dari rekening bank aktual.
-              </p>
             </>
           )}
 
           {/* G4: Arus Kas */}
           {tab === "aruskas" && (
             <>
-              <h3 className="font-bold text-sm mb-4">Arus Kas</h3>
-              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mb-2">KAS MASUK</p>
-              <FinRow label="Penerimaan dari Penjualan" value={data.kasmasuk} indent highlight="pos" sub="Pendapatan bersih setelah fee & diskon" />
-              <FinRow label="Total Kas Masuk" value={data.kasmasuk} bold separator highlight="pos" />
+              <h3 className="font-bold text-sm mb-4">Arus Kas (Uang Masuk & Keluar)</h3>
+              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mb-2">UANG MASUK</p>
+              <FinRow label="Penerimaan dari Penjualan" value={data.kasmasuk} indent highlight="pos" sub="Pendapatan bersih yang sudah diterima" />
+              <FinRow label="Total Uang Masuk" value={data.kasmasuk} bold separator highlight="pos" />
 
-              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">KAS KELUAR</p>
-              <FinRow label="Pengeluaran Usaha (Lunas)" value={`−${formatRp(data.kaskeluar)}`} indent highlight="neg" />
+              <p className="text-xs font-bold text-[hsl(var(--muted-fg))] uppercase tracking-wider mt-4 mb-2">UANG KELUAR</p>
+              <FinRow label="Pengeluaran Operasional (Lunas)" value={`−${formatRp(data.kaskeluar)}`} indent highlight="neg" />
               {data.kasPrive > 0 && (
-                <FinRow label="Prive (Pengambilan Owner)" value={`−${formatRp(data.kasPrive)}`} indent highlight="neg" />
+                <FinRow label="Prive (Pengambilan Pribadi Pemilik)" value={`−${formatRp(data.kasPrive)}`} indent highlight="neg" />
               )}
-              <FinRow label="Total Kas Keluar" value={`−${formatRp(data.kaskeluar + data.kasPrive)}`} bold separator highlight="neg" />
+              <FinRow label="Total Uang Keluar" value={`−${formatRp(data.kaskeluar + data.kasPrive)}`} bold separator highlight="neg" />
 
               <div className="mt-4 pt-4 border-t-2 border-[hsl(var(--border))] flex items-center justify-between">
                 <span className="font-bold text-base">Saldo Bersih</span>

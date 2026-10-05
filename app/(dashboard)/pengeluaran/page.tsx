@@ -640,7 +640,7 @@ export default function PengeluaranPage() {
               <Crown className="w-10 h-10 text-amber-400 mx-auto mb-3" />
               <h3 className="font-bold text-base mb-1">Belum Ada Catatan Prive</h3>
               <p className="text-sm text-[hsl(var(--muted-fg))]">
-                Prive adalah penarikan uang dari bisnis untuk keperluan pribadi owner.<br />
+                Prive adalah penarikan uang dari bisnis untuk keperluan pribadi pemilik.<br />
                 Tidak dihitung dalam laba/rugi.
               </p>
             </div>

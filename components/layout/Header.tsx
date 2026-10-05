@@ -13,6 +13,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const resetToInitial = useStore((s) => s.resetToInitial);
+  const user = useCurrentUser();
   const [dark, setDark] = useState(false);
 
   // Dark mode toggle
@@ -58,19 +59,22 @@ export function Header({ title, subtitle }: HeaderProps) {
           {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        {/* Reset Data */}
-        <button
-          onClick={() => {
-            if (confirm("Reset semua data ke kondisi awal?")) {
-              resetToInitial();
-            }
-          }}
-          id="reset-data-btn"
-          title="Reset Data"
-          className="p-2 rounded-lg hover:bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] transition-colors"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
+        {/* Reset Data Demo (Hanya Pemilik Usaha & Demo Mode) */}
+        {user?.isOwner && process.env.NEXT_PUBLIC_DEMO_MODE !== "false" && (
+          <button
+            onClick={() => {
+              if (confirm("Reset semua data contoh ke kondisi awal? Seluruh perubahan lokal akan dikembalikan.")) {
+                resetToInitial();
+              }
+            }}
+            id="reset-data-btn"
+            title="Reset Data Demo"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 transition-colors border border-amber-200 dark:border-amber-800"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Reset Demo</span>
+          </button>
+        )}
 
         <div className="w-px h-6 bg-[hsl(var(--border))]" />
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -139,7 +139,7 @@ export function Sidebar() {
                 {user?.name ?? "Pengguna"}
               </div>
               <div className="text-[10px] text-white/50 truncate leading-tight mt-0.5">
-                {user?.isOwner ? "👑 Owner" : user?.template}
+                {user?.isOwner ? "👑 Pemilik Usaha" : (user?.template || "Karyawan")}
               </div>
             </div>
           </div>

@@ -34,11 +34,24 @@ export default function PengaturanPage() {
 
   // --- 1. Info Usaha State ---
   const [businessName, setBusinessName] = useState(activeTenant?.name ?? "Usaha Kopi Makmur");
+  const [businessCategory, setBusinessCategory] = useState(activeTenant?.businessType ?? "Kuliner & Minuman");
   const [businessType, setBusinessType] = useState<BusinessType>(
     activeTenant?.businessSettings?.businessType ?? "dagang"
   );
   const [useStock, setUseStock] = useState(activeTenant?.businessSettings?.useStock ?? true);
   const [useShipping, setUseShipping] = useState(activeTenant?.businessSettings?.useShipping ?? true);
+
+  // --- Saldo Awal State ---
+  const [initialCash, setInitialCash] = useState(activeTenant?.businessSettings?.initialCash ?? 15000000);
+  const [initialReceivable, setInitialReceivable] = useState(activeTenant?.businessSettings?.initialReceivable ?? 0);
+  const [initialPayable, setInitialPayable] = useState(activeTenant?.businessSettings?.initialPayable ?? 0);
+
+  const orders = useStore((s) => s.orders);
+  const products = useStore((s) => s.products);
+  const isInitialLocked = (orders.length > 0 || expenses.length > 0) || (activeTenant?.businessSettings?.initialLocked ?? false);
+  const initialStockValue = useMemo(() => {
+    return products.reduce((s, p) => s + Math.max(0, p.stock) * (p.avgCost ?? p.buyPrice), 0);
+  }, [products]);
 
   // --- 2. Fee Defaults State ---
   const [shopeeFeePct, setShopeeFeePct] = useState(
@@ -80,6 +93,9 @@ export default function PengaturanPage() {
       useShipping,
       defaultShopeeFeePct: shopeeFeePct,
       defaultTokopediaFeePct: tokopediaFeePct,
+      initialCash: Number(initialCash) || 0,
+      initialReceivable: Number(initialReceivable) || 0,
+      initialPayable: Number(initialPayable) || 0,
     });
   }
 
@@ -128,7 +144,7 @@ export default function PengaturanPage() {
   return (
     <DashboardLayout
       title="Pengaturan Usaha"
-      subtitle="Kelola preferensi sistem, batas anggaran, fee marketplace, dan proyeksi biaya tetap"
+      subtitle="Kelola profil toko, saldo awal, batas anggaran, dan parameter biaya"
     >
       <div className="space-y-6 max-w-5xl pb-16 animate-fade-in">
         {/* Top Save Bar */}
@@ -137,11 +153,11 @@ export default function PengaturanPage() {
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-[hsl(var(--foreground))]">Konfigurasi Profil & Parameter Bisnis</h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                👑 Akun Owner
+                👑 Akun Pemilik Usaha
               </span>
             </div>
             <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
-              Simpan perubahan parameter untuk memperbarui otomatis seluruh kalkulasi analitik dan dashboard.
+              Simpan perubahan parameter untuk memperbarui otomatis seluruh kalkulasi analitik dan laporan keuangan.
             </p>
           </div>
           <button
@@ -161,7 +177,7 @@ export default function PengaturanPage() {
             <div>
               <h3 className="text-sm font-bold text-[hsl(var(--foreground))]">Informasi & Tipe Usaha</h3>
               <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
-                Identitas toko dan modul operasional yang diaktifkan
+                Identitas toko dan alur model bisnis operasional
               </p>
             </div>
           </div>
@@ -173,44 +189,73 @@ export default function PengaturanPage() {
                 type="text"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Contoh: Toko Sejahtera"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Tipe Bisnis</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(
-                  [
-                    { key: "dagang", label: "Toko Dagang", desc: "Beli & Jual" },
-                    { key: "produksi", label: "Produksi", desc: "Bahan & HPP" },
-                    { key: "jasa", label: "Jasa", desc: "Layanan" },
-                  ] as const
-                ).map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => {
-                      setBusinessType(t.key);
-                      if (t.key === "jasa") {
-                        setUseStock(false);
-                        setUseShipping(false);
-                      } else {
-                        setUseStock(true);
-                        setUseShipping(true);
-                      }
-                    }}
-                    className={`p-2.5 rounded-lg border text-left transition-all ${
-                      businessType === t.key
-                        ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 text-blue-700 dark:text-blue-300 font-bold shadow-xs"
-                        : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                    }`}
-                  >
-                    <div className="text-xs">{t.label}</div>
-                    <div className="text-[10px] text-[hsl(var(--muted-fg))] mt-0.5">{t.desc}</div>
-                  </button>
-                ))}
-              </div>
+              <label className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                Jenis Usaha <span className="text-[hsl(var(--muted-fg))] font-normal">(Opsional)</span>
+              </label>
+              <input
+                type="text"
+                value={businessCategory}
+                onChange={(e) => setBusinessCategory(e.target.value)}
+                placeholder="Contoh: F&B / Kuliner, Fashion, Kopi, Jasa Desain"
+                className="w-full px-3.5 py-2.5 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-[hsl(var(--foreground))]">
+              Tipe Usaha <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                {
+                  key: "dagang" as const,
+                  label: "Dagang (Retail / Reseller)",
+                  desc: "Membeli barang jadi dan langsung menjualnya kembali tanpa mengolah.",
+                },
+                {
+                  key: "produksi" as const,
+                  label: "Produksi (Manufaktur / Olahan)",
+                  desc: "Mengolah bahan baku menjadi produk jadi melalui resep/proses produksi.",
+                },
+                {
+                  key: "jasa" as const,
+                  label: "Jasa (Layanan)",
+                  desc: "Menyediakan layanan atau keahlian tanpa mengelola stok fisik barang.",
+                },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => {
+                    setBusinessType(t.key);
+                    if (t.key === "jasa") {
+                      setUseStock(false);
+                      setUseShipping(false);
+                    } else {
+                      setUseStock(true);
+                      setUseShipping(true);
+                    }
+                  }}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    businessType === t.key
+                      ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 text-blue-700 dark:text-blue-300 font-semibold shadow-xs ring-1 ring-blue-500"
+                      : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] hover:border-blue-300"
+                  }`}
+                >
+                  <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center justify-between">
+                    {t.label}
+                    {businessType === t.key && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                  </div>
+                  <div className="text-xs text-[hsl(var(--muted-fg))] mt-1.5 leading-relaxed">{t.desc}</div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -219,7 +264,7 @@ export default function PengaturanPage() {
               <div>
                 <div className="text-xs font-semibold text-[hsl(var(--foreground))]">Modul Persediaan & Stok Gudang</div>
                 <div className="text-[11px] text-[hsl(var(--muted-fg))] mt-0.5">
-                  Lacak pergerakan stok masuk, keluar, dan peringatan batas minimum
+                  Lacak kuantitas barang masuk, keluar, dan peringatan batas stok minimum
                 </div>
               </div>
               <button
@@ -235,7 +280,7 @@ export default function PengaturanPage() {
               <div>
                 <div className="text-xs font-semibold text-[hsl(var(--foreground))]">Modul Pengiriman & Resi Ekspedisi</div>
                 <div className="text-[11px] text-[hsl(var(--muted-fg))] mt-0.5">
-                  Kelola alur pengiriman barang (diproses, dikemas, dikirim, selesai)
+                  Kelola alur kirim pesanan (diproses, dikemas, dikirim, selesai)
                 </div>
               </div>
               <button
@@ -245,6 +290,104 @@ export default function PengaturanPage() {
               >
                 {useShipping ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION SALDO AWAL (MODAL AWAL) */}
+        <div className="p-6 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[hsl(var(--border))] pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[hsl(var(--foreground))]">Saldo Awal Usaha (Modal Awal)</h3>
+                <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
+                  Posisi keuangan awal saat pertama kali memakai sistem. Dikunci otomatis setelah ada transaksi.
+                </p>
+              </div>
+            </div>
+            {isInitialLocked ? (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1.5 w-fit">
+                🔒 Saldo Awal Terkunci
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5 w-fit">
+                ✓ Siap Dikonfigurasi
+              </span>
+            )}
+          </div>
+
+          {isInitialLocked && (
+            <div className="p-3.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <strong>Saldo awal dikunci</strong> karena transaksi operasional sudah tercatat. Perubahan saldo kas atau stok selanjutnya dilakukan melalui transaksi harian atau menu penyesuaian stok.
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-1.5">
+              <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Kas Awal (Uang Tunai / Bank)</label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[hsl(var(--muted-fg))] font-semibold">Rp</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="50000"
+                  disabled={isInitialLocked}
+                  value={initialCash}
+                  onChange={(e) => setInitialCash(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs font-bold text-[hsl(var(--foreground))] focus:outline-none disabled:opacity-60"
+                />
+              </div>
+              <p className="text-[10px] text-[hsl(var(--muted-fg))]">Uang kas usaha saat mulai</p>
+            </div>
+
+            {useStock && (
+              <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-1.5">
+                <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Nilai Stok Awal</label>
+                <div className="text-sm font-bold text-blue-600 dark:text-blue-400 py-1">
+                  {formatRp(initialStockValue)}
+                </div>
+                <p className="text-[10px] text-[hsl(var(--muted-fg))]">Dihitung dari stok awal pada menu Produk</p>
+              </div>
+            )}
+
+            <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-1.5">
+              <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Piutang Awal (Opsional)</label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[hsl(var(--muted-fg))] font-semibold">Rp</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="50000"
+                  disabled={isInitialLocked}
+                  value={initialReceivable}
+                  onChange={(e) => setInitialReceivable(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs font-bold text-[hsl(var(--foreground))] focus:outline-none disabled:opacity-60"
+                />
+              </div>
+              <p className="text-[10px] text-[hsl(var(--muted-fg))]">Tagihan ke pelanggan lama</p>
+            </div>
+
+            <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-1.5">
+              <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Utang Awal (Opsional)</label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[hsl(var(--muted-fg))] font-semibold">Rp</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="50000"
+                  disabled={isInitialLocked}
+                  value={initialPayable}
+                  onChange={(e) => setInitialPayable(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs font-bold text-[hsl(var(--foreground))] focus:outline-none disabled:opacity-60"
+                />
+              </div>
+              <p className="text-[10px] text-[hsl(var(--muted-fg))]">Utang ke supplier terdahulu</p>
             </div>
           </div>
         </div>

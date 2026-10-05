@@ -26,9 +26,8 @@ import { FULL_ACCESS, TEMPLATES, NO_ACCESS } from "@/lib/permissions";
 // ============================================================
 
 export const INITIAL_EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  { id: "cat-bahan-baku",     name: "Bahan Baku / Pembelian Stok", group: "cogs",      active: true, isStockRelated: true },
+  { id: "cat-bahan-baku",     name: "Belanja stok (masuk persediaan, bukan beban)", group: "cogs", active: true, isStockRelated: true },
   { id: "cat-kemasan",        name: "Kemasan",                    group: "cogs",      active: true },
-  { id: "cat-fee-marketplace",name: "Fee Marketplace",            group: "selling",   active: true },
   { id: "cat-iklan",          name: "Iklan & Promosi",            group: "selling",   active: true },
   { id: "cat-ongkir",         name: "Ongkir Ditanggung Penjual",  group: "selling",   active: true },
   { id: "cat-sewa",           name: "Sewa",                       group: "operating", active: true },
@@ -37,7 +36,7 @@ export const INITIAL_EXPENSE_CATEGORIES: ExpenseCategory[] = [
   { id: "cat-transportasi",   name: "Transportasi",               group: "operating", active: true },
   { id: "cat-admin-bank",     name: "Biaya Admin Bank",           group: "other",     active: true },
   { id: "cat-lainnya",        name: "Lainnya",                    group: "other",     active: true },
-  { id: "cat-prive",          name: "Prive (Penarikan Owner)",    group: "non_expense", active: true },
+  { id: "cat-prive",          name: "Prive (Pengambilan Pribadi Pemilik)", group: "non_expense", active: true },
 ];
 
 export const INITIAL_EXPENSES: Expense[] = [
@@ -101,13 +100,16 @@ export const INITIAL_TENANTS: Tenant[] = [
       useCredit: true,
       defaultShopeeFeePct: 7.5,
       defaultTokopediaFeePct: 3.5,
+      initialCash: 15000000,
+      initialReceivable: 1200000,
+      initialPayable: 1850000,
+      initialLocked: false,
     },
     city: "Bandung",
     province: "Jawa Barat",
     address: "Jl. Riau No. 45, Bandung",
     phone: "0812-3456-7890",
     channels: ["marketplace", "chat", "offline"],
-    nib: "1234567890123",
     createdAt: "2026-01-01T00:00:00.000Z",
   },
 ];
@@ -121,7 +123,7 @@ export const INITIAL_USERS: User[] = [
     id: "owner-1",
     tenantId: "tenant-tokosejahtera",
     username: "ahmad",
-    loginEmail: "ahmad@tokosejahtera.usaha.in",
+    loginEmail: "ahmad@usaha.id",
     contactEmail: "ahmad@gmail.com",
     phone: "0812-3456-7890",
     password: "owner123",
@@ -135,7 +137,7 @@ export const INITIAL_USERS: User[] = [
     id: "emp-sari",
     tenantId: "tenant-tokosejahtera",
     username: "sari",
-    loginEmail: "sari@tokosejahtera.usaha.in",
+    loginEmail: "sari@usaha.id",
     contactEmail: "sari@gmail.com",
     phone: "0813-4567-8901",
     password: "sari123",
@@ -149,7 +151,7 @@ export const INITIAL_USERS: User[] = [
     id: "emp-budi",
     tenantId: "tenant-tokosejahtera",
     username: "budi",
-    loginEmail: "budi@tokosejahtera.usaha.in",
+    loginEmail: "budi@usaha.id",
     contactEmail: "budi@gmail.com",
     phone: "0814-5678-9012",
     password: "budi123",
@@ -163,7 +165,7 @@ export const INITIAL_USERS: User[] = [
     id: "emp-rina",
     tenantId: "tenant-tokosejahtera",
     username: "rina",
-    loginEmail: "rina@tokosejahtera.usaha.in",
+    loginEmail: "rina@usaha.id",
     contactEmail: "rina@gmail.com",
     phone: "0815-6789-0123",
     password: "rina123",

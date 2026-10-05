@@ -72,6 +72,14 @@ export const TEMPLATES: Record<TemplateKey, Record<ModuleKey, Level>> = {
     produk:     "view",
     pembayaran: "view",
   },
+  "Kasir": {
+    ...NO_ACCESS,
+    dashboard:   "view",
+    penjualan:   "manage",
+    pelanggan:   "view",
+    produk:      "view",
+    pembayaran:  "manage",
+  },
   "Staf Gudang": {
     ...NO_ACCESS,
     dashboard:  "view",
@@ -79,13 +87,6 @@ export const TEMPLATES: Record<TemplateKey, Record<ModuleKey, Level>> = {
     produk:     "view",
     pengiriman: "manage",
     penjualan:  "view",
-  },
-  "Staf Pembelian": {
-    ...NO_ACCESS,
-    dashboard:   "view",
-    pengeluaran: "manage",
-    stok:        "view",
-    produk:      "view",
   },
   "Staf Keuangan": {
     ...NO_ACCESS,

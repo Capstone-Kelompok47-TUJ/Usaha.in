@@ -13,7 +13,7 @@ import type { User, ModuleKey, Level, TemplateKey } from "@/types";
 
 const LEVELS: Level[] = ["none", "view", "manage"];
 const LEVEL_LABEL: Record<Level, string> = { none: "Tidak Ada", view: "Lihat", manage: "Kelola" };
-const TEMPLATE_KEYS: TemplateKey[] = ["Staf Penjualan", "Staf Gudang", "Staf Pembelian", "Staf Keuangan", "Kustom"];
+const TEMPLATE_KEYS: TemplateKey[] = ["Staf Penjualan", "Kasir", "Staf Gudang", "Staf Keuangan", "Kustom"];
 
 // ---- Permission Matrix ----
 function PermissionMatrix({
@@ -171,27 +171,22 @@ function EmployeeFormModal({
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
               </div>
               <div>
-                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Nama Pengguna (Email Login)</label>
-                <div className="flex items-center rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/30">
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
-                    required
-                    placeholder="dewi"
-                    className="flex-1 px-3 py-2 bg-transparent text-sm font-mono focus:outline-none"
-                  />
-                  <span className="px-3 py-2 bg-[hsl(var(--muted))] text-xs font-mono text-[hsl(var(--muted-fg))] border-l border-[hsl(var(--border))]">
-                    @{slug}.usaha.in
-                  </span>
-                </div>
+                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Email / ID Login</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._@]/g, ""))}
+                  required
+                  placeholder="dewi@usaha.id atau dewi"
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
+                />
                 <p className="text-[10px] text-[hsl(var(--muted-fg))] mt-1">
-                  Email login: <span className="font-mono text-blue-600">{username || "username"}@{slug}.usaha.in</span>
+                  Digunakan karyawan untuk masuk ke sistem Usaha.in
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Password Awal</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••"
+                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Kata Sandi Awal</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Minimal 6 karakter"
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
               </div>
             </div>
@@ -208,8 +203,8 @@ function EmployeeFormModal({
                   onClick={() => handleTemplateChange(t)}
                   className={`px-3 py-2 rounded-lg border text-xs font-medium text-left transition-all ${
                     template === t
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                      : "border-[hsl(var(--border))] hover:border-blue-300"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold"
+                      : "border-[hsl(var(--border))] hover:border-blue-300 text-[hsl(var(--muted-fg))]"
                   }`}
                 >
                   {t}
@@ -266,11 +261,11 @@ export default function TimPage() {
   return (
     <DashboardLayout
       title="Manajemen Tim"
-      subtitle={`${employees.length} karyawan terdaftar di ${activeTenant?.name || "UMKM Anda"}`}
+      subtitle={`${employees.length} karyawan terdaftar di ${activeTenant?.name || "usaha Anda"}`}
     >
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-[hsl(var(--muted-fg))]">
-          Kelola akun karyawan dan penugasan modul untuk workspace <strong>{activeTenant?.name}</strong>
+          Kelola akun karyawan dan penugasan modul operasional toko Anda
         </p>
         <button id="add-employee-btn" onClick={() => setShowForm(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20">

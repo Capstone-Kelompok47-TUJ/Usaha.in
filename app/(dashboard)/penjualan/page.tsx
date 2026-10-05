@@ -362,6 +362,7 @@ function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
   const voidOrder = useStore((s) => s.voidOrder);
   const customer = customers.find((c) => c.id === order.customerId);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
+  const [showReturnConfirm, setShowReturnConfirm] = useState(false);
 
   const adminFee = order.adminFee;
   const discount = order.discount ?? 0;
@@ -369,6 +370,11 @@ function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
   const totalDiterima = order.subtotal - discount - adminFee - shippingCost;
 
   function handleVoid() {
+    voidOrder(order.id);
+    onClose();
+  }
+
+  function handleReturn() {
     voidOrder(order.id);
     onClose();
   }
@@ -479,9 +485,9 @@ function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Batalkan Pesanan?</p>
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Batalkan Pesanan Ini?</p>
                 <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                  Stok akan dikembalikan. Tindakan ini tidak bisa dibatalkan.
+                  Seluruh stok barang pada pesanan ini akan otomatis dikembalikan ke persediaan toko.
                 </p>
                 <div className="flex gap-2 mt-3">
                   <button onClick={() => setShowVoidConfirm(false)}
@@ -490,7 +496,32 @@ function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
                   </button>
                   <button onClick={handleVoid}
                     className="flex-1 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors">
-                    Ya, Batalkan
+                    Ya, Batalkan Pesanan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Return confirm */}
+        {showReturnConfirm && (
+          <div className="card !p-4 border-amber-200 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/10">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Proses Retur Barang?</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  Barang yang diretur pembeli akan dicatat dan stok dikembalikan ke persediaan.
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => setShowReturnConfirm(false)}
+                    className="flex-1 py-1.5 rounded-lg border border-[hsl(var(--border))] text-xs font-semibold">
+                    Batal
+                  </button>
+                  <button onClick={handleReturn}
+                    className="flex-1 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors">
+                    Ya, Proses Retur
                   </button>
                 </div>
               </div>
@@ -499,11 +530,17 @@ function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
         )}
 
         {/* Action buttons */}
-        {(isOwner || canManage) && !order.voided && !showVoidConfirm && (
-          <button onClick={() => setShowVoidConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-            <Ban className="w-4 h-4" /> Batalkan Pesanan
-          </button>
+        {(isOwner || canManage) && !order.voided && !showVoidConfirm && !showReturnConfirm && (
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <button onClick={() => setShowReturnConfirm(true)}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-xs font-semibold hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
+              Retur Barang
+            </button>
+            <button onClick={() => setShowVoidConfirm(true)}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+              <Ban className="w-3.5 h-3.5" /> Batalkan
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -668,7 +705,7 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-bold text-base flex items-center gap-2">
-              <FileUp className="w-5 h-5 text-blue-500" /> Impor Berkas Penjualan
+              <FileUp className="w-5 h-5 text-blue-500" /> Impor Laporan Penjualan
             </h2>
             <div className="flex items-center gap-2 mt-1">
               {[1, 2, 3, 4].map((s) => (
@@ -687,7 +724,7 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
         {/* Step 1: Upload */}
         {step === 1 && (
           <div className="space-y-4">
-            <p className="text-sm text-[hsl(var(--muted-fg))]">Pilih kanal dan upload file CSV dari dashboard penjual.</p>
+            <p className="text-sm text-[hsl(var(--muted-fg))]">Pilih kanal penjualan dan unggah berkas laporan (.xlsx atau .csv).</p>
             <div className="flex gap-2">
               {CHANNELS_IMPORT.map(({ value, label }) => (
                 <button key={value} type="button" onClick={() => setImportChannel(value)}
@@ -698,9 +735,9 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
             </div>
             <label className="block w-full border-2 border-dashed border-[hsl(var(--border))] rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-all">
               <Upload className="w-8 h-8 text-[hsl(var(--muted-fg))] mx-auto mb-2" />
-              <p className="text-sm font-semibold">Klik untuk upload file CSV</p>
-              <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Format: .csv dari Shopee / Tokopedia Seller Center</p>
-              <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
+              <p className="text-sm font-semibold">Klik untuk unggah berkas .xlsx atau .csv</p>
+              <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Mendukung format ekspor Shopee, Tokopedia, TikTok Shop, atau Excel kasir</p>
+              <input ref={fileRef} type="file" accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFile} />
             </label>
           </div>
         )}
@@ -932,7 +969,7 @@ export default function PenjualanPage() {
           <>
             <button onClick={() => setShowImportModal(true)} id="import-csv-btn"
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[hsl(var(--border))] text-sm font-semibold hover:bg-[hsl(var(--muted))] transition-colors">
-              <Upload className="w-4 h-4" /> Impor CSV
+              <Upload className="w-4 h-4" /> Impor Laporan Penjualan
             </button>
             <button onClick={() => setShowAddModal(true)} id="add-sale-btn"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
@@ -940,7 +977,7 @@ export default function PenjualanPage() {
             </button>
           </>
         )}
-        {user?.isOwner && <AddExampleOrderButton userId={user.id} />}
+        {user?.isOwner && process.env.NEXT_PUBLIC_DEMO_MODE !== "false" && <AddExampleOrderButton userId={user.id} />}
       </div>
 
       {/* Summary mini */}

@@ -16,12 +16,16 @@ export interface BusinessSettings {
   useCredit: boolean;
   defaultShopeeFeePct: number;   // default 7.5 (untuk simulasi demo)
   defaultTokopediaFeePct: number; // default 3.5 (untuk simulasi demo)
+  initialCash?: number;
+  initialReceivable?: number;
+  initialPayable?: number;
+  initialLocked?: boolean;
 }
 
 export interface Tenant {
   id: string;
   name: string;
-  slug: string; // e.g. "tokosejahtera"
+  slug: string; // internal identifier
   businessType: string; // deskripsi bebas (kuliner, fashion, dll.)
   businessSettings: BusinessSettings;
   city: string;
@@ -53,8 +57,8 @@ export type ModuleKey =
 
 export type TemplateKey =
   | "Staf Penjualan"
+  | "Kasir"
   | "Staf Gudang"
-  | "Staf Pembelian"
   | "Staf Keuangan"
   | "Kustom";
 

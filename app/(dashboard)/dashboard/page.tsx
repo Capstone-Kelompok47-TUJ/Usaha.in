@@ -192,13 +192,115 @@ function HealthScoreCard() {
 }
 
 // ============================================================
-// H1: Kas + Uang Aman card
+// H1: Kas + Uang Aman (Prive) Card & Modal
 // ============================================================
+
+function RecordPriveModal({
+  onClose,
+  safeAmount,
+}: {
+  onClose: () => void;
+  safeAmount: number;
+}) {
+  const addExpense = useStore((s) => s.addExpense);
+  const addToast = useStore((s) => s.addToast);
+  const [amount, setAmount] = useState(safeAmount > 0 ? safeAmount : 0);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [note, setNote] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (amount <= 0) {
+      addToast("Nominal penarikan harus lebih dari 0", "error");
+      return;
+    }
+    addExpense({
+      categoryId: "cat-prive",
+      amount,
+      date,
+      paid: true,
+      isPrive: true,
+      note: note.trim() || "Pengambilan uang pribadi pemilik (Prive)",
+    });
+    addToast(`Pengambilan uang pribadi ${formatRp(amount)} berhasil dicatat`, "success");
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+        <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-3">
+          <h3 className="font-bold text-base text-[hsl(var(--foreground))]">Catat Pengambilan Uang Pribadi</h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]">
+            <span className="text-xl">×</span>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs">
+            Uang yang aman ditarik saat ini: <strong>{formatRp(safeAmount)}</strong>. Penarikan ini otomatis dicatat ke pos <strong>Prive</strong> (tidak mengurangi laba operasional).
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Tanggal Penarikan</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs font-semibold"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Nominal yang Diambil (Rp)</label>
+            <input
+              type="number"
+              min="1000"
+              step="10000"
+              value={amount}
+              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+              required
+              className="w-full px-3.5 py-2.5 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-sm font-bold text-[hsl(var(--foreground))]"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Catatan (Opsional)</label>
+            <input
+              type="text"
+              placeholder="Contoh: Keperluan pribadi / belanja rumah"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[hsl(var(--border))]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-xs font-semibold text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors"
+            >
+              Simpan Penarikan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function SafeWithdrawCard() {
   const orders = useStore((s) => s.orders);
   const expenses = useStore((s) => s.expenses);
-  const expenseCategories = useStore((s) => s.expenseCategories);
+  const [showPriveModal, setShowPriveModal] = useState(false);
 
   const data = useMemo(() => {
     const now = Date.now();
@@ -211,7 +313,7 @@ function SafeWithdrawCard() {
     // Biaya wajib 30 hari: expenses yg belum lunas + jatuh tempo 30 hari ke depan
     const upcomingDebt = expenses.filter((e) => {
       if (e.isPrive || e.paid) return false;
-      if (!e.dueDate) return true; // tidak ada jatuh tempo = wajib bayar
+      if (!e.dueDate) return true;
       return new Date(e.dueDate).getTime() <= now + ms30;
     }).reduce((s, e) => s + e.amount, 0);
 
@@ -228,35 +330,58 @@ function SafeWithdrawCard() {
   }, [orders, expenses]);
 
   return (
-    <div className={`card ${data.uangAman === 0 && data.kasEst < data.upcomingDebt + data.cadangan ? "border-red-200 dark:border-red-800/60" : ""}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <ShieldCheck className={`w-5 h-5 ${data.uangAman > 0 ? "text-emerald-500" : "text-red-500"}`} />
-        <p className="text-sm font-bold">Uang Aman Ditarik</p>
-        <Link href="/keuangan" className="ml-auto text-xs text-[hsl(var(--muted-fg))] hover:text-blue-500 flex items-center gap-0.5">
-          Detail <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
-        </Link>
-      </div>
-      <p className={`text-2xl font-black mb-3 ${data.uangAman > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-        {formatRp(data.uangAman)}
-      </p>
-      {data.uangAman === 0 && (
-        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs mb-3">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>Kas tidak cukup setelah dikurangi kewajiban dan cadangan</span>
+    <>
+      <div className={`card flex flex-col justify-between ${data.uangAman === 0 && data.kasEst < data.upcomingDebt + data.cadangan ? "border-red-200 dark:border-red-800/60" : ""}`}>
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className={`w-5 h-5 ${data.uangAman > 0 ? "text-emerald-500" : "text-red-500"}`} />
+            <div>
+              <p className="text-sm font-bold leading-tight">Uang yang Boleh Kamu Ambil</p>
+              <p className="text-[11px] text-[hsl(var(--muted-fg))]">Uang aman ditarik (Prive)</p>
+            </div>
+            <Link href="/keuangan" className="ml-auto text-xs text-[hsl(var(--muted-fg))] hover:text-blue-500 flex items-center gap-0.5">
+              Detail <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
+            </Link>
+          </div>
+          <p className={`text-2xl font-black mb-3 ${data.uangAman > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+            {formatRp(data.uangAman)}
+          </p>
+          {data.uangAman === 0 && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs mb-3">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>Kas usaha sedang diprioritaskan untuk kewajiban & cadangan operasional</span>
+            </div>
+          )}
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between text-[hsl(var(--muted-fg))]">
+              <span>Kas Usaha Tersedia</span><span className="font-semibold text-[hsl(var(--foreground))]">{formatRp(data.kasEst)}</span>
+            </div>
+            <div className="flex justify-between text-[hsl(var(--muted-fg))]">
+              <span>Kewajiban 30 hari</span><span className="font-semibold text-red-500">−{formatRp(data.upcomingDebt)}</span>
+            </div>
+            <div className="flex justify-between text-[hsl(var(--muted-fg))]">
+              <span>Cadangan Darurat (10%)</span><span className="font-semibold text-amber-600">−{formatRp(data.cadangan)}</span>
+            </div>
+          </div>
         </div>
+
+        <div className="mt-4 pt-3 border-t border-[hsl(var(--border))]">
+          <button
+            onClick={() => setShowPriveModal(true)}
+            className="w-full py-2 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Banknote className="w-4 h-4" /> Catat Pengambilan Uang Pribadi
+          </button>
+        </div>
+      </div>
+
+      {showPriveModal && (
+        <RecordPriveModal
+          onClose={() => setShowPriveModal(false)}
+          safeAmount={data.uangAman}
+        />
       )}
-      <div className="space-y-1.5 text-xs">
-        <div className="flex justify-between text-[hsl(var(--muted-fg))]">
-          <span>Estimasi Kas</span><span className="font-semibold text-[hsl(var(--foreground))]">{formatRp(data.kasEst)}</span>
-        </div>
-        <div className="flex justify-between text-[hsl(var(--muted-fg))]">
-          <span>Kewajiban 30 hari</span><span className="font-semibold text-red-500">−{formatRp(data.upcomingDebt)}</span>
-        </div>
-        <div className="flex justify-between text-[hsl(var(--muted-fg))]">
-          <span>Cadangan (10%)</span><span className="font-semibold text-amber-600">−{formatRp(data.cadangan)}</span>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 

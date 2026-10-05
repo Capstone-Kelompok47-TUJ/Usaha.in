@@ -63,7 +63,7 @@ export function AccountSwitcher() {
             {currentUser?.name ?? "—"}
           </div>
           <div className="text-[10px] text-[hsl(var(--muted-fg))] leading-tight">
-            {currentUser?.isOwner ? "Owner" : currentUser?.template}
+            {currentUser?.isOwner ? "Pemilik Usaha" : (currentUser?.template || "Karyawan")}
           </div>
         </div>
         <ChevronDown
@@ -81,11 +81,11 @@ export function AccountSwitcher() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{currentUser?.name}</p>
-                <p className="text-xs font-mono text-[hsl(var(--muted-fg))] truncate">{currentUser?.loginEmail || (currentUser as any)?.email}</p>
+                <p className="text-xs text-[hsl(var(--muted-fg))] truncate">{currentUser?.loginEmail || (currentUser as any)?.email}</p>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     <Shield className="w-2.5 h-2.5" />
-                    {currentUser?.isOwner ? "Owner (Akses Penuh)" : currentUser?.template}
+                    {currentUser?.isOwner ? "Pemilik Usaha" : (currentUser?.template || "Karyawan")}
                   </span>
                   {activeTenant && (
                     <span className="text-[10px] text-[hsl(var(--muted-fg))] font-medium">
@@ -97,7 +97,7 @@ export function AccountSwitcher() {
             </div>
           </div>
 
-          {/* Quick Account Switcher Section (Hanya karyawan dalam UMKM aktif) */}
+          {/* Quick Account Switcher Section */}
           <div className="py-2 px-2">
             <button
               onClick={() => setShowSwitchSubmenu((v) => !v)}
@@ -105,7 +105,7 @@ export function AccountSwitcher() {
             >
               <span className="flex items-center gap-2">
                 <ArrowRightLeft className="w-3.5 h-3.5 text-blue-500" />
-                Ganti Akun ({activeTenant?.name || "UMKM"})
+                Ganti Akun Tim
               </span>
               <ChevronDown className={`w-3 h-3 text-[hsl(var(--muted-fg))] transition-transform ${showSwitchSubmenu ? "rotate-180" : ""}`} />
             </button>
@@ -126,10 +126,10 @@ export function AccountSwitcher() {
                     </span>
                     <div className="truncate flex-1">
                       <div className="truncate">{u.name}</div>
-                      <div className="text-[9px] font-mono text-[hsl(var(--muted-fg))] truncate">{u.loginEmail}</div>
+                      <div className="text-[9px] text-[hsl(var(--muted-fg))] truncate">{u.loginEmail}</div>
                     </div>
                     <span className="text-[10px] opacity-70">
-                      {u.isOwner ? "Owner" : u.template?.split(" ")[1] ?? u.template}
+                      {u.isOwner ? "Pemilik" : (u.template?.split(" ")[1] ?? u.template)}
                     </span>
                     {currentUser?.id === u.id && (
                       <Circle className="w-1.5 h-1.5 fill-blue-500 text-blue-500 shrink-0" />
