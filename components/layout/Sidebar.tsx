@@ -247,8 +247,10 @@ export function Sidebar() {
       >
         {/* Logo / Header */}
         <div
-          className={`flex items-center justify-between px-3 h-16 border-b border-white/5 shrink-0 ${
-            isIconOnly ? "justify-center px-2" : "px-4"
+          className={`flex items-center border-b border-white/5 shrink-0 ${
+            isIconOnly
+              ? "h-20 flex-col justify-center gap-1 px-1.5"
+              : "h-16 justify-between px-4"
           }`}
         >
           <Link
@@ -282,6 +284,23 @@ export function Sidebar() {
               aria-label="Tutup menu"
             >
               <X className="w-4 h-4" />
+            </button>
+          )}
+          {!isMobile && (
+            <button
+              onClick={toggleCollapse}
+              id="sidebar-collapse-toggle-btn"
+              title={collapsed ? "Lebarkan menu" : "Ciutkan menu"}
+              aria-label={collapsed ? "Lebarkan menu" : "Ciutkan menu"}
+              className={`shrink-0 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ${
+                isIconOnly ? "p-1.5" : "p-2"
+              }`}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
             </button>
           )}
         </div>
@@ -364,29 +383,8 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Footer / User & Collapse controls */}
+        {/* Footer / User controls */}
         <div className="p-2 border-t border-white/5 bg-black/15 shrink-0 space-y-1.5">
-          {/* Desktop Collapse Toggle Button */}
-          {!isMobile && (
-            <button
-              onClick={toggleCollapse}
-              id="sidebar-collapse-toggle-btn"
-              title={collapsed ? "Lebarkan menu (Buka Sidebar)" : "Ciutkan menu (Hanya Ikon)"}
-              className={`w-full flex items-center justify-center p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-xs cursor-pointer ${
-                isIconOnly ? "" : "gap-2"
-              }`}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
-                <>
-                  <PanelLeftClose className="w-4 h-4" />
-                  <span className="text-xs font-medium">Ciutkan Menu</span>
-                </>
-              )}
-            </button>
-          )}
-
           {/* User badge */}
           <div
             className={`flex items-center rounded-lg bg-white/5 border border-white/5 ${
