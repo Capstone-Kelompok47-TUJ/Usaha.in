@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { Hint } from "@/components/ui/Hint";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
@@ -616,28 +618,53 @@ export default function AnalitikPage() {
 
   return (
     <DashboardLayout
-      title="Analitik Bisnis & Diagnosis"
-      subtitle="Analisis dekomposisi laba, audit skor kesehatan, deteksi anomali operasional, dan rekomendasi aksi mingguan"
+      title="Saran dan Analisis"
+      subtitle="Diagnosis penyebab perubahan laba, audit skor kesehatan, deteksi anomali operasional, dan rekomendasi aksi"
     >
       <div className="space-y-6 max-w-7xl pb-16">
+        {/* Page Intro with Help Tips */}
+        <PageIntro
+          title="Saran & Analisis Usaha"
+          description="Wawasan mendalam khusus Pemilik Usaha: Cari tahu kenapa laba usahamu berubah, pantau 4 indikator kesehatan toko, serta ambil tindakan perbaikan mingguan."
+          badge="Khusus Pemilik"
+          helpTips={[
+            {
+              title: "Kenapa Laba Berubah? (Analisis PVM)",
+              description: "Mengurai secara presisi apakah kenaikan/penurunan laba tokomu disebabkan oleh naik-turunnya harga jual, modal pokok barang, atau banyaknya jumlah transaksi.",
+            },
+            {
+              title: "Skor Kesehatan Usaha",
+              description: "Menghitung nilai kesehatan tokomu (0-100) dari 4 faktor kunci: Margin Bersih, Perputaran Stok, Umur Piutang, dan Ketahanan Kas.",
+            },
+            {
+              title: "Deteksi Anomali",
+              description: "Peringatan otomatis saat ada lonjakan biaya tidak wajar, harga beli barang naik drastis dari supplier, atau pesanan anjlok.",
+            },
+            {
+              title: "Peluang Belanja Ulang (Repeat Order)",
+              description: "Daftar pelanggan setia yang sudah melewati siklus belanja biasanya lengkap dengan draf pesan sapaan WA siap kirim.",
+            },
+          ]}
+        />
+
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("pvm")}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === "pvm"
-                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
+                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs"
                 : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
-            Diagnosis Laba (PVM)
+            Kenapa Laba Berubah? (PVM)
           </button>
           <button
             onClick={() => setActiveTab("health")}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeTab === "health"
-                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
+                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs"
                 : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
             }`}
           >

@@ -1,6 +1,9 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
@@ -431,6 +434,51 @@ export default function PengeluaranPage() {
       title="Pengeluaran"
       subtitle="Kelola semua beban operasional dan utang usaha"
     >
+      {/* Page Intro with Help Tips & Single Primary Action */}
+      <PageIntro
+        title="Pengeluaran Toko"
+        description="Catat seluruh pengeluaran operasional tokomu, belanja stok barang, serta pantau jadwal pelunasan utang usaha ke supplier."
+        helpTips={[
+          {
+            title: "Belanja Stok vs Beban Operasional",
+            description: "Kategori 'Belanja Stok' otomatis menambah persediaan produk dan tidak langsung memotong laba bersih sebagai beban.",
+          },
+          {
+            title: "Batas Anggaran Bulanan",
+            description: "Setiap kategori biaya memiliki batas anggaran. Jika melebihi batas, sistem akan meminta alasan pengeluaran sebagai kontrol keuangan.",
+          },
+          {
+            title: "Utang Usaha & Jatuh Tempo",
+            description: "Pengeluaran yang belum lunas otomatis masuk ke tab Utang Usaha dengan penanda waktu jatuh tempo agar kas toko tetap terjaga.",
+          },
+          {
+            title: "Penarikan Pribadi (Prive)",
+            description: "Catat penarikan dana pribadi pemilik di tab Prive agar tidak tercampur dan tidak merusak perhitungan laba/rugi usaha.",
+          },
+        ]}
+        primaryAction={
+          canManage ? (
+            activeTab === "prive" && user?.isOwner ? (
+              <button
+                onClick={() => setShowPriveModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors shadow-xs cursor-pointer"
+              >
+                <Crown className="w-4 h-4" /> Catat Prive
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAddModal(true)}
+                id="add-expense-btn"
+                data-shortcut="new"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Catat Pengeluaran
+              </button>
+            )
+          ) : undefined
+        }
+      />
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="card flex items-center gap-4">
@@ -438,7 +486,9 @@ export default function PengeluaranPage() {
             <TrendingDown className="w-5 h-5 text-red-500" />
           </div>
           <div>
-            <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Total Bulan Ini</p>
+            <div className="text-xs text-[hsl(var(--muted-fg))] font-medium flex items-center gap-1">
+              <span>Total Biaya Bulan Ini</span>
+            </div>
             <p className="text-lg font-black text-red-600 dark:text-red-400">{formatRp(totalBulanIni)}</p>
           </div>
         </div>
@@ -447,7 +497,9 @@ export default function PengeluaranPage() {
             <CreditCard className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Total Utang</p>
+            <div className="text-xs text-[hsl(var(--muted-fg))] font-medium flex items-center gap-1">
+              <Hint term="utang_usaha" text="Utang yang Harus Dibayar" />
+            </div>
             <p className="text-lg font-black text-amber-600 dark:text-amber-400">{formatRp(totalUtang)}</p>
             <p className="text-[10px] text-[hsl(var(--muted-fg))]">{utangExpenses.length} tagihan belum lunas</p>
           </div>
@@ -458,23 +510,25 @@ export default function PengeluaranPage() {
               <Wallet className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Total Prive</p>
+              <div className="text-xs text-[hsl(var(--muted-fg))] font-medium flex items-center gap-1">
+                <Hint term="prive" text="Uang Pribadi Ditarik (Prive)" />
+              </div>
               <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatRp(totalPrive)}</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Tabs & Action Button */}
+      {/* Tabs */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div className="flex gap-1 bg-[hsl(var(--muted))] rounded-xl p-1">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === tab.key
-                  ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
+                  ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-xs"
                   : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
               }`}
             >
@@ -490,23 +544,6 @@ export default function PengeluaranPage() {
             </button>
           ))}
         </div>
-
-        {canManage && (
-          <div className="flex gap-2">
-            {user?.isOwner && activeTab === "prive" && (
-              <button onClick={() => setShowPriveModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm font-semibold hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors">
-                <Crown className="w-4 h-4" /> Tambah Prive
-              </button>
-            )}
-            {activeTab !== "prive" && (
-              <button onClick={() => setShowAddModal(true)} id="add-expense-btn"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
-                <Plus className="w-4 h-4" /> Tambah Pengeluaran
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ====== TAB: SEMUA PENGELUARAN ====== */}
@@ -514,37 +551,44 @@ export default function PengeluaranPage() {
         <div>
           {/* Filter kategori */}
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <button onClick={() => setFilterCat("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${filterCat === "all" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
+            <button
+              onClick={() => setFilterCat("all")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${filterCat === "all" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}
+            >
               Semua
             </button>
             {expenseCategories.filter(c => c.group !== "non_expense").map((cat) => (
-              <button key={cat.id} onClick={() => setFilterCat(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${filterCat === cat.id ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
+              <button
+                key={cat.id}
+                onClick={() => setFilterCat(cat.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${filterCat === cat.id ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}
+              >
                 {cat.name}
               </button>
             ))}
           </div>
 
-          <div className="card !p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                    {["Tanggal", "Kategori", "Vendor", "Nominal", "Status", "Catatan"].map((h) => (
-                      <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExpenses.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-10 text-[hsl(var(--muted-fg))] text-sm">
-                        Belum ada data pengeluaran
-                      </td>
+          {filteredExpenses.length === 0 ? (
+            <EmptyState
+              icon={<TrendingDown className="w-7 h-7" />}
+              title="Belum Ada Catatan Pengeluaran"
+              description="Catat seluruh biaya operasional toko, sewa, listrik, gaji, atau belanja stok barang untuk menjaga laporan laba/rugi tetap akurat."
+              actionText={canManage ? "Catat Pengeluaran Pertama" : undefined}
+              onAction={canManage ? () => setShowAddModal(true) : undefined}
+            />
+          ) : (
+            <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
+                      {["Tanggal", "Kategori", "Vendor / Toko", "Nominal", "Status", "Catatan"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
+                      ))}
                     </tr>
-                  ) : (
-                    filteredExpenses.map((exp) => {
+                  </thead>
+                  <tbody>
+                    {filteredExpenses.map((exp) => {
                       const cat = getCat(exp.categoryId);
                       return (
                         <tr key={exp.id} className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors">
@@ -575,12 +619,12 @@ export default function PengeluaranPage() {
                           </td>
                         </tr>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -588,11 +632,11 @@ export default function PengeluaranPage() {
       {activeTab === "utang" && (
         <div>
           {utangExpenses.length === 0 ? (
-            <div className="card text-center py-12">
-              <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-              <h3 className="font-bold text-base mb-1">Tidak Ada Utang!</h3>
-              <p className="text-sm text-[hsl(var(--muted-fg))]">Semua pengeluaran sudah lunas.</p>
-            </div>
+            <EmptyState
+              icon={<CheckCircle2 className="w-7 h-7 text-emerald-500" />}
+              title="Tidak Ada Utang Usaha yang Belum Lunas"
+              description="Hebat! Seluruh tagihan operasional dan belanja persediaan barang usahamu saat ini berstatus lunas."
+            />
           ) : (
             <div className="space-y-3">
               {utangExpenses.map((exp) => {
@@ -601,25 +645,33 @@ export default function PengeluaranPage() {
                 const dueAge = exp.dueDate ? daysDiff(exp.dueDate) : null;
                 const age = daysDiff(exp.date);
                 return (
-                  <div key={exp.id}
-                    className={`card flex flex-col sm:flex-row sm:items-center gap-4 ${isOverdue ? "border-red-200 dark:border-red-800/60 bg-red-50/30 dark:bg-red-950/10" : ""}`}>
+                  <div
+                    key={exp.id}
+                    className={`p-4 rounded-2xl border bg-[hsl(var(--card))] flex flex-col sm:flex-row sm:items-center gap-4 shadow-2xs ${
+                      isOverdue
+                        ? "border-red-200 dark:border-red-800/60 bg-red-50/30 dark:bg-red-950/10"
+                        : "border-[hsl(var(--border))]"
+                    }`}
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isOverdue ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"}`}>
-                          {isOverdue ? `⚠ Jatuh Tempo +${dueAge}h` : `Jatuh Tempo: ${exp.dueDate ? formatDate(exp.dueDate) : "—"}`}
+                          {isOverdue ? `⚠ Lewat Tempo +${dueAge} Hari` : `Jatuh Tempo: ${exp.dueDate ? formatDate(exp.dueDate) : "—"}`}
                         </span>
-                        <span className="text-[10px] text-[hsl(var(--muted-fg))]">Umur utang: {age} hari</span>
+                        <span className="text-[10px] text-[hsl(var(--muted-fg))]">Umur tagihan: {age} hari</span>
                       </div>
                       <p className="font-semibold text-sm mt-1">{cat?.name ?? exp.categoryId}</p>
-                      {exp.vendor && <p className="text-xs text-[hsl(var(--muted-fg))]">{exp.vendor}</p>}
+                      {exp.vendor && <p className="text-xs text-[hsl(var(--muted-fg))]">Vendor: {exp.vendor}</p>}
                       {exp.note && <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5 italic">{exp.note}</p>}
-                      <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Tanggal: {formatDate(exp.date)}</p>
+                      <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Tanggal Transaksi: {formatDate(exp.date)}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <p className="font-black text-lg text-red-600 dark:text-red-400">{formatRp(exp.amount)}</p>
                       {canManage && (
-                        <button onClick={() => markExpensePaid(exp.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors">
+                        <button
+                          onClick={() => markExpensePaid(exp.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors cursor-pointer"
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Tandai Lunas
                         </button>
                       )}
@@ -636,41 +688,29 @@ export default function PengeluaranPage() {
       {activeTab === "prive" && user?.isOwner && (
         <div>
           {priveExpenses.length === 0 ? (
-            <div className="card text-center py-12">
-              <Crown className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-              <h3 className="font-bold text-base mb-1">Belum Ada Catatan Prive</h3>
-              <p className="text-sm text-[hsl(var(--muted-fg))]">
-                Prive adalah penarikan uang dari bisnis untuk keperluan pribadi pemilik.<br />
-                Tidak dihitung dalam laba/rugi.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Wallet className="w-7 h-7 text-amber-500" />}
+              title="Belum Ada Catatan Penarikan Pribadi (Prive)"
+              description="Saat kamu mengambil uang kas usaha untuk keperluan pribadi, catat di sini agar pemisahan uang usaha dan uang pribadi tetap rapi."
+              actionText="Catat Prive Sekarang"
+              onAction={() => setShowPriveModal(true)}
+            />
           ) : (
-            <div className="card !p-0 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                      {["Tanggal", "Nominal", "Catatan"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {priveExpenses.map((exp) => (
-                      <tr key={exp.id} className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors">
-                        <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))] whitespace-nowrap">{formatDate(exp.date)}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">{formatRp(exp.amount)}</td>
-                        <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))]">{exp.note ?? "—"}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-[hsl(var(--muted))]">
-                      <td className="px-4 py-3 text-xs font-bold">Total Prive</td>
-                      <td className="px-4 py-3 font-black text-emerald-600 dark:text-emerald-400">{formatRp(totalPrive)}</td>
-                      <td />
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-3">
+              {priveExpenses.map((exp) => (
+                <div key={exp.id} className="p-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] flex items-center justify-between gap-4 shadow-2xs">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                        Prive Pemilik
+                      </span>
+                      <span className="text-xs text-[hsl(var(--muted-fg))]">{formatDate(exp.date)}</span>
+                    </div>
+                    {exp.note && <p className="text-sm font-medium mt-1">{exp.note}</p>}
+                  </div>
+                  <p className="font-black text-lg text-amber-600 dark:text-amber-400 shrink-0">{formatRp(exp.amount)}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>

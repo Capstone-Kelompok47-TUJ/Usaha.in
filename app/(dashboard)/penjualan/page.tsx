@@ -5,6 +5,8 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { usePermission } from "@/hooks/usePermission";
 import { formatDate, formatRp } from "@/lib/finance";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { redirect } from "next/navigation";
 import {
   Search, X, Plus, ExternalLink, Package, Calendar,
@@ -931,7 +933,59 @@ export default function PenjualanPage() {
       title="Penjualan"
       subtitle={`${filtered.length} pesanan aktif`}
     >
-      {/* Toolbar */}
+      {/* Page Intro with Help and Action Bar */}
+      <PageIntro
+        title="Penjualan"
+        description="Daftar semua transaksi pesanan dari semua kanal tokomu. Klik salah satu pesanan untuk melihat detail barang, tagihan, atau melunasi pembayaran."
+        badge={`${filtered.length} Pesanan`}
+        helpTips={[
+          {
+            title: "Catat Penjualan Manual",
+            description: "Gunakan tombol 'Input Penjualan' untuk mencatat transaksi langsung dari kasir toko fisik, pesanan WhatsApp, atau kanal kustom.",
+          },
+          {
+            title: "Impor Laporan Massal",
+            description: "Gunakan 'Impor Laporan Penjualan' untuk mengunggah file spreadsheet (.xlsx / .csv) dari Shopee atau Tokopedia dalam sekali klik.",
+          },
+          {
+            title: "Filter & Pencarian",
+            description: "Cari cepat berdasarkan nama pembeli atau filter pesanan menurut kanal (Shopee, Tokopedia, WA, Toko Offline) dan status pembayaran.",
+          },
+          {
+            title: "Rincian & Pelunasan Piutang",
+            description: "Klik baris pesanan untuk melihat rincian barang, potongan fee kanal, ongkos kirim, atau mencatat pelunasan bertahap bila bayar tempo.",
+          },
+        ]}
+        primaryAction={
+          canManage ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              id="add-sale-btn"
+              data-shortcut="new"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Input Penjualan
+            </button>
+          ) : undefined
+        }
+        secondaryAction={
+          canManage ? (
+            <button
+              onClick={() => setShowImportModal(true)}
+              id="import-csv-btn"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-xs sm:text-sm font-semibold hover:bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] transition-colors cursor-pointer"
+            >
+              <Upload className="w-4 h-4" /> Impor Laporan Penjualan
+            </button>
+          ) : undefined
+        }
+      >
+        {user?.isOwner && process.env.NEXT_PUBLIC_DEMO_MODE !== "false" && (
+          <AddExampleOrderButton userId={user.id} />
+        )}
+      </PageIntro>
+
+      {/* Search & Filters Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
@@ -941,79 +995,105 @@ export default function PenjualanPage() {
             placeholder="Cari ID pesanan atau pelanggan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/30"
           />
         </div>
 
         {/* Filters */}
-        <select value={filterChannel} onChange={(e) => setFilterChannel(e.target.value as Channel | "")}
-          className="px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+        <select
+          value={filterChannel}
+          onChange={(e) => setFilterChannel(e.target.value as Channel | "")}
+          className="px-3 py-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/30 text-[hsl(var(--foreground))]"
+        >
           <option value="">Semua Kanal</option>
-          {CHANNELS.map((c) => <option key={c} value={c}>{CHANNEL_LABEL[c]}</option>)}
+          {CHANNELS.map((c) => (
+            <option key={c} value={c}>
+              {CHANNEL_LABEL[c]}
+            </option>
+          ))}
         </select>
 
-        <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value as PaymentStatus | "")}
-          className="px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+        <select
+          value={filterPayment}
+          onChange={(e) => setFilterPayment(e.target.value as PaymentStatus | "")}
+          className="px-3 py-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/30 text-[hsl(var(--foreground))]"
+        >
           <option value="">Status Bayar</option>
-          {PAYMENTS.map((p) => <option key={p} value={p}>{PAYMENT_LABEL[p]}</option>)}
+          {PAYMENTS.map((p) => (
+            <option key={p} value={p}>
+              {PAYMENT_LABEL[p]}
+            </option>
+          ))}
         </select>
 
-        <select value={filterShipment} onChange={(e) => setFilterShipment(e.target.value as ShipmentStatus | "")}
-          className="px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+        <select
+          value={filterShipment}
+          onChange={(e) => setFilterShipment(e.target.value as ShipmentStatus | "")}
+          className="px-3 py-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/30 text-[hsl(var(--foreground))]"
+        >
           <option value="">Status Kirim</option>
-          {SHIPMENTS.map((s) => <option key={s} value={s}>{SHIPMENT_LABEL[s]}</option>)}
+          {SHIPMENTS.map((s) => (
+            <option key={s} value={s}>
+              {SHIPMENT_LABEL[s]}
+            </option>
+          ))}
         </select>
-
-        {/* Action buttons */}
-        {canManage && (
-          <>
-            <button onClick={() => setShowImportModal(true)} id="import-csv-btn"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[hsl(var(--border))] text-sm font-semibold hover:bg-[hsl(var(--muted))] transition-colors">
-              <Upload className="w-4 h-4" /> Impor Laporan Penjualan
-            </button>
-            <button onClick={() => setShowAddModal(true)} id="add-sale-btn"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
-              <Plus className="w-4 h-4" /> Input Penjualan
-            </button>
-          </>
-        )}
-        {user?.isOwner && process.env.NEXT_PUBLIC_DEMO_MODE !== "false" && <AddExampleOrderButton userId={user.id} />}
       </div>
 
       {/* Summary mini */}
-      <div className="flex items-center gap-4 mb-4 text-sm">
-        <span className="text-[hsl(var(--muted-fg))]">Total: <strong className="text-[hsl(var(--foreground))]">{formatRp(totalRevenue)}</strong></span>
+      <div className="flex items-center gap-4 mb-4 text-xs sm:text-sm">
+        <span className="text-[hsl(var(--muted-fg))]">
+          Total Omzet Tampil:{" "}
+          <strong className="text-[hsl(var(--foreground))]">{formatRp(totalRevenue)}</strong>
+        </span>
         {voidedCount > 0 && (
-          <span className="text-[hsl(var(--muted-fg))]">{voidedCount} pesanan dibatalkan (tersembunyi)</span>
+          <span className="text-[hsl(var(--muted-fg))]">
+            • {voidedCount} pesanan dibatalkan (tersembunyi)
+          </span>
         )}
       </div>
 
-      {/* Table */}
-      <div className="card !p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                {["ID Pesanan", "Tanggal", "Kanal", "Pelanggan", "Total", "Bayar", "Kirim", ""].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-[hsl(var(--muted-fg))]">
-                    Tidak ada pesanan ditemukan
-                  </td>
+      {/* Table or Empty State */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<Package className="w-7 h-7" />}
+          title={search || filterChannel || filterPayment || filterShipment ? "Tidak Ada Pesanan yang Cocok" : "Belum Ada Pesanan Penjualan"}
+          description={
+            search || filterChannel || filterPayment || filterShipment
+              ? "Coba ubah kata kunci pencarian atau sesuaikan pilihan filter untuk menemukan transaksi yang kamu cari."
+              : "Mulai catat transaksi penjualan pertamamu untuk memantau omzet, sisa stok, dan status kiriman paket."
+          }
+          actionText={canManage ? "Input Penjualan Sekarang" : undefined}
+          onAction={canManage ? () => setShowAddModal(true) : undefined}
+          secondaryActionText={search || filterChannel || filterPayment || filterShipment ? "Reset Filter" : undefined}
+          onSecondaryAction={() => {
+            setSearch("");
+            setFilterChannel("");
+            setFilterPayment("");
+            setFilterShipment("");
+          }}
+        />
+      ) : (
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
+                  {["ID Pesanan", "Tanggal", "Kanal", "Pelanggan", "Total", "Bayar", "Kirim", ""].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
+                  ))}
                 </tr>
-              ) : (
-                filtered.map((order) => {
+              </thead>
+              <tbody>
+                {filtered.map((order) => {
                   const customer = customers.find((c) => c.id === order.customerId);
                   return (
-                    <tr key={order.id}
+                    <tr
+                      key={order.id}
                       className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedOrder(order)}>
-                      <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400">{order.id}</td>
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 font-semibold">{order.id}</td>
                       <td className="px-4 py-3 text-[hsl(var(--muted-fg))] text-xs whitespace-nowrap">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />{formatDate(order.date)}
@@ -1029,12 +1109,12 @@ export default function PenjualanPage() {
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modals & Drawer */}
       {showAddModal && <AddManualOrderModal onClose={() => setShowAddModal(false)} />}

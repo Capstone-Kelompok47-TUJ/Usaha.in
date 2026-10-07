@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { calcChannelFinance, calcFinanceSummary } from "@/lib/finance";
@@ -245,14 +246,27 @@ export default function CopilotPage() {
 
   return (
     <DashboardLayout title="AI Business Copilot" subtitle="Asisten finansial cerdas khusus Owner">
-      <div className="flex flex-col h-[calc(100vh-10rem)] max-w-3xl mx-auto space-y-3">
-        {/* Header badge */}
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 text-blue-800 dark:text-blue-300">
-          <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-          <p className="text-xs">
-            Dihasilkan dari data internal penjualan, stok, pengeluaran, dan kas Usaha.in.
-          </p>
-        </div>
+      <div className="space-y-4 max-w-3xl mx-auto pb-4">
+        <PageIntro
+          title="Tanya AI (Business Copilot)"
+          description="Konsultasikan performa penjualan, kondisi kas saat ini, evaluasi pos pengeluaran, dan strategi bisnis secara instan."
+          guideTitle="Panduan Tanya AI"
+          guideSteps={[
+            "Pilih tombol pertanyaan cepat (seperti laba bulan ini atau produk terlaris) atau ketik pertanyaan langsung.",
+            "Jawaban dihitung secara real-time dari seluruh data transaksi, stok, dan kas usaha Anda.",
+            "Tanyakan berapa 'Uang Aman Ditarik' sebelum mengambil dividen/prive pribadi.",
+            "Karyawan tidak memiliki akses ke fitur Tanya AI untuk menjaga kerahasiaan margin dan laba.",
+          ]}
+        />
+
+        <div className="flex flex-col h-[calc(100vh-14rem)] space-y-3">
+          {/* Header badge */}
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 text-blue-800 dark:text-blue-300 shrink-0">
+            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <p className="text-xs">
+              Dihasilkan dari data internal penjualan, stok, pengeluaran, dan kas Usaha.in.
+            </p>
+          </div>
 
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
@@ -308,6 +322,7 @@ export default function CopilotPage() {
             <Send className="w-4 h-4" />
           </button>
         </form>
+        </div>
       </div>
     </DashboardLayout>
   );

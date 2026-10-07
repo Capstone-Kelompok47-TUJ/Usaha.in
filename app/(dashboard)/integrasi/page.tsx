@@ -20,6 +20,7 @@ import {
   Store,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { WhatsAppLogo, ShopeeLogo, TokopediaLogo } from "@/components/icons/BrandLogos";
 
@@ -256,6 +257,18 @@ export default function IntegrasiPage() {
       subtitle="Hubungkan WhatsApp, Shopee, dan Tokopedia untuk pengelolaan pesanan terpusat"
     >
       <div className="mx-auto max-w-6xl space-y-7 animate-fade-in pb-12">
+        <PageIntro
+          title="Integrasi Kanal Penjualan"
+          description="Hubungkan nomor WhatsApp Business serta akun toko Shopee & Tokopedia untuk sentralisasi pesanan dan otomatisasi stok."
+          guideTitle="Panduan Integrasi Kanal"
+          guideSteps={[
+            "Pilih kanal penjualan yang ingin dihubungkan (WhatsApp, Shopee, atau Tokopedia).",
+            "Klik tombol 'Hubungkan' dan lengkapi data identitas toko/nomor WhatsApp bisnis Anda.",
+            "Untuk WhatsApp, simulasikan pengiriman kode verifikasi OTP (gunakan kode demo 123456).",
+            "Setelah terhubung, transaksi dari kanal tersebut akan terpusat di halaman Penjualan dan stok berkurang otomatis.",
+          ]}
+        />
+
         {/* Sleek Header Banner Card */}
         <section className="relative overflow-hidden rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white shadow-lg dark:border-indigo-800/60 sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />

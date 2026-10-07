@@ -1,6 +1,8 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { ALL_MODULES, TEMPLATES, NO_ACCESS } from "@/lib/permissions";
@@ -260,36 +262,49 @@ export default function TimPage() {
 
   return (
     <DashboardLayout
-      title="Manajemen Tim"
+      title="Tim"
       subtitle={`${employees.length} karyawan terdaftar di ${activeTenant?.name || "usaha Anda"}`}
     >
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-[hsl(var(--muted-fg))]">
-          Kelola akun karyawan dan penugasan modul operasional toko Anda
-        </p>
-        <button id="add-employee-btn" onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20">
-          <Plus className="w-4 h-4" /> Tambah Karyawan
-        </button>
-      </div>
+      {/* Page Intro with Help Tips & Single Primary Action */}
+      <PageIntro
+        title="Tim & Karyawan"
+        description="Kelola akun karyawan tokomu, atur hak akses modul kerja operasional, dan pantau status keaktifan anggota tim."
+        badge={`${employees.length} Karyawan`}
+        helpTips={[
+          {
+            title: "Template Jabatan Praktis",
+            description: "Pilih template siap pakai (Staf Penjualan, Kasir, Staf Gudang, Staf Keuangan) agar izin akses modul terisi otomatis.",
+          },
+          {
+            title: "Peran Kasir Khusus",
+            description: "Kasir hanya memiliki akses mencatat penjualan, melihat produk & pelanggan, serta melunasi pembayaran tanpa dapat melihat laporan laba bersih pemilik.",
+          },
+          {
+            title: "Hak Akses Kustom",
+            description: "Gunakan pilihan 'Kustom' bila ingin mengatur izin Lihat / Kelola / Tidak Ada untuk setiap modul secara fleksibel.",
+          },
+        ]}
+        primaryAction={
+          <button
+            id="add-employee-btn"
+            data-shortcut="new"
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20"
+          >
+            <Plus className="w-4 h-4" /> Tambah Karyawan
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4">
         {employees.length === 0 ? (
-          <div className="card text-center py-10 space-y-3">
-            <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center mx-auto">
-              <Plus className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold">Belum Ada Karyawan</h3>
-            <p className="text-xs text-[hsl(var(--muted-fg))] max-w-sm mx-auto">
-              Tambahkan akun karyawan pertama Anda dengan penugasan modul yang disesuaikan.
-            </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
-            >
-              Tambah Karyawan Sekarang
-            </button>
-          </div>
+          <EmptyState
+            icon={<UserCog className="w-7 h-7" />}
+            title="Belum Ada Akun Karyawan"
+            description="Tambahkan akun karyawan pertamamu dengan penugasan modul yang sesuai agar mereka dapat membantu operasional toko."
+            actionText="Tambah Karyawan Sekarang"
+            onAction={() => setShowForm(true)}
+          />
         ) : (
           employees.map((emp) => {
             const assignedModules = ALL_MODULES.filter(

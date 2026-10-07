@@ -1,6 +1,9 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
@@ -271,21 +274,45 @@ export default function PembayaranPage() {
 
   return (
     <DashboardLayout
-      title="Pembayaran & Piutang"
+      title="Tagihan dan Utang"
       subtitle={`${unpaid.length} tagihan belum lunas — total ${formatRp(totalPiutang)}`}
     >
+      {/* Page Intro with Help Tips */}
+      <PageIntro
+        title="Tagihan & Piutang Pelanggan"
+        description="Pantau seluruh tagihan pesanan yang belum lunas dari pembeli, umur jatuh tempo piutang, dan catat pelunasan pembayaran secara bertahap."
+        badge={`${unpaid.length} Tagihan Aktif`}
+        helpTips={[
+          {
+            title: "Kategori Umur Tagihan (Aging)",
+            description: "Tagihan dikelompokkan: Belum Jatuh Tempo, 1–7 Hari Lewat, 8–30 Hari Lewat, dan >30 Hari Lewat untuk mempermudah prioritas penagihan.",
+          },
+          {
+            title: "Catat Pembayaran Bertahap",
+            description: "Klik tombol 'Bayar' untuk mencatat setoran uang tunai atau transfer sebagian saat pembeli mencicil tagihannya.",
+          },
+          {
+            title: "Salin Pesan Pengingat",
+            description: "Klik tombol ikon salin di sebelah kanan untuk menyalin draf pesan ramah pengingat pembayaran ke WhatsApp pembeli.",
+          },
+        ]}
+      />
+
       {/* D1: Bucket Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {(["current", "1-7", "8-30", "30+"] as AgeBucket[]).map((bucket) => {
           const { count, total } = bucketSummary[bucket];
           const isActive = filterBucket === bucket;
           return (
-            <button key={bucket} onClick={() => setFilterBucket(isActive ? "" : bucket)}
-              className={`card text-left transition-all hover:shadow-md ${isActive ? "ring-2 ring-blue-500" : ""} ${count === 0 ? "opacity-50" : ""}`}>
+            <button
+              key={bucket}
+              onClick={() => setFilterBucket(isActive ? "" : bucket)}
+              className={`p-4 rounded-2xl border bg-[hsl(var(--card))] text-left transition-all hover:shadow-md cursor-pointer shadow-2xs ${isActive ? "ring-2 ring-blue-500 border-blue-500" : "border-[hsl(var(--border))]"} ${count === 0 ? "opacity-60" : ""}`}
+            >
               <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 ${BUCKET_BADGE[bucket]}`}>
                 {BUCKET_LABELS[bucket]}
               </div>
-              <p className="font-black text-base">{formatRp(total)}</p>
+              <p className="font-black text-base text-[hsl(var(--foreground))]">{formatRp(total)}</p>
               <p className="text-xs text-[hsl(var(--muted-fg))]">{count} tagihan</p>
             </button>
           );
@@ -295,61 +322,72 @@ export default function PembayaranPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {(["belum", "sebagian"] as PaymentStatus[]).map((s) => (
-          <button key={s} onClick={() => setFilterStatus(filterStatus === s ? "" : s)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${filterStatus === s ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
+          <button
+            key={s}
+            onClick={() => setFilterStatus(filterStatus === s ? "" : s)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${filterStatus === s ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}
+          >
             {PAYMENT_LABEL[s]}
           </button>
         ))}
         {(filterStatus || filterBucket) && (
-          <button onClick={() => { setFilterStatus(""); setFilterBucket(""); }}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[hsl(var(--muted-fg))] hover:text-red-500 flex items-center gap-1">
-            <X className="w-3 h-3" /> Reset filter
+          <button
+            onClick={() => { setFilterStatus(""); setFilterBucket(""); }}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[hsl(var(--muted-fg))] hover:text-red-500 flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <X className="w-3.5 h-3.5" /> Reset filter
           </button>
         )}
-        <span className="ml-auto text-xs text-[hsl(var(--muted-fg))]">{filtered.length} ditampilkan</span>
+        <span className="ml-auto text-xs text-[hsl(var(--muted-fg))]">{filtered.length} tagihan ditampilkan</span>
       </div>
 
-      {/* Table */}
-      <div className="card !p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                {["ID Pesanan", "Pelanggan", "Tagihan", "Dibayar", "Sisa", "Umur", "Status", "Aksi"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-14">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                    <p className="font-semibold text-sm">Tidak ada piutang yang sesuai filter</p>
-                    <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Semua tagihan sudah lunas 🎉</p>
-                  </td>
+      {/* Table or Empty State */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<CheckCircle2 className="w-7 h-7 text-emerald-500" />}
+          title={filterStatus || filterBucket ? "Tidak Ada Tagihan Sesuai Filter" : "Semua Tagihan Sudah Lunas!"}
+          description={
+            filterStatus || filterBucket
+              ? "Tidak ada tagihan yang cocok dengan pilihan filter saat ini. Coba klik 'Reset Filter'."
+              : "Luar biasa! Tidak ada tagihan piutang pembeli yang tertunggak saat ini. Seluruh transaksi berstatus lunas."
+          }
+          secondaryActionText={filterStatus || filterBucket ? "Reset Filter" : undefined}
+          onSecondaryAction={() => { setFilterStatus(""); setFilterBucket(""); }}
+        />
+      ) : (
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
+                  {["ID Pesanan", "Pelanggan", "Total Tagihan", "Sudah Dibayar", "Sisa Tagihan", "Umur Piutang", "Status", "Aksi"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
+                  ))}
                 </tr>
-              ) : (
-                filtered.map((order) => {
+              </thead>
+              <tbody>
+                {filtered.map((order) => {
                   const customer = customers.find((c) => c.id === order.customerId);
                   const bucket = getAgeBucket(order.dueDate);
                   const due = amountDue(order);
                   const paid = amountPaid(order);
                   const remaining = due - paid;
                   return (
-                    <tr key={order.id}
-                      className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/60 transition-colors ${BUCKET_ROW_COLOR[bucket]}`}>
-                      <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                    <tr
+                      key={order.id}
+                      className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/60 transition-colors ${BUCKET_ROW_COLOR[bucket]}`}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap font-semibold">
                         {order.id}
                       </td>
-                      <td className="px-4 py-3 font-medium max-w-[120px] truncate">
+                      <td className="px-4 py-3 font-medium max-w-[140px] truncate text-[hsl(var(--foreground))]">
                         {customer?.name ?? "—"}
                       </td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap text-[hsl(var(--foreground))]">
                         {formatRp(due)}
                       </td>
-                      <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        {paid > 0 ? formatRp(paid) : <span className="text-[hsl(var(--muted-fg))]">—</span>}
+                      <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 whitespace-nowrap font-semibold">
+                        {paid > 0 ? formatRp(paid) : <span className="text-[hsl(var(--muted-fg))] font-normal">—</span>}
                       </td>
                       <td className="px-4 py-3 font-bold text-red-600 dark:text-red-400 whitespace-nowrap">
                         {formatRp(remaining)}
@@ -376,7 +414,7 @@ export default function PembayaranPage() {
                           {canManage && (
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                             >
                               <DollarSign className="w-3.5 h-3.5" /> Bayar
                             </button>
@@ -384,11 +422,11 @@ export default function PembayaranPage() {
                           {/* D3: Salin pesan tagihan */}
                           <button
                             onClick={() => handleCopyMessage(order)}
-                            title="Salin pesan tagihan"
-                            className={`p-1.5 rounded-lg transition-colors ${copiedId === order.id ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" : "text-[hsl(var(--muted-fg))] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"}`}
+                            title="Salin pesan tagihan pengingat ke WA"
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${copiedId === order.id ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" : "text-[hsl(var(--muted-fg))] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"}`}
                           >
                             {copiedId === order.id
-                              ? <CheckCircle2 className="w-3.5 h-3.5" />
+                              ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               : <Copy className="w-3.5 h-3.5" />
                             }
                           </button>
@@ -396,12 +434,12 @@ export default function PembayaranPage() {
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* D2: Record Payment Modal */}
       {selectedOrder && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
 import { usePermission } from "@/hooks/usePermission";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
@@ -82,7 +83,23 @@ export default function PengirimanPage() {
 
   return (
     <DashboardLayout title="Pengiriman" subtitle="Papan kanban status pengiriman">
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
+      {/* Page Intro with Help Tips */}
+      <PageIntro
+        title="Pengiriman Paket"
+        description="Papan pantau status pengiriman pesanan pembeli dari mulai pesanan baru, diproses, dikemas, dikirim ekspedisi, hingga paket selesai diterima."
+        helpTips={[
+          {
+            title: "Papan Status Kanban",
+            description: "Setiap kolom mewakili tahapan pengiriman paket pembeli: Baru Masuk → Diproses → Dikemas → Dikirim → Selesai.",
+          },
+          {
+            title: "Memajukan Status Paket",
+            description: "Klik tombol 'Lanjut' pada kartu pesanan untuk memindahkan status paket ke tahap berikutnya setelah selesai dikerjakan staf gudang.",
+          },
+        ]}
+      />
+
+      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-14rem)]">
         {COLUMNS.map((col) => {
           const colOrders = orders
             .filter((o) => o.shipmentStatus === col.key)

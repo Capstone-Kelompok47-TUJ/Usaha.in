@@ -1,6 +1,9 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
@@ -323,115 +326,168 @@ export default function ProdukPage() {
 
   return (
     <DashboardLayout title="Produk" subtitle={`${products.length} produk terdaftar`}>
-      {/* Toolbar */}
+      {/* Page Intro with Help and Action Button */}
+      <PageIntro
+        title="Produk dan Stok"
+        description="Katalog barang dagangan, pengaturan harga jual, modal pokok barang (HPP), batas stok minimum, dan kanal distribusi tokomu."
+        badge={`${products.length} Produk`}
+        helpTips={[
+          {
+            title: "Tambah Produk Baru",
+            description: "Klik 'Tambah Produk' untuk memasukkan SKU, nama barang, harga jual, dan modal awal.",
+          },
+          {
+            title: "Batas Stok Minimum",
+            description: "Atur batas stok minimum pada setiap barang agar kamu menerima notifikasi sebelum persediaan habis total.",
+          },
+          {
+            title: "Modal Pokok (HPP Moving Average)",
+            description: "Sistem otomatis menghitung rata-rata modal pokok barang setiap kali kamu mencatat belanja stok baru di menu Pengeluaran.",
+          },
+          {
+            title: "Kartu Mutasi Stok",
+            description: "Klik pada baris produk untuk melihat buku besar riwayat keluar/masuk stok akibat penjualan atau belanja.",
+          },
+        ]}
+        primaryAction={
+          canManage ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              id="add-product-btn"
+              data-shortcut="new"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Tambah Produk
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* Filter Toolbar */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 flex-wrap">
           {([
             { value: "", label: "Semua" },
             { value: "dagang", label: "Barang Dagangan" },
             { value: "produksi", label: "Produksi" },
             { value: "jasa", label: "Jasa" },
           ] as { value: ProductType | ""; label: string }[]).map(({ value, label }) => (
-            <button key={value} onClick={() => setFilterType(value)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${filterType === value ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
+            <button
+              key={value}
+              onClick={() => setFilterType(value)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${filterType === value ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}
+            >
               {label}
             </button>
           ))}
         </div>
-        {canManage && (
-          <button onClick={() => setShowAddModal(true)} id="add-product-btn"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
-            <Plus className="w-4 h-4" /> Tambah Produk
-          </button>
-        )}
       </div>
 
-      <div className="card !p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                {[
-                  "SKU", "Nama Produk", "Jenis", "Harga Jual",
-                  ...(canViewFinance ? ["HPP (avg)"] : []),
-                  "Stok", "Min", "Kanal", "Status"
-                ].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => {
-                const isLow = (p.trackStock !== false) && p.stock <= p.minStock;
-                const isNeg = p.stock < 0;
-                const pType: ProductType = p.productType ?? "dagang";
-                return (
-                  <tr key={p.id} onClick={() => setSelected(p)}
-                    className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer">
-                    <td className="px-4 py-3 font-mono text-xs text-[hsl(var(--muted-fg))]">{p.sku}</td>
-                    <td className="px-4 py-3 font-medium">
-                      <div className="flex items-center gap-2">
-                        {p.name}
-                        {p.trackStock === false && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))]">No Track</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${PRODUCT_TYPE_COLOR[pType]}`}>
-                        {PRODUCT_TYPE_LABEL[pType]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium">{formatRp(p.sellPrice)}</td>
-                    {/* E1: HPP disembunyikan jika tidak punya akses laporan_keuangan */}
-                    {canViewFinance && (
-                      <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">
-                        {p.avgCost ? formatRp(p.avgCost) : formatRp(p.buyPrice)}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<Package className="w-7 h-7" />}
+          title={filterType ? "Tidak Ada Produk untuk Filter Ini" : "Belum Ada Produk Terdaftar"}
+          description={
+            filterType
+              ? "Tidak ada produk yang cocok dengan tipe yang dipilih. Coba pilih kategori 'Semua'."
+              : "Tambahkan produk pertamamu untuk mulai mencatat transaksi penjualan dan melacak mutasi persediaan barang."
+          }
+          actionText={canManage ? "Tambah Produk Pertama" : undefined}
+          onAction={canManage ? () => setShowAddModal(true) : undefined}
+          secondaryActionText={filterType ? "Tampilkan Semua" : undefined}
+          onSecondaryAction={() => setFilterType("")}
+        />
+      ) : (
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
+                  {[
+                    "SKU", "Nama Produk", "Jenis", "Harga Jual",
+                    ...(canViewFinance ? ["Modal per Barang"] : []),
+                    "Stok", "Min", "Kanal", "Status"
+                  ].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p) => {
+                  const isLow = (p.trackStock !== false) && p.stock <= p.minStock;
+                  const isNeg = p.stock < 0;
+                  const pType: ProductType = p.productType ?? "dagang";
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => setSelected(p)}
+                      className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-[hsl(var(--muted-fg))]">{p.sku}</td>
+                      <td className="px-4 py-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[hsl(var(--foreground))]">{p.name}</span>
+                          {p.trackStock === false && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))]">Tanpa Stok</span>
+                          )}
+                        </div>
                       </td>
-                    )}
-                    <td className="px-4 py-3">
-                      {p.trackStock === false ? (
-                        <span className="text-[hsl(var(--muted-fg))] text-xs">—</span>
-                      ) : isNeg ? (
-                        <span className="font-bold text-red-600">{p.stock} <span className="text-[10px] font-normal">⚠ negatif</span></span>
-                      ) : (
-                        <span className={`font-bold ${isLow ? "text-amber-500" : ""}`}>{p.stock}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">{p.minStock}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {(p.channels.includes("marketplace_a") || (p.channels as string[]).includes("shopee")) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">Shopee</span>
-                        )}
-                        {(p.channels.includes("marketplace_b") || (p.channels as string[]).includes("tokopedia")) && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300">Tokopedia</span>
-                        )}
-                        {p.channels.includes("offline") && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Offline</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {isNeg ? (
-                        <span className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Negatif
+                      <td className="px-4 py-3">
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${PRODUCT_TYPE_COLOR[pType]}`}>
+                          {PRODUCT_TYPE_LABEL[pType]}
                         </span>
-                      ) : isLow ? (
-                        <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-                          <AlertTriangle className="w-3 h-3" /> Menipis
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Aman</span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-[hsl(var(--foreground))]">{formatRp(p.sellPrice)}</td>
+                      {/* E1: HPP disembunyikan jika tidak punya akses laporan_keuangan */}
+                      {canViewFinance && (
+                        <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">
+                          {p.avgCost ? formatRp(p.avgCost) : formatRp(p.buyPrice)}
+                        </td>
                       )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="px-4 py-3">
+                        {p.trackStock === false ? (
+                          <span className="text-[hsl(var(--muted-fg))] text-xs">—</span>
+                        ) : isNeg ? (
+                          <span className="font-bold text-red-600">{p.stock} <span className="text-[10px] font-normal">⚠ minus</span></span>
+                        ) : (
+                          <span className={`font-bold ${isLow ? "text-amber-500" : ""}`}>{p.stock}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[hsl(var(--muted-fg))]">{p.minStock}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {(p.channels.includes("marketplace_a") || (p.channels as string[]).includes("shopee")) && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">Shopee</span>
+                          )}
+                          {(p.channels.includes("marketplace_b") || (p.channels as string[]).includes("tokopedia")) && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300">Tokopedia</span>
+                          )}
+                          {p.channels.includes("offline") && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Offline</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isNeg ? (
+                          <span className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Minus
+                          </span>
+                        ) : isLow ? (
+                          <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="w-3 h-3" /> Menipis
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Aman</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {selected && <StockLedgerDrawer product={selected} onClose={() => setSelected(null)} />}
       {showAddModal && <AddProductModal onClose={() => setShowAddModal(false)} />}

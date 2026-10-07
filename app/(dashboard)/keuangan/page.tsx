@@ -1,6 +1,8 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
@@ -202,13 +204,40 @@ export default function KeuanganPage() {
   }, [orders, expenses, expenseCategories, products, period]);
 
   return (
-    <DashboardLayout title="Laporan Keuangan" subtitle="Laba/Rugi · Neraca · Arus Kas">
+    <DashboardLayout title="Laporan Keuangan" subtitle="Laba/Rugi · Posisi Keuangan · Arus Kas">
+      {/* Page Intro with Help Tips */}
+      <PageIntro
+        title="Laporan Keuangan"
+        description="Ringkasan performa finansial tokomu: Laba/Rugi dari penjualan, Posisi Keuangan (Neraca aset vs utang), dan Arus Kas nyata yang masuk dan keluar."
+        helpTips={[
+          {
+            title: "Laporan Laba/Rugi",
+            description: "Menghitung laba kotor dari omzet dikurangi modal pokok barang (HPP), lalu dikurangi biaya operasional untuk menghasilkan laba bersih toko.",
+          },
+          {
+            title: "Posisi Keuangan (Neraca)",
+            description: "Memantau keseimbangan antara total aset (kas toko + tagihan piutang + stok barang) dengan utang usaha dan ekuitas usahamu.",
+          },
+          {
+            title: "Uang Masuk & Keluar (Arus Kas)",
+            description: "Menampilkan arus perpindahan uang tunai nyata yang masuk dari pesanan lunas dan uang kas yang keluar untuk belanja serta prive.",
+          },
+          {
+            title: "Profitabilitas per Kanal",
+            description: "Membandingkan kanal jualan mana (Shopee, Tokopedia, WA, Toko Offline) yang memberikan margin keuntungan bersih paling sehat.",
+          },
+        ]}
+      />
+
       {/* Period + Tab bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-1 p-1 bg-[hsl(var(--muted))] rounded-xl">
           {PERIODS.map((p) => (
-            <button key={p.key} onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${period === p.key ? "bg-[hsl(var(--card))] shadow text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-fg))]"}`}>
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${period === p.key ? "bg-[hsl(var(--card))] shadow-xs text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-fg))]"}`}
+            >
               {p.label}
             </button>
           ))}
@@ -217,10 +246,13 @@ export default function KeuanganPage() {
           {([
             { key: "labarugi", label: "Laba/Rugi" },
             { key: "neraca", label: "Posisi Keuangan (Neraca)" },
-            { key: "aruskas", label: "Arus Kas" },
+            { key: "aruskas", label: "Uang Masuk & Keluar (Arus Kas)" },
           ] as { key: Tab; label: string }[]).map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t.key ? "bg-[hsl(var(--card))] shadow text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-fg))]"}`}>
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${tab === t.key ? "bg-[hsl(var(--card))] shadow-xs text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-fg))]"}`}
+            >
               {t.label}
             </button>
           ))}
@@ -233,7 +265,10 @@ export default function KeuanganPage() {
           {/* G2: Laba/Rugi */}
           {tab === "labarugi" && (
             <>
-              <h3 className="font-bold text-sm mb-4">Laporan Laba/Rugi</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="font-bold text-sm text-[hsl(var(--foreground))]">Laporan Laba/Rugi</h3>
+                <Hint term="laba_bersih" />
+              </div>
               <FinRow label="Pendapatan Penjualan" value={data.revenue} highlight="pos" />
               {data.totalDiscount > 0 && (
                 <FinRow label="(-) Diskon & Retur" value={`−${formatRp(data.totalDiscount)}`} indent highlight="neg" />

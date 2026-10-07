@@ -1,6 +1,9 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
@@ -143,32 +146,53 @@ export default function PelangganPage() {
       title="Pelanggan"
       subtitle={`${totalCustomers} pelanggan — ${activeCustomers} aktif`}
     >
-      {/* F3: Pengingat repeat order (Owner only) */}
+      {/* Page Intro with Help Tips */}
+      <PageIntro
+        title="Data Pelanggan"
+        description="Daftar seluruh pembeli toko, kontak nomor telepon, kanal asal pesanan, riwayat belanja, dan pengelompokan pelanggan (RFM)."
+        badge={`${totalCustomers} Pelanggan`}
+        helpTips={[
+          {
+            title: "Pengelompokan Pelanggan (RFM)",
+            description: "Pelanggan otomatis dikelompokkan (Juara, Setia, Baru, Berisiko, Hilang) berdasarkan kapan terakhir kali mereka belanja dan seberapa sering.",
+          },
+          {
+            title: "Pengingat Belanja Ulang (Repeat Order)",
+            description: "Sistem otomatis menandai pelanggan setia yang sudah waktunya belanja ulang agar kamu dapat menyapa mereka kembali.",
+          },
+          {
+            title: "Kanal Asal Pelanggan",
+            description: "Mengetahui apakah pembeli berasal dari Shopee, Tokopedia, WhatsApp, atau langsung dari Toko Fisik.",
+          },
+        ]}
+      />
+
+      {/* Repeat Order Alert Box */}
       {isOwner && lateCustomers.length > 0 && (
-        <div className="mb-5 card border-amber-200 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/10">
+        <div className="mb-5 p-4 rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/20 shadow-2xs">
           <div className="flex items-center gap-2 mb-3">
             <Bell className="w-4 h-4 text-amber-500" />
             <h3 className="font-semibold text-sm text-amber-800 dark:text-amber-300">
-              Pengingat Repeat Order — {lateCustomers.length} pelanggan terlambat
+              Pengingat Belanja Ulang — {lateCustomers.length} pelanggan sudah waktunya belanja lagi
             </h3>
           </div>
           <div className="space-y-2">
-            {lateCustomers.map((c) => (
+            {lateCustomers.slice(0, 5).map((c) => (
               <div key={c.id} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center text-xs font-bold text-amber-800 dark:text-amber-300">
                     {c.name[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{c.name}</p>
+                    <p className="font-medium text-sm text-[hsl(var(--foreground))]">{c.name}</p>
                     <p className="text-xs text-[hsl(var(--muted-fg))]">
-                      Terakhir order {c.daysSinceLast} hari lalu · avg interval{" "}
+                      Terakhir order {c.daysSinceLast} hari lalu · Rata-rata interval{" "}
                       {c.avgInterval ? Math.round(c.avgInterval) : "—"} hari
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 whitespace-nowrap">
-                  {c.daysSinceLast === Infinity ? "Belum pernah" : `${c.daysSinceLast}h lalu`}
+                  {c.daysSinceLast === Infinity ? "Belum pernah" : `${c.daysSinceLast} hari lalu`}
                 </span>
               </div>
             ))}
@@ -177,133 +201,145 @@ export default function PelangganPage() {
       )}
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         <div className="card">
           <div className="flex items-center gap-2 mb-1">
             <Users className="w-4 h-4 text-blue-500" />
-            <p className="text-xs text-[hsl(var(--muted-fg))]">Total Pelanggan</p>
+            <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Total Pelanggan</p>
           </div>
-          <p className="text-2xl font-black">{totalCustomers}</p>
+          <p className="text-2xl font-black text-[hsl(var(--foreground))]">{totalCustomers}</p>
         </div>
         <div className="card">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <p className="text-xs text-[hsl(var(--muted-fg))]">Pernah Belanja</p>
+            <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Pernah Belanja</p>
           </div>
-          <p className="text-2xl font-black">{activeCustomers}</p>
+          <p className="text-2xl font-black text-[hsl(var(--foreground))]">{activeCustomers}</p>
         </div>
         <div className="card">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-amber-500" />
-            <p className="text-xs text-[hsl(var(--muted-fg))]">Perlu Diingatkan</p>
+            <p className="text-xs text-[hsl(var(--muted-fg))] font-medium">Perlu Diingatkan</p>
           </div>
-          <p className="text-2xl font-black">{lateCustomers.length}</p>
+          <p className="text-2xl font-black text-[hsl(var(--foreground))]">{lateCustomers.length}</p>
         </div>
       </div>
 
-      {/* Main table */}
-      <div className="card !p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
-                {[
-                  "#", "Nama", "Kanal", "No. HP",
-                  "Jml Pesanan", "Total Belanja", "Order Terakhir",
-                  ...(isOwner ? ["Segmen"] : [])
-                ].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {customerWithRfm.map((c, idx) => (
-                <tr key={c.id}
-                  className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors ${c.isLate && isOwner ? "bg-amber-50/30 dark:bg-amber-950/10" : ""}`}>
-                  {/* # */}
-                  <td className="px-4 py-3 text-[hsl(var(--muted-fg))] text-xs">{idx + 1}</td>
+      {/* Main Table or Empty State */}
+      {customerWithRfm.length === 0 ? (
+        <EmptyState
+          icon={<Users className="w-7 h-7" />}
+          title="Belum Ada Data Pelanggan"
+          description="Data pelanggan akan otomatis terisi saat kamu mencatat transaksi penjualan atau mengimpor laporan penjualan toko."
+          actionText="Catat Penjualan Sekarang"
+          actionHref="/penjualan"
+        />
+      ) : (
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
+                  {[
+                    "#", "Nama", "Kanal Asal", "No. HP",
+                    "Jml Pesanan", "Total Belanja", "Order Terakhir",
+                    ...(isOwner ? ["Kelompok"] : [])
+                  ].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {customerWithRfm.map((c, idx) => (
+                  <tr
+                    key={c.id}
+                    className={`border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 transition-colors ${c.isLate && isOwner ? "bg-amber-50/30 dark:bg-amber-950/10" : ""}`}
+                  >
+                    {/* # */}
+                    <td className="px-4 py-3 text-[hsl(var(--muted-fg))] text-xs">{idx + 1}</td>
 
-                  {/* Nama */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {c.name[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium">{c.name}</p>
-                        {c.isLate && isOwner && (
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                            <Bell className="w-2.5 h-2.5" /> Terlambat repeat order
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Kanal */}
-                  <td className="px-4 py-3">
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${CHANNEL_BADGE[c.channel] ?? ""}`}>
-                      {CHANNEL_LABEL[c.channel] ?? c.channel}
-                    </span>
-                  </td>
-
-                  {/* No HP */}
-                  <td className="px-4 py-3 font-mono text-xs text-[hsl(var(--muted-fg))]">
-                    {c.phone ?? "—"}
-                  </td>
-
-                  {/* F1: Jumlah pesanan */}
-                  <td className="px-4 py-3 font-semibold text-center">{c.orderCount}</td>
-
-                  {/* F1: Total belanja */}
-                  <td className="px-4 py-3 font-bold">
-                    {c.totalSpend > 0 ? formatRp(c.totalSpend) : <span className="text-[hsl(var(--muted-fg))] font-normal">—</span>}
-                  </td>
-
-                  {/* F1: Tanggal order terakhir */}
-                  <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))] whitespace-nowrap">
-                    {c.lastOrderDate ? (
-                      <span>
-                        {formatDate(c.lastOrderDate)}
-                        <br />
-                        <span className="text-[10px]">{c.daysSinceLast}h lalu</span>
-                      </span>
-                    ) : "—"}
-                  </td>
-
-                  {/* F2: RFM Segmen — Owner only */}
-                  {isOwner && (
+                    {/* Nama */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        {c.segment === "Juara" && <Crown className="w-3 h-3 text-yellow-500" />}
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${SEGMENT_COLOR[c.segment]}`}>
-                          {c.segment}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-2xs">
+                          {c.name[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[hsl(var(--foreground))]">{c.name}</p>
+                          {c.isLate && isOwner && (
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5 mt-0.5">
+                              <Bell className="w-2.5 h-2.5" /> Waktunya repeat order
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {/* F2: Legend — Owner only */}
+                    {/* Kanal */}
+                    <td className="px-4 py-3">
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${CHANNEL_BADGE[c.channel] ?? ""}`}>
+                        {CHANNEL_LABEL[c.channel] ?? c.channel}
+                      </span>
+                    </td>
+
+                    {/* No HP */}
+                    <td className="px-4 py-3 font-mono text-xs text-[hsl(var(--muted-fg))]">
+                      {c.phone ?? "—"}
+                    </td>
+
+                    {/* Jumlah pesanan */}
+                    <td className="px-4 py-3 font-semibold text-center">{c.orderCount}</td>
+
+                    {/* Total belanja */}
+                    <td className="px-4 py-3 font-bold text-[hsl(var(--foreground))]">
+                      {c.totalSpend > 0 ? formatRp(c.totalSpend) : <span className="text-[hsl(var(--muted-fg))] font-normal">—</span>}
+                    </td>
+
+                    {/* Tanggal order terakhir */}
+                    <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))] whitespace-nowrap">
+                      {c.lastOrderDate ? (
+                        <span>
+                          {formatDate(c.lastOrderDate)}
+                          <br />
+                          <span className="text-[10px]">{c.daysSinceLast} hari lalu</span>
+                        </span>
+                      ) : "—"}
+                    </td>
+
+                    {/* Kelompok RFM — Owner only */}
+                    {isOwner && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          {c.segment === "Juara" && <Crown className="w-3.5 h-3.5 text-yellow-500" />}
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${SEGMENT_COLOR[c.segment]}`}>
+                            {c.segment}
+                          </span>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* RFM Legend — Owner only */}
       {isOwner && (
-        <div className="mt-4 card !p-4">
-          <p className="text-xs font-semibold text-[hsl(var(--muted-fg))] mb-2 flex items-center gap-1">
-            <Crown className="w-3.5 h-3.5 text-yellow-500" /> Segmen RFM (Owner)
-          </p>
+        <div className="mt-4 p-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xs">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Hint term="rfm" text="Panduan Kelompok Pelanggan" />
+          </div>
           <div className="flex flex-wrap gap-2">
             {(Object.entries(SEGMENT_COLOR) as [RfmSegment, string][]).map(([seg, cls]) => (
-              <span key={seg} className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cls}`}>
+              <span key={seg} className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${cls}`}>
                 {seg}
               </span>
             ))}
           </div>
-          <p className="text-[10px] text-[hsl(var(--muted-fg))] mt-2">
-            Juara (baru+sering) · Setia (sering) · Berisiko (lama+sering) · Baru (baru+sekali) · Hilang (lama+jarang) · Reguler (tengah)
+          <p className="text-[11px] text-[hsl(var(--muted-fg))] mt-2 leading-relaxed">
+            <strong>Juara:</strong> Baru & sering belanja · <strong>Setia:</strong> Rutin belanja · <strong>Berisiko:</strong> Sudah lama tidak order · <strong>Baru:</strong> Pembeli anyar · <strong>Hilang:</strong> Tidak aktif lama
           </p>
         </div>
       )}

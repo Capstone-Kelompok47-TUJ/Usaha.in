@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
@@ -147,26 +148,27 @@ export default function PengaturanPage() {
       subtitle="Kelola profil toko, saldo awal, batas anggaran, dan parameter biaya"
     >
       <div className="space-y-6 max-w-5xl pb-16 animate-fade-in">
-        {/* Top Save Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-[hsl(var(--foreground))]">Konfigurasi Profil & Parameter Bisnis</h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                👑 Akun Pemilik Usaha
-              </span>
-            </div>
-            <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
-              Simpan perubahan parameter untuk memperbarui otomatis seluruh kalkulasi analitik dan laporan keuangan.
-            </p>
-          </div>
-          <button
-            onClick={handleSaveBusinessInfo}
-            className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm self-start sm:self-auto"
-          >
-            <Save className="w-4 h-4" /> Simpan Pengaturan
-          </button>
-        </div>
+        <PageIntro
+          title="Pengaturan Usaha"
+          description="Kelola profil toko, saldo modal awal, batas anggaran bulanan, dan parameter potongan biaya admin kanal penjualan."
+          guideTitle="Panduan Pengaturan Usaha"
+          guideSteps={[
+            "Atur Nama dan Tipe Usaha (Dagang, Produksi, atau Jasa) untuk menyesuaikan modul yang aktif.",
+            "Tentukan Saldo Awal (kas/bank) sebelum mulai mencatat transaksi. Saldo akan otomatis terkunci setelah transaksi pertama.",
+            "Sesuaikan persentase potongan admin Shopee dan Tokopedia agar kalkulasi laba bersih akurat.",
+            "Tentukan batas anggaran bulanan pada tiap kategori pengeluaran untuk memantau potensi pemborosan.",
+            "Daftarkan biaya tetap bulanan (seperti gaji atau sewa ruko) untuk menghitung kalkulasi Uang Aman Ditarik.",
+          ]}
+          actions={
+            <button
+              onClick={handleSaveBusinessInfo}
+              data-shortcut="save"
+              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              <Save className="w-4 h-4" /> Simpan Pengaturan
+            </button>
+          }
+        />
 
         {/* SECTION 1: INFORMASI & MODEL USAHA */}
         <div className="p-6 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm space-y-6">
