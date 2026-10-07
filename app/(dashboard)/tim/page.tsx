@@ -5,11 +5,11 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
-import { ALL_MODULES, TEMPLATES, NO_ACCESS } from "@/lib/permissions";
+import { ALL_MODULES, TEMPLATES } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 import { useState } from "react";
 import {
-  Plus, X, UserCog, Power, Edit, ChevronRight, Check,
+  Plus, X, UserCog, Power, Edit, Check,
 } from "lucide-react";
 import type { User, ModuleKey, Level, TemplateKey } from "@/types";
 
@@ -79,8 +79,6 @@ function EmployeeFormModal({
   const updateUserPermissions = useStore((s) => s.updateUserPermissions);
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
-  const slug = activeTenant?.slug || "tokosejahtera";
-
   const [name, setName] = useState(editUser?.name ?? "");
   const [username, setUsername] = useState(editUser?.username ?? "");
   const [password, setPassword] = useState(editUser?.password ?? "");
@@ -247,6 +245,7 @@ export default function TimPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<User | undefined>(undefined);
+  const [pendingDeactivation, setPendingDeactivation] = useState<User | null>(null);
 
   const employees = tenantUsers.filter((u) => !u.isOwner);
 
@@ -325,7 +324,7 @@ export default function TimPage() {
                       <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">Nonaktif</span>
                     )}
                   </div>
-                  <p className="text-xs font-mono text-blue-600 dark:text-blue-400 mb-2">{emp.loginEmail || (emp as any).email}</p>
+                  <p className="text-xs font-mono text-blue-600 dark:text-blue-400 mb-2">{emp.loginEmail}</p>
                   <div className="flex flex-wrap gap-1">
                     {assignedModules.slice(0, 5).map((m) => {
                       const level = emp.permissions[m.key as ModuleKey];
@@ -352,7 +351,7 @@ export default function TimPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] text-xs font-medium hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer">
                     <Edit className="w-3.5 h-3.5" /> Ubah
                   </button>
-                  <button onClick={() => toggleUserActive(emp.id)}
+                  <button onClick={() => emp.active ? setPendingDeactivation(emp) : toggleUserActive(emp.id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       emp.active
                         ? "border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -368,6 +367,29 @@ export default function TimPage() {
         )}
       </div>
 
+      {pendingDeactivation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="presentation">
+          <section className="w-full max-w-md rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="deactivate-user-title">
+            <h2 id="deactivate-user-title" className="font-bold text-base">Nonaktifkan akun {pendingDeactivation.name}?</h2>
+            <p className="text-sm text-[hsl(var(--muted-fg))] mt-2">
+              Karyawan ini tidak bisa masuk sampai akunnya diaktifkan kembali. Riwayat transaksi dan aktivitasnya tetap tersimpan.
+            </p>
+            <div className="flex gap-2 mt-5">
+              <button type="button" onClick={() => setPendingDeactivation(null)}
+                className="flex-1 min-h-11 rounded-lg border border-[hsl(var(--border))] text-sm font-semibold">
+                Jangan nonaktifkan
+              </button>
+              <button type="button" onClick={() => {
+                toggleUserActive(pendingDeactivation.id);
+                setPendingDeactivation(null);
+              }}
+                className="flex-1 min-h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
+                Ya, nonaktifkan
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {showForm && (
         <EmployeeFormModal editUser={editTarget} onClose={closeForm} />
       )}

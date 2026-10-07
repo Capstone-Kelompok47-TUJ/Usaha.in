@@ -9,11 +9,11 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatRp, formatDate } from "@/lib/finance";
 import { redirect } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import type { ExpenseItem } from "@/types";
 import {
   Plus, X, AlertTriangle, CheckCircle2, Clock,
-  TrendingDown, Wallet, CreditCard, Crown, ChevronDown,
+  TrendingDown, Wallet, CreditCard, Crown,
 } from "lucide-react";
 
 // ============================================================
@@ -28,6 +28,7 @@ function daysDiff(dateStr: string): number {
 
 function BudgetIndicator({ used, limit }: { used: number; limit: number }) {
   const pct = limit > 0 ? Math.min((used / limit) * 100, 120) : 0;
+  const remaining = Math.max(0, limit - used);
   const color =
     pct < 80 ? "bg-emerald-500" : pct <= 100 ? "bg-amber-500" : "bg-red-500";
   const textColor =
@@ -45,6 +46,9 @@ function BudgetIndicator({ used, limit }: { used: number; limit: number }) {
       <div className="h-1.5 rounded-full bg-[hsl(var(--muted))] overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
+      <p className={`text-[11px] mt-1 font-medium ${textColor}`}>
+        {used >= limit ? `Batas terlampaui ${formatRp(used - limit)}` : `Sisa batas ${formatRp(remaining)}`}
+      </p>
       {pct > 100 && (
         <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" /> Melebihi batas anggaran
@@ -64,7 +68,6 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
   const budgets = useStore((s) => s.budgets);
   const addExpense = useStore((s) => s.addExpense);
   const getExpenseSumByCategory = useStore((s) => s.getExpenseSumByCategory);
-  const user = useCurrentUser();
 
   const categories = isPrive
     ? expenseCategories.filter((c) => c.id === "cat-prive")
@@ -72,7 +75,7 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split("T")[0],
-    categoryId: isPrive ? "cat-prive" : categories[0]?.id ?? "",
+    categoryId: isPrive ? "cat-prive" : "",
     amount: 0,
     paid: true,
     dueDate: "",
@@ -109,25 +112,23 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
     const errs: Record<string, string> = {};
     if (!form.date) errs.date = "Tanggal wajib diisi";
     if (!form.categoryId) errs.categoryId = "Kategori wajib dipilih";
-    if (effectiveAmount <= 0) errs.amount = "Nominal harus lebih dari 0";
+    if (selectedCat?.isStockRelated && items.length === 0) errs.items = "Tambahkan barang yang dibeli agar stok toko ikut bertambah.";
+    if (selectedCat?.isStockRelated && items.some((item) => !item.productId || item.qty <= 0 || item.unitCost <= 0)) {
+      errs.items = "Pilih produk, jumlah lebih dari 0, dan harga modal untuk setiap barang.";
+    }
+    if (effectiveAmount <= 0) errs.amount = selectedCat?.isStockRelated
+      ? "Total belanja stok harus lebih dari Rp0."
+      : "Nominal pengeluaran harus lebih dari Rp0.";
     if (!form.paid && !form.dueDate) errs.dueDate = "Tanggal jatuh tempo wajib diisi jika belum lunas";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-
-    // Cek batas anggaran
-    if (budgetLimit > 0 && (usedBudget + effectiveAmount) > budgetLimit && !showBudgetWarning) {
-      setShowBudgetWarning(true);
+  function saveExpense() {
+    if (showBudgetWarning && !budgetExceedReason.trim()) {
+      setErrors((current) => ({ ...current, budgetExceedReason: "Tuliskan alasan agar pengeluaran di atas batas dapat dicatat." }));
       return;
     }
-    if (showBudgetWarning && !budgetExceedReason.trim()) {
-      return; // wajib isi alasan
-    }
-
     addExpense({
       date: form.date,
       categoryId: form.categoryId,
@@ -140,7 +141,19 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
       budgetExceedReason: showBudgetWarning ? budgetExceedReason : undefined,
       isPrive,
     });
+    setShowBudgetWarning(false);
     onClose();
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    if (budgetLimit > 0 && usedBudget + effectiveAmount > budgetLimit) {
+      setShowBudgetWarning(true);
+      return;
+    }
+    saveExpense();
   }
 
   const title = isPrive ? "Tambah Prive" : "Tambah Pengeluaran";
@@ -167,30 +180,33 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
           </button>
         </div>
 
-        {/* Budget Warning Banner */}
-        {showBudgetWarning && (
-          <div className="mb-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Melebihi Batas Anggaran</p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                  Anggaran {selectedCat?.name}: {formatRp(budgetLimit)}, sudah terpakai {formatRp(usedBudget)}.
-                  Pengeluaran ini akan melebihi batas. Isi alasan untuk tetap menyimpan.
-                </p>
-                <textarea
-                  value={budgetExceedReason}
-                  onChange={(e) => setBudgetExceedReason(e.target.value)}
-                  placeholder="Alasan melebihi anggaran (wajib)..."
-                  rows={2}
-                  className="mt-2 w-full px-3 py-2 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-red-950/60 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!isPrive && (
+            <div>
+              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Pilih kategori dahulu *</label>
+              <select value={form.categoryId}
+                onChange={(e) => {
+                  setItems([]);
+                  setShowBudgetWarning(false);
+                  setBudgetExceedReason("");
+                  setErrors({});
+                  setForm({ ...form, categoryId: e.target.value });
+                }}
+                className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 ${errors.categoryId ? "border-red-500" : "border-[hsl(var(--border))] focus:ring-blue-500/30"}`}>
+                <option value="">Pilih kategori pengeluaran</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+              {errors.categoryId && <p className="text-[11px] text-red-500 mt-0.5" role="alert">{errors.categoryId}</p>}
+              {budgetLimit > 0 && form.categoryId && <BudgetIndicator used={usedBudget} limit={budgetLimit} />}
+            </div>
+          )}
+
+          {!isPrive && !form.categoryId ? (
+            <p className="rounded-lg bg-[hsl(var(--muted))]/60 px-3 py-3 text-xs text-[hsl(var(--muted-fg))]">
+              Pilih kategori untuk menampilkan isian yang sesuai dengan pengeluaranmu.
+            </p>
+          ) : (
+            <>
           {/* Tanggal */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -227,23 +243,6 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
             </div>
           )}
 
-          {/* Kategori */}
-          {!isPrive && (
-            <div>
-              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Kategori *</label>
-              <select value={form.categoryId}
-                onChange={(e) => { setItems([]); setForm({ ...form, categoryId: e.target.value }); }}
-                className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 ${errors.categoryId ? "border-red-500" : "border-[hsl(var(--border))] focus:ring-blue-500/30"}`}>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-
-              {/* Budget indicator */}
-              {budgetLimit > 0 && (
-                <BudgetIndicator used={usedBudget} limit={budgetLimit} />
-              )}
-            </div>
-          )}
-
           {/* Items stok jika kategori stock-related */}
           {selectedCat?.isStockRelated && !isPrive && (
             <div>
@@ -256,7 +255,7 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
               </div>
               {items.length === 0 ? (
                 <p className="text-xs text-[hsl(var(--muted-fg))] text-center py-3 rounded-lg border border-dashed border-[hsl(var(--border))]">
-                  Klik "Tambah Item" untuk menambah produk yang dibeli
+                  Klik &quot;Tambah Item&quot; untuk menambah produk yang dibeli
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -274,11 +273,11 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
                       <input type="number" min={1} value={item.qty}
                         onChange={(e) => updateItem(idx, "qty", +e.target.value)}
                         className="px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                        placeholder="Qty" />
+                        placeholder="Contoh: 20" />
                       <input type="number" min={0} value={item.unitCost}
                         onChange={(e) => updateItem(idx, "unitCost", +e.target.value)}
                         className="px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                        placeholder="Harga/unit" />
+                        placeholder="Contoh: 12000" />
                       <button type="button" onClick={() => removeItem(idx)} className="p-1 rounded text-[hsl(var(--muted-fg))] hover:text-red-500">
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -293,13 +292,13 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
           )}
 
           {/* Nominal (hanya jika bukan stock-related atau tidak ada items) */}
-          {(!selectedCat?.isStockRelated || items.length === 0) && (
+          {!selectedCat?.isStockRelated && (
             <div>
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Nominal (Rp) *</label>
               <input type="number" min={0} value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: +e.target.value })}
                 className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 ${errors.amount ? "border-red-500 focus:ring-red-500/30" : "border-[hsl(var(--border))] focus:ring-blue-500/30"}`}
-                placeholder="0" />
+                placeholder="Contoh: 25000" />
               {errors.amount && <p className="text-[11px] text-red-500 mt-0.5">{errors.amount}</p>}
             </div>
           )}
@@ -311,14 +310,14 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
               <input type="text" value={form.vendor}
                 onChange={(e) => setForm({ ...form, vendor: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                placeholder="Nama vendor" />
+                placeholder="Contoh: Toko Sumber Makmur" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Catatan <span className="font-normal">(opsional)</span></label>
               <input type="text" value={form.note}
                 onChange={(e) => setForm({ ...form, note: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                placeholder="Keterangan" />
+                placeholder="Contoh: Beli 20 kg tepung terigu" />
             </div>
           </div>
 
@@ -333,7 +332,46 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
               {showBudgetWarning ? "Simpan (Melebihi Batas)" : "Simpan Pengeluaran"}
             </button>
           </div>
+            </>
+          )}
         </form>
+        {showBudgetWarning && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50" role="presentation">
+            <section className="w-full max-w-md rounded-2xl border border-red-200 dark:border-red-900 bg-[hsl(var(--card))] p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="expense-budget-title">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 id="expense-budget-title" className="font-semibold text-sm text-red-700 dark:text-red-300">Pengeluaran melewati batas anggaran</h3>
+                  <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">
+                    Setelah disimpan, kategori {selectedCat?.name} akan mencapai {formatRp(usedBudget + effectiveAmount)} dari batas {formatRp(budgetLimit)}. Tulis alasan untuk tetap mencatat pengeluaran ini.
+                  </p>
+                  <textarea
+                    value={budgetExceedReason}
+                    onChange={(e) => {
+                      setBudgetExceedReason(e.target.value);
+                      setErrors((current) => ({ ...current, budgetExceedReason: "" }));
+                    }}
+                    placeholder="Contoh: Perlu tambahan stok untuk pesanan besar"
+                    rows={3}
+                    className="mt-3 w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
+                    aria-invalid={Boolean(errors.budgetExceedReason)}
+                  />
+                  {errors.budgetExceedReason && <p className="text-xs text-red-600 mt-1" role="alert">{errors.budgetExceedReason}</p>}
+                  <div className="flex gap-2 mt-3">
+                    <button type="button" onClick={() => setShowBudgetWarning(false)}
+                      className="flex-1 min-h-11 rounded-lg border border-[hsl(var(--border))] text-sm font-semibold">
+                      Kembali
+                    </button>
+                    <button type="button" onClick={saveExpense}
+                      className="flex-1 min-h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
+                      Simpan dengan alasan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -410,13 +448,13 @@ export default function PengeluaranPage() {
     : allExpenses.filter((e) => e.categoryId === filterCat);
 
   // Summary
-  const totalBulanIni = useMemo(() => {
+  const totalBulanIni = (() => {
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     return tenantExpenses
       .filter((e) => !e.isPrive && e.date.startsWith(ym))
       .reduce((s, e) => s + e.amount, 0);
-  }, [tenantExpenses]);
+  })();
 
   const totalUtang = utangExpenses.reduce((s, e) => s + e.amount, 0);
   const totalPrive = priveExpenses.reduce((s, e) => s + e.amount, 0);

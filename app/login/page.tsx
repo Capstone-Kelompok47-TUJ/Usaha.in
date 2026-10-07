@@ -16,6 +16,7 @@ export default function LoginPage() {
   const login = useStore((s) => s.login);
   const isAuthenticated = useStore((s) => s.isAuthenticated);
   const users = useStore((s) => s.users);
+  const tenants = useStore((s) => s.tenants);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,11 +53,16 @@ export default function LoginPage() {
 
   function handleRoleLogin(userId: string) {
     const targetUser = users.find((u) => u.id === userId);
-    if (!targetUser) return;
+    const targetTenant = targetUser && tenants.find((t) => t.id === targetUser.tenantId);
+    if (!targetUser || !targetTenant) {
+      setError("Akun demo tidak tersedia. Muat ulang halaman lalu coba lagi.");
+      return;
+    }
     setError(null);
     setLoading(true);
     setTimeout(() => {
-      const res = login(targetUser.loginEmail, targetUser.password);
+      const demoLogin = `${targetUser.username}@${targetTenant.slug}.usaha.in`;
+      const res = login(demoLogin, targetUser.password);
       if (res.success) {
         router.push("/dashboard");
       } else {

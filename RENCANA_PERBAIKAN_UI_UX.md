@@ -26,9 +26,9 @@
 - [x] **Bagian A — Bersihkan Sisa Fitur Lama di Dalam Aplikasi** `[SELESAI ✅]`
 - [x] **Bagian B — Istilah Sederhana & Kamus Istilah (Glossary)** `[SELESAI ✅]`
 - [x] **Bagian C — Navigasi Desktop & Sidebar** `[SELESAI ✅]`
-- [ ] **Bagian D — Standar Setiap Halaman (Intro, Bantuan, Empty State, Aksi Utama)** `[BERIKUTNYA ⏳]`
-- [ ] **Bagian E — Dashboard Pemilik Usaha & Karyawan** `[BELUM]`
-- [ ] **Bagian F — Form, Input & Interaksi Ramah Pengguna** `[BELUM]`
+- [x] **Bagian D — Standar Setiap Halaman (Intro, Bantuan, Empty State, Aksi Utama)** `[SELESAI ✅]`
+- [x] **Bagian E — Dashboard Pemilik Usaha & Karyawan** `[SELESAI ✅]`
+- [ ] **Bagian F — Form, Input & Interaksi Ramah Pengguna** `[DALAM VALIDASI]`
 - [ ] **Bagian G — Panduan Pemula, Konsistensi & Aksesibilitas** `[BELUM]`
 
 ---
@@ -62,7 +62,7 @@
 - [x] **A.9 Pemisahan Prive & Uang Aman:**
   - Kartu *"Uang yang boleh kamu ambil"* (hasil perhitungan aman).
   - Tombol *"Catat pengambilan uang pribadi"* yang mencatat ke Prive.
-- [x] **A.10 Kontrol Demo Mode:** Tombol *"Tambah Pesanan Contoh"* dan *"Reset Data Demo"* hanya muncul bila `DEMO_MODE` aktif dan khusus Pemilik Usaha.
+- [x] **A.10 Kontrol Demo Mode:** Tombol *"Tambah Pesanan Contoh"* hanya muncul bila `DEMO_MODE` aktif dan khusus Pemilik Usaha. Reset seluruh data demo tidak disediakan di UI agar data tidak terhapus tanpa sengaja.
 - [x] **A.11 Bersihkan Sisa Fitur Lama:** Hapus sisa teks integrasi API langsung / sinkronisasi otomatis Shopee/Tokopedia/WA, Staf Pembelian, dan teks "mode demo" pada Copilot.
 - [x] **A.12 Kelengkapan UI:** Memastikan adanya batas pengeluaran (indikator hijau/kuning/merah + alasan wajib), tab Utang Usaha, pembayaran sebagian, tombol Batalkan & Retur, serta proteksi akses modul sesuai peran.
 
@@ -110,7 +110,7 @@
   - Menampilkan Nama Toko/Usaha + Badge Tipe Usaha.
   - Kolom **Pencarian Global** (<kbd>Ctrl</kbd> + <kbd>K</kbd>).
   - Tombol Bantuan Pintasan (<kbd>?</kbd>).
-  - Mode Gelap / Terang & Reset Demo.
+  - Mode Gelap / Terang.
   - Menu Pengguna (Avatar, Nama, Peran, Ganti Akun Tim Simulasi, Keluar).
 - [x] **C.4 Pencarian Global / Command Palette (`Ctrl+K`):**
   - Mencari Pesanan, Produk Katalog, Data Pelanggan, Catatan Pengeluaran, dan Pindah Halaman/Menu Navigasi dengan navigasi keyboard.
@@ -138,35 +138,34 @@
 ### BAGIAN E. DASHBOARD PEMILIK USAHA & KARYAWAN
 *Tujuan: Menyajikan ringkasan bisnis berlapis yang menenangkan dan langsung memberi arahan tindakan.*
 
-- [ ] **E.1 Kalimat Ringkasan Dinamis (Bahasa Manusia):** Contoh: *"Bulan ini usahamu untung Rp4,2 juta, naik 8% dari bulan lalu."* (bila rugi, gunakan nada tenang, solutif, dan konstruktif).
-- [ ] **E.2 Kartu "Yang Perlu Kamu Perhatikan":** Maksimal 3 butir peringatan paling mendesak (mis. stok hampir habis, tagihan lewat tempo) lengkap dengan tombol tindakan langsung (*"Lihat Stok"*, *"Tagih Sekarang"*).
-- [ ] **E.3 Empat Kartu Angka Kunci:** Omzet, Laba Bersih, Pengeluaran, Jumlah Pesanan (dengan indikator tren dibanding bulan lalu).
-- [ ] **E.4 Dua Kartu Keuangan Cerdas:**
+- [x] **E.1 Kalimat Ringkasan Dinamis (Bahasa Manusia):** Contoh: *"Bulan ini usahamu untung Rp4,2 juta, naik 8% dari bulan lalu."* (bila rugi, gunakan nada tenang, solutif, dan konstruktif).
+- [x] **E.2 Kartu "Yang Perlu Kamu Perhatikan":** Maksimal 3 butir peringatan paling mendesak (mis. stok hampir habis, tagihan lewat tempo) lengkap dengan tombol tindakan langsung (*"Lihat Stok"*, *"Tagih Sekarang"*).
+- [x] **E.3 Empat Kartu Angka Kunci:** Omzet, Laba Bersih, Pengeluaran, Jumlah Pesanan (dengan indikator tren dibanding bulan lalu).
+- [x] **E.4 Dua Kartu Keuangan Cerdas:**
   - *"Uang yang boleh kamu ambil"* (kartu Uang Aman Ditarik).
   - *"Kesehatan usaha"* (Skor Sehat / Waspada / Perlu Perhatian + 1 kalimat saran & rincian saat diklik).
-- [ ] **E.5 Grafik Terorganisir (Collapsible):** Tren 30 hari, omzet per kanal, dan produk terlaris dalam panel yang rapi.
-- [ ] **E.6 Dashboard Khusus Karyawan:** Menampilkan *"Tugas Hari Ini"* sesuai peran/penugasan (misal pesanan perlu diproses/dikemas), tanpa membebani karyawan dengan laporan keuangan pemilik.
+- [x] **E.5 Grafik Terorganisir (Collapsible):** Tren 30 hari, omzet per kanal, dan produk terlaris dalam panel yang rapi.
+- [x] **E.6 Dashboard Khusus Karyawan:** Menampilkan *"Tugas Hari Ini"* sesuai peran/penugasan (misal pesanan perlu diproses/dikemas), tanpa membebani karyawan dengan laporan keuangan pemilik.
 
 ---
 
 ### BAGIAN F. FORM, INPUT & INTERAKSI RAMAH PENGGUNA
 *Tujuan: Mempercepat proses entri harian dan mencegah salah input tanpa birokrasi rumit.*
 
-- [ ] **F.1 Input Penjualan 2 Langkah:**
+- [x] **F.1 Input Penjualan 2 Langkah:**
   - Langkah 1: Siapa pembeli & apa barang yang dibeli (autocomplete produk & pelanggan).
   - Langkah 2: Pembayaran (Bayar Sekarang atau Tempo).
   - Default cerdas: Tanggal hari ini, kanal terakhir dipakai, opsi diskon/ongkir di bagian lanjutan yang bisa dilipat.
   - Tombol *"Simpan dan Tambah Lagi"*.
 - [ ] **F.2 Form Pengeluaran Adaptif:**
-  - Pilih kategori dahulu, lalu isian form menyesuaikan (belanja stok menampilkan tabel item produk; biaya operasional hanya nominal dan catatan).
-  - Tampilkan sisa batas anggaran kategori secara langsung.
-  - Dialog alasan pengeluaran hanya muncul jika melebihi batas yang ditentukan.
-- [ ] **F.3 Placeholder & Panduan Nyata:** Placeholder memberi contoh konkret (misal: *"Contoh: Beli 20 kg tepung terigu"*).
+  - [x] Pilih kategori dahulu; belanja stok menampilkan tabel item produk, sementara biaya operasional menampilkan nominal dan catatan.
+  - [ ] Verifikasi indikator batas anggaran serta dialog alasan saat batas terlampaui (belum ada batas anggaran pada data demo untuk diuji).
+- [x] **F.3 Placeholder & Panduan Nyata:** Placeholder memberi contoh konkret (misal: *"Contoh: Beli 20 kg tepung terigu"*).
 - [ ] **F.4 Stepper Impor Penjualan (4 Langkah):**
-  - `Unggah File` → `Cocokkan Kolom` → `Periksa Data` → `Selesai`.
-  - Memberikan visual progres dan laporan hasil impor yang jelas.
-- [ ] **F.5 Konfirmasi Aksi Berisiko:** Konfirmasi dialog hanya untuk aksi krusial (batalkan pesanan, hapus/nonaktifkan akun, reset data demo) dengan kalimat dampak yang jelas.
-- [ ] **F.6 Pesan Galat yang Memberi Solusi:** Pesan error ramah pengguna dan langsung menunjukkan cara memperbaikinya.
+  - [x] Unggah XLSX, pemetaan kolom, dan pratinjau tervalidasi; progres empat langkah serta jumlah data siap/lewat tampil jelas.
+  - [ ] Verifikasi konfirmasi impor dan ringkasan setelah impor berhasil.
+- [x] **F.5 Konfirmasi Aksi Berisiko:** Konfirmasi dampak sebelum menonaktifkan akun karyawan; konfirmasi pembatalan/retur pesanan tersedia.
+- [x] **F.6 Pesan Galat yang Memberi Solusi:** Validasi formulir penjualan memberi arahan langsung untuk memperbaiki data yang belum diisi.
 
 ---
 

@@ -11,10 +11,11 @@ import { redirect } from "next/navigation";
 import {
   Search, X, Plus, ExternalLink, Package, Calendar,
   Upload, AlertTriangle, CheckCircle2, Ban, Crown,
-  ChevronRight, FileUp, Info,
+  ChevronRight, FileUp,
 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
-import type { Channel, PaymentStatus, ShipmentStatus, Order, OrderItem } from "@/types";
+import { useState, useRef } from "react";
+import type { Channel, PaymentStatus, ShipmentStatus, Order, OrderItem, Product } from "@/types";
+import { unzipSync } from "fflate";
 
 // ============================================================
 // Constants
@@ -90,13 +91,96 @@ function ShipmentBadge({ status }: { status: ShipmentStatus }) {
 // C1 — Add Manual Order Modal
 // ============================================================
 
-function AddManualOrderModal({ onClose }: { onClose: () => void }) {
+function getLastSalesChannel(): Channel {
+  if (typeof window === "undefined") return "offline";
+  const channel = window.localStorage.getItem("usaha-in-last-sales-channel");
+  return channel && Object.prototype.hasOwnProperty.call(CHANNEL_FEE_PCT, channel)
+    ? channel as Channel
+    : "offline";
+}
+
+function ProductAutocomplete({
+  products,
+  selectedId,
+  onSelect,
+  row,
+}: {
+  products: Product[];
+  selectedId: string;
+  onSelect: (productId: string) => void;
+  row: number;
+}) {
+  const selected = products.find((product) => product.id === selectedId);
+  const [query, setQuery] = useState(selected?.name ?? "");
+  const [open, setOpen] = useState(false);
+  const matches = products.filter((product) =>
+    product.name.toLowerCase().includes(query.toLowerCase()) ||
+    product.sku.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 6);
+
+  return (
+    <div className="relative min-w-0">
+      <input
+        type="text"
+        value={query}
+        onFocus={() => setOpen(true)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          onSelect("");
+          setOpen(true);
+        }}
+        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        placeholder="Cari produk atau kode barang"
+        autoComplete="off"
+        role="combobox"
+        aria-expanded={open && matches.length > 0}
+        aria-controls={`product-options-${row}`}
+        aria-autocomplete="list"
+        aria-label={`Cari produk baris ${row + 1}`}
+        className="w-full px-2.5 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+      />
+      {open && (
+        <div id={`product-options-${row}`} role="listbox" className="absolute z-20 top-full left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-xl">
+          {matches.length > 0 ? matches.map((product) => (
+            <button
+              key={product.id}
+              type="button"
+              role="option"
+              aria-selected={product.id === selectedId}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setQuery(product.name);
+                onSelect(product.id);
+                setOpen(false);
+              }}
+              className="w-full min-h-11 px-3 py-2 text-left text-xs hover:bg-[hsl(var(--muted))]"
+            >
+              <span className="block font-medium">{product.name}</span>
+              <span className="text-[hsl(var(--muted-fg))]">Kode {product.sku} · Stok {product.stock}</span>
+            </button>
+          )) : (
+            <p className="px-3 py-2 text-xs text-[hsl(var(--muted-fg))]">Produk tidak ditemukan. Coba nama atau kode barang lain.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddManualOrderModal({
+  onClose,
+  initialChannel,
+}: {
+  onClose: () => void;
+  initialChannel: Channel;
+}) {
   const products = useStore((s) => s.products);
   const customers = useStore((s) => s.customers);
   const addOrder = useStore((s) => s.addOrder);
-  const activeTenantId = useStore((s) => s.activeTenantId);
 
-  const [channel, setChannel] = useState<Channel>("offline");
+  const [channel, setChannel] = useState<Channel>(initialChannel);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerSuggestions, setCustomerSuggestions] = useState<typeof customers>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -147,25 +231,36 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
   const adminFee = Math.round(((subtotal - discount) * CHANNEL_FEE_PCT[channel]) / 100);
   const totalDiterima = subtotal - discount - adminFee - shippingCost;
 
-  function validate() {
+  function validateItemsAndCustomer() {
     const errs: Record<string, string> = {};
-    if (!customerName.trim()) errs.customer = "Nama pelanggan wajib diisi";
-    if (items.some((it) => it.qty <= 0)) errs.items = "Qty harus lebih dari 0";
-    if (items.some((it) => !it.productId)) errs.items = "Pilih produk untuk semua baris";
-    if (!payNow && !dueDate) errs.dueDate = "Tanggal jatuh tempo wajib jika tempo";
+    if (!date) errs.date = "Pilih tanggal transaksi.";
+    if (!customerName.trim()) errs.customer = "Masukkan nama pembeli atau pilih pelanggan yang sudah ada.";
+    if (items.length === 0 || items.some((it) => !it.productId)) errs.items = "Pilih produk untuk setiap baris.";
+    else if (items.some((it) => it.qty <= 0 || it.unitPrice <= 0)) {
+      errs.items = "Jumlah dan harga setiap barang harus lebih dari 0.";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
+  function saveOrder(keepOpen: boolean) {
+    const errs: Record<string, string> = {};
+    if (!date) errs.date = "Pilih tanggal transaksi.";
+    if (!customerName.trim()) errs.customer = "Masukkan nama pembeli atau pilih pelanggan yang sudah ada.";
+    if (items.some((it) => !it.productId)) errs.items = "Pilih produk untuk setiap baris.";
+    if (items.some((it) => it.qty <= 0)) errs.items = "Jumlah setiap barang harus lebih dari 0.";
+    if (items.some((it) => it.unitPrice <= 0)) errs.items = "Harga setiap barang harus lebih dari 0.";
+    if (!payNow && !dueDate) errs.dueDate = "Pilih tanggal jatuh tempo untuk penjualan tempo.";
+    if (totalDiterima < 0) errs.amount = "Total yang diterima tidak boleh kurang dari Rp0. Kurangi diskon atau ongkir.";
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
 
     // Cari atau gunakan customerId
     const customerId = selectedCustomerId ||
       customers.find((c) => c.name.toLowerCase() === customerName.trim().toLowerCase())?.id ||
-      `cust-new-${Date.now()}`;
+      `cust-new-${window.crypto.randomUUID()}`;
 
+    window.localStorage.setItem("usaha-in-last-sales-channel", channel);
     addOrder({
       date,
       channel,
@@ -180,7 +275,35 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
       dueDate: !payNow ? dueDate : undefined,
       note: note || undefined,
     });
-    onClose();
+    if (keepOpen) {
+      setCustomerName("");
+      setSelectedCustomerId("");
+      setCustomerSuggestions([]);
+      setPayNow(true);
+      setDueDate("");
+      setDiscount(0);
+      setShippingCost(0);
+      setNote("");
+      setDate(new Date().toISOString().split("T")[0]);
+      setItems([{ productId: products[0]?.id ?? "", qty: 1, unitPrice: products[0]?.sellPrice ?? 0 }]);
+      setErrors({});
+      setShowAdvanced(false);
+      setStep(1);
+    } else {
+      onClose();
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (step === 1) {
+      if (validateItemsAndCustomer()) {
+        setErrors({});
+        setStep(2);
+      }
+      return;
+    }
+    saveOrder(false);
   }
 
   const CHANNELS: { value: Channel; label: string }[] = [
@@ -195,19 +318,32 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-[hsl(var(--card))] rounded-2xl border border-[hsl(var(--border))] shadow-2xl w-full max-w-2xl p-6 animate-fade-in my-4">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-bold text-base">Input Penjualan Manual</h2>
+          <div>
+            <h2 className="font-bold text-base">Input Penjualan</h2>
+            <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">
+              Langkah {step} dari 2: {step === 1 ? "Pembeli dan barang" : "Pembayaran"}
+            </p>
+          </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[hsl(var(--muted))] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex gap-2" aria-label="Langkah input penjualan">
+            {[1, 2].map((number) => (
+              <div key={number} className={`h-1.5 flex-1 rounded-full ${step >= number ? "bg-blue-600" : "bg-[hsl(var(--muted))]"}`} />
+            ))}
+          </div>
+          {step === 1 && (
+            <>
           {/* Baris 1: Tanggal + Kanal */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Tanggal *</label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+              {errors.date && <p className="text-[11px] text-red-500 mt-0.5" role="alert">{errors.date}</p>}
             </div>
             <div>
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Kanal *</label>
@@ -227,7 +363,8 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
           <div className="relative">
             <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Pelanggan *</label>
             <input type="text" value={customerName} onChange={(e) => handleCustomerInput(e.target.value)}
-              placeholder="Nama pelanggan atau ketik baru..."
+              placeholder="Contoh: Bu Siti atau pilih nama pelanggan"
+              autoComplete="off"
               className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 ${errors.customer ? "border-red-500 focus:ring-red-500/30" : "border-[hsl(var(--border))] focus:ring-blue-500/30"}`} />
             {errors.customer && <p className="text-[11px] text-red-500 mt-0.5">{errors.customer}</p>}
             {customerSuggestions.length > 0 && (
@@ -235,7 +372,7 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
                 {customerSuggestions.map((c) => (
                   <button key={c.id} type="button"
                     onClick={() => { setCustomerName(c.name); setSelectedCustomerId(c.id); setCustomerSuggestions([]); }}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors flex items-center justify-between">
+                    className="w-full min-h-11 text-left px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors flex items-center justify-between">
                     <span>{c.name}</span>
                     <span className="text-xs text-[hsl(var(--muted-fg))]">{CHANNEL_LABEL[c.channel]}</span>
                   </button>
@@ -257,21 +394,22 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-2">
               {items.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_70px_110px_auto] gap-2 items-center">
-                  <select value={item.productId}
-                    onChange={(e) => updateItem(idx, "productId", e.target.value)}
-                    className="px-2.5 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30">
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} (stok: {p.stock})</option>
-                    ))}
-                  </select>
+                  <ProductAutocomplete
+                    products={products}
+                    selectedId={item.productId}
+                    row={idx}
+                    onSelect={(productId) => updateItem(idx, "productId", productId)}
+                  />
                   <input type="number" min={1} value={item.qty}
+                    aria-label={`Jumlah baris ${idx + 1}`}
                     onChange={(e) => updateItem(idx, "qty", +e.target.value)}
                     className="px-2.5 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                    placeholder="Qty" />
+                    placeholder="Contoh: 2" />
                   <input type="number" min={0} value={item.unitPrice}
+                    aria-label={`Harga satuan baris ${idx + 1}`}
                     onChange={(e) => updateItem(idx, "unitPrice", +e.target.value)}
                     className="px-2.5 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                    placeholder="Harga/unit" />
+                    placeholder="Contoh: 25000" />
                   <button type="button" onClick={() => removeItem(idx)}
                     className="p-1.5 rounded-lg text-[hsl(var(--muted-fg))] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                     <X className="w-3.5 h-3.5" />
@@ -280,40 +418,22 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           </div>
+            </>
+          )}
 
+          {step === 2 && (
+            <>
           {/* Diskon + Ongkir */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Diskon Penjual (Rp)</label>
-              <input type="number" min={0} value={discount} onChange={(e) => setDiscount(+e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                placeholder="0" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Ongkir Ditanggung Penjual (Rp)</label>
-              <input type="number" min={0} value={shippingCost} onChange={(e) => setShippingCost(+e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                placeholder="0" />
-            </div>
+          <div className="rounded-xl bg-[hsl(var(--muted))]/60 p-3">
+            <p className="font-semibold text-sm">{customerName} · {items.length} jenis barang</p>
+            <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Pilih cara pembayaran untuk transaksi ini.</p>
           </div>
-
-          {/* Rincian biaya */}
-          <div className="rounded-xl bg-[hsl(var(--muted))] p-3 text-xs space-y-1.5">
-            <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Subtotal</span><span>{formatRp(subtotal)}</span></div>
-            {discount > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Diskon</span><span className="text-red-500">−{formatRp(discount)}</span></div>}
-            {adminFee > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Fee Marketplace ({CHANNEL_FEE_PCT[channel]}%)</span><span className="text-red-500">−{formatRp(adminFee)}</span></div>}
-            {shippingCost > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Ongkir</span><span className="text-red-500">−{formatRp(shippingCost)}</span></div>}
-            <div className="h-px bg-[hsl(var(--border))]" />
-            <div className="flex justify-between font-bold"><span>Total Diterima</span><span className="text-emerald-600 dark:text-emerald-400">{formatRp(totalDiterima)}</span></div>
-          </div>
-
-          {/* Status Bayar */}
           <div>
             <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-2">Pembayaran</label>
             <div className="flex gap-2">
               {[{ v: true, label: "Bayar Sekarang" }, { v: false, label: "Tempo" }].map(({ v, label }) => (
                 <button key={String(v)} type="button" onClick={() => setPayNow(v)}
-                  className={`flex-1 py-2 rounded-lg border text-xs font-semibold transition-all ${payNow === v ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
+                  className={`flex-1 min-h-11 rounded-lg border text-xs font-semibold transition-all ${payNow === v ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:border-blue-300"}`}>
                   {label}
                 </button>
               ))}
@@ -327,24 +447,83 @@ function AddManualOrderModal({ onClose }: { onClose: () => void }) {
               </div>
             )}
           </div>
+          <div>
+            <button type="button" onClick={() => setShowAdvanced((open) => !open)}
+              aria-expanded={showAdvanced}
+              className="min-h-11 flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-blue-300">
+              {showAdvanced ? "Sembunyikan" : "Atur diskon, ongkir, dan catatan"}
+              <ChevronRight className={`w-4 h-4 transition-transform ${showAdvanced ? "rotate-90" : ""}`} />
+            </button>
+            {showAdvanced && (
+              <div className="mt-2 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Diskon Penjual (Rp)</label>
+              <input type="number" min={0} value={discount} onChange={(e) => setDiscount(+e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                placeholder="Contoh: 5000" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Ongkir Ditanggung Penjual (Rp)</label>
+              <input type="number" min={0} value={shippingCost} onChange={(e) => setShippingCost(+e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                placeholder="Contoh: 10000" />
+            </div>
+          </div>
+
+          {/* Rincian biaya */}
+          <div className="rounded-xl bg-[hsl(var(--muted))] p-3 text-xs space-y-1.5">
+            <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Subtotal</span><span>{formatRp(subtotal)}</span></div>
+            {discount > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Diskon</span><span className="text-red-500">−{formatRp(discount)}</span></div>}
+            {adminFee > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Fee Marketplace ({CHANNEL_FEE_PCT[channel]}%)</span><span className="text-red-500">−{formatRp(adminFee)}</span></div>}
+            {shippingCost > 0 && <div className="flex justify-between"><span className="text-[hsl(var(--muted-fg))]">Ongkir</span><span className="text-red-500">−{formatRp(shippingCost)}</span></div>}
+            <div className="h-px bg-[hsl(var(--border))]" />
+            <div className="flex justify-between font-bold"><span>Total Diterima</span><span className="text-emerald-600 dark:text-emerald-400">{formatRp(totalDiterima)}</span></div>
+          </div>
 
           {/* Catatan */}
           <div>
             <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Catatan (opsional)</label>
             <input type="text" value={note} onChange={(e) => setNote(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              placeholder="Keterangan tambahan" />
+              placeholder="Contoh: Pesanan diambil sore ini" />
           </div>
+              </div>
+            )}
+          </div>
+          {errors.amount && <p className="text-xs text-red-600" role="alert">{errors.amount}</p>}
+            </>
+          )}
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
+            {step === 1 ? (
+              <button type="button" onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-[hsl(var(--border))] text-sm font-semibold hover:bg-[hsl(var(--muted))] transition-colors">
               Batal
-            </button>
-            <button type="submit"
+              </button>
+            ) : (
+              <button type="button" onClick={() => setStep(1)}
+                className="flex-1 py-2.5 rounded-xl border border-[hsl(var(--border))] text-sm font-semibold hover:bg-[hsl(var(--muted))] transition-colors">
+                Kembali
+              </button>
+            )}
+            {step === 1 ? (
+              <button type="submit"
               className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors">
-              Simpan Penjualan
-            </button>
+                Lanjut ke Pembayaran
+              </button>
+            ) : (
+              <>
+                <button type="button" onClick={() => saveOrder(true)}
+                  className="flex-1 py-2.5 rounded-xl border border-blue-600 text-blue-700 dark:text-blue-300 font-semibold text-sm transition-colors">
+                  Simpan dan Tambah Lagi
+                </button>
+                <button type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors">
+                  Simpan Penjualan
+                </button>
+              </>
+            )}
           </div>
         </form>
       </div>
@@ -575,6 +754,123 @@ type ParsedCsvOrder = {
   skipReason?: string;
 };
 
+function parseCsv(text: string): CsvRow[] {
+  const records: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '"' && quoted && text[index + 1] === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) records.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell);
+  if (row.some((value) => value.trim())) records.push(row);
+
+  const headers = (records.shift() ?? []).map((header) => header.trim());
+  return records.map((values) => {
+    const data: CsvRow = {};
+    headers.forEach((header, index) => { data[header] = values[index]?.trim() ?? ""; });
+    return data;
+  });
+}
+
+function parseXlsx(buffer: ArrayBuffer): CsvRow[] {
+  const files = unzipSync(new Uint8Array(buffer));
+  const decode = (path: string) => {
+    const contents = files[path];
+    if (!contents) throw new Error(`Missing workbook entry: ${path}`);
+    return new TextDecoder().decode(contents);
+  };
+  const workbook = new DOMParser().parseFromString(decode("xl/workbook.xml"), "application/xml");
+  const relationId = workbook.getElementsByTagName("sheet")[0]?.getAttribute("r:id");
+  if (!relationId) throw new Error("Workbook does not contain a worksheet");
+  const relationships = new DOMParser().parseFromString(decode("xl/_rels/workbook.xml.rels"), "application/xml");
+  const relation = Array.from(relationships.getElementsByTagName("Relationship"))
+    .find((item) => item.getAttribute("Id") === relationId);
+  const target = relation?.getAttribute("Target");
+  if (!target) throw new Error("Worksheet relationship was not found");
+  const sheetPath = target.startsWith("/")
+    ? target.slice(1)
+    : target.startsWith("xl/")
+      ? target
+      : `xl/${target.replace(/^\.\//, "")}`;
+  const sheet = new DOMParser().parseFromString(decode(sheetPath), "application/xml");
+  const sharedStringsPath = "xl/sharedStrings.xml";
+  const sharedStrings = files[sharedStringsPath]
+    ? Array.from(new DOMParser().parseFromString(decode(sharedStringsPath), "application/xml").getElementsByTagName("si"))
+      .map((item) => Array.from(item.getElementsByTagName("t")).map((text) => text.textContent ?? "").join(""))
+    : [];
+  const cellColumn = (reference: string) => {
+    const letters = reference.match(/^[A-Z]+/i)?.[0].toUpperCase() ?? "";
+    return [...letters].reduce((index, letter) => index * 26 + letter.charCodeAt(0) - 64, 0) - 1;
+  };
+  const rows = Array.from(sheet.getElementsByTagName("sheetData")[0]?.getElementsByTagName("row") ?? []);
+  const values = rows.slice(0, 10001).map((xmlRow) => {
+    const cells: string[] = [];
+    for (const cell of Array.from(xmlRow.getElementsByTagName("c"))) {
+      const reference = cell.getAttribute("r") ?? "";
+      const type = cell.getAttribute("t");
+      const value = cell.getElementsByTagName("v")[0]?.textContent ?? "";
+      const inlineText = Array.from(cell.getElementsByTagName("t")).map((text) => text.textContent ?? "").join("");
+      const cellValue = type === "s"
+        ? sharedStrings[Number(value)] ?? ""
+        : type === "inlineStr" || type === "str"
+          ? inlineText || value
+          : value;
+      cells[cellColumn(reference)] = cellValue;
+    }
+    return cells;
+  });
+  const headerIndex = values.findIndex((cells) => cells.some((value) => value?.trim()));
+  if (headerIndex < 0) return [];
+  const headers = values[headerIndex].map((header) => header?.trim() ?? "");
+  return values.slice(headerIndex + 1)
+    .filter((cells) => cells.some((value) => value?.trim()))
+    .map((cells) => {
+      const data: CsvRow = {};
+      headers.forEach((header, index) => {
+        if (header) data[header] = cells[index] ?? "";
+      });
+      return data;
+    });
+}
+
+function normalizeImportDate(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^\d+(?:\.\d+)?$/.test(trimmed)) {
+    const serial = Number(trimmed);
+    if (serial > 0 && serial < 100000) {
+      return new Date(Date.UTC(1899, 11, 30) + serial * 86400000).toISOString().slice(0, 10);
+    }
+  }
+  const localized = trimmed.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/);
+  if (localized) {
+    const [, day, month, year] = localized;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return date.toISOString().slice(0, 10);
+  }
+  const date = new Date(trimmed);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
+
 function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Channel }) {
   const products = useStore((s) => s.products);
   const orders = useStore((s) => s.orders);
@@ -591,22 +887,38 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
   const [result, setResult] = useState<{ ok: number; skipped: number; failed: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  const [fileError, setFileError] = useState("");
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) return;
-      const hdrs = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
+    setFileError("");
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!extension || !["csv", "xlsx", "xls"].includes(extension)) {
+      setFileError("Pilih berkas .csv, .xlsx, atau .xls. Format lain belum didukung.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setFileError("Ukuran berkas maksimal 10 MB. Pisahkan laporan menjadi beberapa berkas, lalu unggah kembali.");
+      e.target.value = "";
+      return;
+    }
+    try {
+      const buffer = await file.arrayBuffer();
+      const rows = extension === "csv"
+        ? parseCsv(new TextDecoder().decode(buffer))
+        : parseXlsx(buffer);
+      if (rows.length === 0) {
+        setFileError("Tidak ditemukan baris transaksi. Pastikan baris pertama berisi judul kolom dan baris berikutnya berisi data.");
+        return;
+      }
+      const hdrs = Object.keys(rows[0]);
+      if (hdrs.length === 0) {
+        setFileError("Judul kolom tidak ditemukan. Pastikan baris pertama berisi nama kolom laporan.");
+        return;
+      }
       setHeaders(hdrs);
-      const rows: CsvRow[] = lines.slice(1).map((line) => {
-        const vals = line.split(",").map((v) => v.trim().replace(/"/g, ""));
-        const row: CsvRow = {};
-        hdrs.forEach((h, i) => { row[h] = vals[i] ?? ""; });
-        return row;
-      });
       setRawCsv(rows);
       // Auto-map kolom
       const autoMap: Record<string, string> = { externalOrderId: "", date: "", productName: "", qty: "", unitPrice: "", platformFee: "" };
@@ -621,24 +933,33 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
       }
       setColMap(autoMap);
       setStep(2);
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      console.error("Gagal membaca laporan penjualan:", error);
+      setFileError("Berkas tidak dapat dibaca atau formatnya tidak sesuai. Simpan ulang sebagai .xlsx atau .csv, lalu unggah kembali.");
+    }
   }
 
   function handleParse() {
+    if (!colMap.productName || !colMap.qty || !colMap.unitPrice) {
+      setFileError("Pilih kolom Nama Produk, Jumlah, dan Harga Satuan agar transaksi bisa diperiksa.");
+      return;
+    }
+    setFileError("");
     const defaultFeePct = CHANNEL_FEE_PCT[importChannel];
     const existingIds = new Set(orders.map((o) => `${o.channel}||${o.externalOrderId}`).filter(Boolean));
 
     const result: ParsedCsvOrder[] = rawCsv.map((row) => {
       const ordId = (colMap.externalOrderId ? row[colMap.externalOrderId] : "") ?? "";
-      const dateStr = (colMap.date ? row[colMap.date] : "") ?? new Date().toISOString().split("T")[0];
+      const dateStr = colMap.date
+        ? normalizeImportDate(row[colMap.date] ?? "")
+        : new Date().toISOString().split("T")[0];
       const pName = (colMap.productName ? row[colMap.productName] : "") ?? "";
       const qtyStr = (colMap.qty ? row[colMap.qty] : "1") ?? "1";
       const priceStr = (colMap.unitPrice ? row[colMap.unitPrice] : "0") ?? "0";
       const feeStr = (colMap.platformFee ? row[colMap.platformFee] : "") ?? "";
 
-      const qty = parseInt(qtyStr) || 0;
-      const unitPrice = parseFloat(priceStr.replace(/[^0-9.]/g, "")) || 0;
+      const qty = parseInt(qtyStr.replace(/[^\d-]/g, ""), 10) || 0;
+      const unitPrice = parseFloat(priceStr.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".")) || 0;
       const feeRaw = parseFloat(feeStr.replace(/[^0-9.]/g, ""));
       const adminFee = isNaN(feeRaw) ? Math.round((qty * unitPrice * defaultFeePct) / 100) : feeRaw;
 
@@ -650,6 +971,10 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
       const key = `${importChannel}||${ordId}`;
       if (ordId && existingIds.has(key)) {
         return { externalOrderId: ordId, date: dateStr, productId: "", productName: pName, qty, unitPrice, adminFee, ok: false, skipReason: "Duplikat (sudah ada)" };
+      }
+      if (ordId) existingIds.add(key);
+      if (!dateStr) {
+        return { externalOrderId: ordId, date: "", productId: "", productName: pName, qty, unitPrice, adminFee, ok: false, skipReason: "Tanggal tidak valid. Gunakan format tanggal Indonesia atau YYYY-MM-DD." };
       }
       if (!product) {
         return { externalOrderId: ordId, date: dateStr, productId: "", productName: pName, qty, unitPrice, adminFee, ok: false, skipReason: `Produk "${pName}" tidak ditemukan` };
@@ -709,13 +1034,15 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
             <h2 className="font-bold text-base flex items-center gap-2">
               <FileUp className="w-5 h-5 text-blue-500" /> Impor Laporan Penjualan
             </h2>
-            <div className="flex items-center gap-2 mt-1">
-              {[1, 2, 3, 4].map((s) => (
-                <div key={s} className="flex items-center gap-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${step >= s ? "bg-blue-600 text-white" : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))]"}`}>{s}</div>
-                  {s < 4 && <div className={`w-6 h-px transition-all ${step > s ? "bg-blue-600" : "bg-[hsl(var(--border))]"}`} />}
-                </div>
-              ))}
+            <div className="grid grid-cols-4 gap-2 mt-3" aria-label="Langkah impor">
+              {["Unggah File", "Cocokkan Kolom", "Periksa Data", "Selesai"].map((label, index) => {
+                const stepNumber = index + 1;
+                return (
+                  <div key={label} className={`border-t-2 pt-1.5 text-[10px] leading-tight ${step >= stepNumber ? "border-blue-600 text-blue-700 dark:text-blue-300 font-semibold" : "border-[hsl(var(--border))] text-[hsl(var(--muted-fg))]"}`}>
+                    {stepNumber}. {label}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[hsl(var(--muted))] transition-colors">
@@ -726,7 +1053,7 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
         {/* Step 1: Upload */}
         {step === 1 && (
           <div className="space-y-4">
-            <p className="text-sm text-[hsl(var(--muted-fg))]">Pilih kanal penjualan dan unggah berkas laporan (.xlsx atau .csv).</p>
+            <p className="text-sm text-[hsl(var(--muted-fg))]">Pilih kanal penjualan dan unggah berkas laporan Excel atau CSV.</p>
             <div className="flex gap-2">
               {CHANNELS_IMPORT.map(({ value, label }) => (
                 <button key={value} type="button" onClick={() => setImportChannel(value)}
@@ -737,16 +1064,18 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
             </div>
             <label className="block w-full border-2 border-dashed border-[hsl(var(--border))] rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-all">
               <Upload className="w-8 h-8 text-[hsl(var(--muted-fg))] mx-auto mb-2" />
-              <p className="text-sm font-semibold">Klik untuk unggah berkas .xlsx atau .csv</p>
+              <p className="text-sm font-semibold">Klik untuk unggah berkas .xlsx, .xls, atau .csv</p>
               <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">Mendukung format ekspor Shopee, Tokopedia, TikTok Shop, atau Excel kasir</p>
               <input ref={fileRef} type="file" accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFile} />
             </label>
+            {fileError && <p className="text-xs text-red-600 dark:text-red-400" role="alert">{fileError}</p>}
           </div>
         )}
 
         {/* Step 2: Pemetaan kolom */}
         {step === 2 && (
           <div className="space-y-4">
+            <p className="text-sm text-[hsl(var(--muted-fg))]">Cocokkan informasi transaksi dengan judul kolom. Nama produk, jumlah, dan harga satuan wajib dipilih.</p>
             <div>
               <p className="text-sm font-semibold mb-1">Preview 5 baris pertama</p>
               <div className="overflow-x-auto rounded-lg border border-[hsl(var(--border))]">
@@ -763,6 +1092,7 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
                   </tbody>
                 </table>
               </div>
+              {fileError && <p className="text-xs text-red-600 dark:text-red-400" role="alert">{fileError}</p>}
             </div>
             <div>
               <p className="text-sm font-semibold mb-2">Pemetaan Kolom</p>
@@ -841,6 +1171,9 @@ function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Ch
           <div className="text-center py-4 space-y-4">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
             <h3 className="font-bold text-lg">Impor Selesai</h3>
+            <p className="text-sm text-[hsl(var(--muted-fg))]">
+              {result.ok} transaksi berhasil masuk ke daftar penjualan. {result.skipped > 0 ? `${result.skipped} baris dilewati karena tidak cocok atau duplikat.` : "Semua baris yang valid berhasil diproses."}
+            </p>
             <div className="flex justify-center gap-6 text-sm">
               <div className="text-center">
                 <p className="text-2xl font-black text-emerald-600">{result.ok}</p>
@@ -1117,7 +1450,12 @@ export default function PenjualanPage() {
       )}
 
       {/* Modals & Drawer */}
-      {showAddModal && <AddManualOrderModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && (
+        <AddManualOrderModal
+          onClose={() => setShowAddModal(false)}
+          initialChannel={getLastSalesChannel()}
+        />
+      )}
       {showImportModal && (
         <ImportCsvModal
           onClose={() => setShowImportModal(false)}

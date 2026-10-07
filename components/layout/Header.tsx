@@ -1,10 +1,8 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { AccountSwitcher } from "./AccountSwitcher";
 import {
-  RotateCcw,
   Moon,
   Sun,
   Search,
@@ -26,10 +24,8 @@ export function Header({
   onOpenSearch,
   onOpenShortcuts,
 }: HeaderProps) {
-  const resetToInitial = useStore((s) => s.resetToInitial);
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
-  const user = useCurrentUser();
   const [dark, setDark] = useState(false);
 
   // Dark mode toggle
@@ -142,27 +138,6 @@ export function Header({
         >
           {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-
-        {/* Reset Data Demo (Hanya Pemilik Usaha & Demo Mode) */}
-        {user?.isOwner && process.env.NEXT_PUBLIC_DEMO_MODE !== "false" && (
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  "Reset semua data contoh ke kondisi awal? Seluruh perubahan lokal akan dikembalikan."
-                )
-              ) {
-                resetToInitial();
-              }
-            }}
-            id="reset-data-btn"
-            title="Reset Data Demo ke Kondisi Awal"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors border border-amber-200 dark:border-amber-800 cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Reset Demo</span>
-          </button>
-        )}
 
         <div className="w-px h-5 bg-[hsl(var(--border))] mx-0.5" />
 

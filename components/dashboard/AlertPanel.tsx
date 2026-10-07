@@ -6,7 +6,7 @@ import { AlertTriangle, TrendingDown, Package, Clock, Banknote, Flame, ChevronRi
 import Link from "next/link";
 import { useMemo } from "react";
 
-export function AlertPanel() {
+export function AlertPanel({ now }: { now: number }) {
   const products = useStore((s) => s.products);
   const orders = useStore((s) => s.orders);
   const expenses = useStore((s) => s.expenses);
@@ -14,13 +14,14 @@ export function AlertPanel() {
   const budgets = useStore((s) => s.budgets);
 
   const alerts = useMemo(() => {
-    const now = Date.now();
     const result: {
       id: string;
       type: "error" | "warning";
       icon: React.ReactNode;
       message: string;
-      href?: string;
+      href: string;
+      actionLabel: string;
+      priority: number;
     }[] = [];
 
     // 1. Stok menipis / negatif
@@ -33,6 +34,8 @@ export function AlertPanel() {
           icon: <Package className="w-4 h-4 shrink-0" />,
           message: `Stok negatif: ${p.name} (${p.stock}) — periksa pencatatan`,
           href: "/stok",
+          actionLabel: "Periksa stok",
+          priority: 1,
         });
       } else if (p.stock <= p.minStock) {
         result.push({
@@ -41,6 +44,8 @@ export function AlertPanel() {
           icon: <Package className="w-4 h-4 shrink-0" />,
           message: `Stok menipis: ${p.name} (${p.stock} unit, min: ${p.minStock})`,
           href: "/stok",
+          actionLabel: "Lihat stok",
+          priority: 3,
         });
       }
     }
@@ -62,6 +67,8 @@ export function AlertPanel() {
         icon: <TrendingDown className="w-4 h-4 shrink-0" />,
         message: `Pendapatan minggu ini turun ~${Math.round(((week2Rev - week1Rev) / week2Rev) * 100)}% vs minggu lalu`,
         href: "/keuangan",
+        actionLabel: "Lihat keuangan",
+        priority: 5,
       });
     }
 
@@ -84,6 +91,8 @@ export function AlertPanel() {
         icon: <Clock className="w-4 h-4 shrink-0" />,
         message: `Piutang lewat jatuh tempo: ${overdueOrders.length} pesanan, total ${formatRp(totalOverdue)}`,
         href: "/pembayaran",
+        actionLabel: "Tagih sekarang",
+        priority: 2,
       });
     }
 
@@ -103,6 +112,8 @@ export function AlertPanel() {
           icon: <Flame className="w-4 h-4 shrink-0" />,
           message: `Batas biaya "${cat?.name ?? categoryId}" terlampaui: ${formatRp(spent)} / ${formatRp(limit)}`,
           href: "/pengeluaran",
+          actionLabel: "Atur pengeluaran",
+          priority: 4,
         });
       }
     }
@@ -124,11 +135,13 @@ export function AlertPanel() {
         icon: <Banknote className="w-4 h-4 shrink-0" />,
         message: `Kas diperkirakan cukup hanya ${runwayDays} hari lagi`,
         href: "/keuangan",
+        actionLabel: "Lihat arus kas",
+        priority: 2,
       });
     }
 
-    return result;
-  }, [products, orders, expenses, expenseCategories, budgets]);
+    return result.sort((a, b) => a.priority - b.priority).slice(0, 3);
+  }, [products, orders, expenses, expenseCategories, budgets, now]);
 
   if (alerts.length === 0) return null;
 
@@ -136,7 +149,7 @@ export function AlertPanel() {
     <div className="card space-y-2">
       <div className="flex items-center gap-2 mb-1">
         <AlertTriangle className="w-4 h-4 text-amber-500" />
-        <h3 className="font-semibold text-sm">Peringatan Otomatis</h3>
+        <h3 className="font-semibold text-sm">Yang Perlu Kamu Perhatikan</h3>
         <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
           {alerts.length}
         </span>
@@ -153,8 +166,9 @@ export function AlertPanel() {
             <span className="flex-1">{alert.message}</span>
             {alert.href && (
               <Link href={alert.href}
-                className="shrink-0 text-xs font-semibold opacity-70 hover:opacity-100 flex items-center gap-0.5">
-                Lihat <ChevronRight className="w-3 h-3" />
+                className="shrink-0 text-xs font-semibold opacity-70 hover:opacity-100 flex items-center gap-0.5"
+                aria-label={`${alert.actionLabel}: ${alert.message}`}>
+                {alert.actionLabel} <ChevronRight className="w-3 h-3" />
               </Link>
             )}
           </div>

@@ -23,8 +23,6 @@ import {
   PieChart,
   X,
   Menu,
-  ChevronLeft,
-  ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -36,7 +34,6 @@ import { useState, useEffect } from "react";
 interface NavItem {
   key: ModuleKey | "manajemen_tim" | "log_aktivitas" | "pengaturan" | "dashboard";
   label: string;
-  hint: string;
   href: string;
   icon: React.ReactNode;
   ownerOnly?: boolean;
@@ -58,7 +55,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "dashboard",
         label: "Beranda",
-        hint: "Kas, peringatan, transaksi terkini",
         href: "/dashboard",
         icon: <LayoutDashboard className="w-4 h-4" />,
       },
@@ -70,14 +66,12 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "penjualan",
         label: "Penjualan",
-        hint: "Catat & pantau pesanan masuk",
         href: "/penjualan",
         icon: <ShoppingCart className="w-4 h-4" />,
       },
       {
         key: "pengiriman",
         label: "Pengiriman",
-        hint: "Status kiriman & ekspedisi",
         href: "/pengiriman",
         icon: <Truck className="w-4 h-4" />,
         requiresShipping: true,
@@ -85,14 +79,12 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "pelanggan",
         label: "Pelanggan",
-        hint: "Data pembeli & kontak",
         href: "/pelanggan",
         icon: <Users className="w-4 h-4" />,
       },
       {
         key: "produk",
         label: "Produk dan Stok",
-        hint: "Katalog barang & persediaan",
         href: "/produk",
         icon: <Package className="w-4 h-4" />,
         requiresStock: true,
@@ -105,21 +97,18 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "pengeluaran",
         label: "Pengeluaran",
-        hint: "Catat biaya & belanja toko",
         href: "/pengeluaran",
         icon: <Receipt className="w-4 h-4" />,
       },
       {
         key: "pembayaran",
         label: "Tagihan dan Utang",
-        hint: "Piutang & pelunasan pelanggan",
         href: "/pembayaran",
         icon: <CreditCard className="w-4 h-4" />,
       },
       {
         key: "laporan_keuangan",
         label: "Laporan Keuangan",
-        hint: "Laba/rugi, neraca, arus kas",
         href: "/keuangan",
         icon: <BarChart3 className="w-4 h-4" />,
       },
@@ -131,7 +120,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "analitik",
         label: "Saran dan Analisis",
-        hint: "Diagnosis laba & anomali",
         href: "/analitik",
         icon: <PieChart className="w-4 h-4" />,
         ownerOnly: true,
@@ -139,7 +127,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "copilot",
         label: "Tanya AI",
-        hint: "Konsultasi bisnis cerdas",
         href: "/copilot",
         icon: <Bot className="w-4 h-4" />,
         ownerOnly: true,
@@ -152,7 +139,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "manajemen_tim",
         label: "Tim",
-        hint: "Kelola anggota tim & akses",
         href: "/tim",
         icon: <UsersRound className="w-4 h-4" />,
         ownerOnly: true,
@@ -160,7 +146,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "log_aktivitas",
         label: "Log Aktivitas",
-        hint: "Rekam jejak tindakan di sistem",
         href: "/tim/log",
         icon: <Activity className="w-4 h-4" />,
         ownerOnly: true,
@@ -168,7 +153,6 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "pengaturan",
         label: "Pengaturan Usaha",
-        hint: "Profil usaha, batas biaya, fee",
         href: "/pengaturan",
         icon: <Settings className="w-4 h-4" />,
         ownerOnly: true,
@@ -325,7 +309,7 @@ export function Sidebar() {
                       <Link
                         key={item.key}
                         href={item.href}
-                        title={isIconOnly ? `${item.label} (${item.hint})` : undefined}
+                        title={isIconOnly ? item.label : undefined}
                         className={`
                           relative flex items-center rounded-xl transition-all group cursor-pointer
                           ${
@@ -356,17 +340,12 @@ export function Sidebar() {
                           {item.icon}
                         </span>
 
-                        {/* Label & hint */}
+                        {/* Label */}
                         {!isIconOnly && (
                           <span className="flex-1 min-w-0">
                             <span className="block text-sm leading-tight truncate">
                               {item.label}
                             </span>
-                            {!active && (
-                              <span className="block text-[10px] text-white/30 group-hover:text-white/45 leading-tight truncate transition-colors mt-0.5">
-                                {item.hint}
-                              </span>
-                            )}
                           </span>
                         )}
 

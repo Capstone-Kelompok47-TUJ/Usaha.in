@@ -10,11 +10,12 @@ import { useStore } from "@/lib/store";
 import { calcKpi, formatRp } from "@/lib/finance";
 import {
   DollarSign, TrendingUp, ShoppingCart, CreditCard,
-  Banknote, ShieldCheck, ChevronDown, ChevronUp, Info,
-  Heart, AlertTriangle, Activity,
+  Banknote, ShieldCheck, ChevronDown, ChevronUp,
+  AlertTriangle, Activity,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import type { Expense, ExpenseCategory, Order, Product } from "@/types";
 
 type Period = "daily" | "weekly" | "monthly";
 
@@ -27,37 +28,37 @@ function clamp(v: number, min: number, max: number) {
 }
 
 function calcHealthScore(
-  orders: any[],
-  expenses: any[],
-  products: any[],
-  expenseCategories: any[]
+  orders: Order[],
+  expenses: Expense[],
+  products: Product[],
+  expenseCategories: ExpenseCategory[],
+  now: number
 ) {
-  const now = Date.now();
   const ms30 = 30 * 86400000;
 
   // Periode 30 hari
-  const orders30 = orders.filter((o: any) =>
+  const orders30 = orders.filter((o) =>
     !o.voided && new Date(o.date).getTime() >= now - ms30
   );
-  const paid30 = orders30.filter((o: any) => o.paymentStatus === "lunas");
-  const revenue30 = paid30.reduce((s: number, o: any) => s + o.subtotal, 0);
-  const discount30 = paid30.reduce((s: number, o: any) => s + (o.discount ?? 0), 0);
+  const paid30 = orders30.filter((o) => o.paymentStatus === "lunas");
+  const revenue30 = paid30.reduce((s, o) => s + o.subtotal, 0);
+  const discount30 = paid30.reduce((s, o) => s + (o.discount ?? 0), 0);
   const netRevenue30 = revenue30 - discount30;
 
-  const cogs30 = paid30.reduce((s: number, o: any) =>
-    s + o.items.reduce((ss: number, item: any) => {
-      const c = item.cogsUnit ?? products.find((p: any) => p.id === item.productId)?.avgCost ?? 0;
+  const cogs30 = paid30.reduce((s, o) =>
+    s + o.items.reduce((ss, item) => {
+      const c = item.cogsUnit ?? products.find((p) => p.id === item.productId)?.avgCost ?? 0;
       return ss + c * item.qty;
     }, 0), 0);
 
   const getGroup = (catId: string) =>
-    expenseCategories.find((c: any) => c.id === catId)?.group ?? "other";
-  const expenses30 = expenses.filter((e: any) =>
+    expenseCategories.find((c) => c.id === catId)?.group ?? "other";
+  const expenses30 = expenses.filter((e) =>
     !e.isPrive && new Date(e.date).getTime() >= now - ms30
   );
-  const opEx30 = expenses30.filter((e: any) => getGroup(e.categoryId) === "operating").reduce((s: number, e: any) => s + e.amount, 0);
-  const selling30 = expenses30.filter((e: any) => getGroup(e.categoryId) === "selling").reduce((s: number, e: any) => s + e.amount, 0)
-    + paid30.reduce((s: number, o: any) => s + o.adminFee + o.shippingCost, 0);
+  const opEx30 = expenses30.filter((e) => getGroup(e.categoryId) === "operating").reduce((s, e) => s + e.amount, 0);
+  const selling30 = expenses30.filter((e) => getGroup(e.categoryId) === "selling").reduce((s, e) => s + e.amount, 0)
+    + paid30.reduce((s, o) => s + o.adminFee + o.shippingCost, 0);
   const netProfit30 = netRevenue30 - cogs30 - selling30 - opEx30;
 
   // 1. Margin bersih (30%)
@@ -65,19 +66,19 @@ function calcHealthScore(
   const marginScore = clamp(marginPct / 0.20, 0, 1) * 100;
 
   // 2. Perputaran stok (20%): DIO
-  const inventoryValue = products.reduce((s: number, p: any) =>
+  const inventoryValue = products.reduce((s, p) =>
     s + Math.max(0, p.stock) * (p.avgCost ?? p.buyPrice), 0);
   const dailyCogs = cogs30 / 30;
   const DIO = dailyCogs > 0 ? inventoryValue / dailyCogs : 0;
   const stockScore = DIO <= 30 ? 100 : DIO >= 120 ? 0 : clamp((120 - DIO) / 90, 0, 1) * 100;
 
   // 3. Umur piutang (20%)
-  const overdueAmt = orders.filter((o: any) =>
+  const overdueAmt = orders.filter((o) =>
     !o.voided && (o.paymentStatus === "belum" || o.paymentStatus === "sebagian") &&
     o.dueDate && new Date(o.dueDate).getTime() < now
-  ).reduce((s: number, o: any) => {
+  ).reduce((s, o) => {
     const due = o.subtotal - (o.discount ?? 0) - o.adminFee - o.shippingCost;
-    const paid = (o.payments ?? []).reduce((p: number, pay: any) => p + pay.amount, 0);
+    const paid = (o.payments ?? []).reduce((p, pay) => p + pay.amount, 0);
     return s + (due - paid);
   }, 0);
   const receivableScore = netRevenue30 > 0
@@ -85,8 +86,8 @@ function calcHealthScore(
     : 100;
 
   // 4. Kas runway (30%)
-  const allPaidRev = orders.filter((o: any) => !o.voided && o.paymentStatus === "lunas").reduce((s: number, o: any) => s + o.subtotal, 0);
-  const allPaidExp = expenses.filter((e: any) => !e.isPrive && e.paid).reduce((s: number, e: any) => s + e.amount, 0);
+  const allPaidRev = orders.filter((o) => !o.voided && o.paymentStatus === "lunas").reduce((s, o) => s + o.subtotal, 0);
+  const allPaidExp = expenses.filter((e) => !e.isPrive && e.paid).reduce((s, e) => s + e.amount, 0);
   const kasEst = allPaidRev - allPaidExp;
   const avgDailyExp = opEx30 > 0 ? (opEx30 + selling30) / 30 : 0;
   const runwayDays = avgDailyExp > 0 ? kasEst / avgDailyExp : 60;
@@ -118,7 +119,7 @@ function calcHealthScore(
   };
 }
 
-function HealthScoreCard() {
+function HealthScoreCard({ now }: { now: number }) {
   const orders = useStore((s) => s.orders);
   const expenses = useStore((s) => s.expenses);
   const products = useStore((s) => s.products);
@@ -127,9 +128,21 @@ function HealthScoreCard() {
   const [open, setOpen] = useState(false);
 
   const score = useMemo(
-    () => calcHealthScore(orders, expenses, products, expenseCategories),
-    [orders, expenses, products, expenseCategories]
+    () => calcHealthScore(orders, expenses, products, expenseCategories, now),
+    [orders, expenses, products, expenseCategories, now]
   );
+  const weakestComponent = score.components.reduce((weakest, component) =>
+    component.score < weakest.score ? component : weakest
+  );
+  const advice = score.total >= 80
+    ? "Pertahankan kebiasaan mencatat transaksi dan memeriksa kondisi usaha secara rutin."
+    : weakestComponent.name === "Margin Bersih"
+      ? "Periksa kembali harga jual dan modal barang agar laba dari setiap penjualan tetap cukup."
+      : weakestComponent.name === "Perputaran Stok"
+        ? "Mulai dengan memeriksa barang yang paling lama tersimpan dan sesuaikan rencana belanja."
+        : weakestComponent.name === "Umur Piutang"
+          ? "Dahulukan menghubungi pembeli yang tagihannya sudah lewat tempo."
+          : "Tinjau biaya wajib dan pemasukan yang diperkirakan masuk dalam beberapa minggu ke depan.";
 
   const colorMap: Record<string, string> = {
     emerald: "text-emerald-600 dark:text-emerald-400",
@@ -146,6 +159,8 @@ function HealthScoreCard() {
     <div className="card">
       <button
         className="w-full flex items-center justify-between"
+        aria-expanded={open}
+        aria-label={`${open ? "Sembunyikan" : "Lihat"} rincian kesehatan usaha`}
         onClick={() => setOpen((o) => !o)}>
         <div className="flex items-center gap-3">
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl ${bgMap[score.color]}`}>
@@ -162,6 +177,7 @@ function HealthScoreCard() {
           {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
+      <p className="mt-3 text-xs text-[hsl(var(--muted-fg))]">{advice}</p>
 
       {open && (
         <div className="mt-4 pt-4 border-t border-[hsl(var(--border))] space-y-3">
@@ -297,13 +313,12 @@ function RecordPriveModal({
   );
 }
 
-function SafeWithdrawCard() {
+function SafeWithdrawCard({ now }: { now: number }) {
   const orders = useStore((s) => s.orders);
   const expenses = useStore((s) => s.expenses);
   const [showPriveModal, setShowPriveModal] = useState(false);
 
   const data = useMemo(() => {
-    const now = Date.now();
     const ms30 = 30 * 86400000;
 
     const allPaidRev = orders.filter((o) => !o.voided && o.paymentStatus === "lunas").reduce((s, o) => s + o.subtotal, 0);
@@ -327,7 +342,7 @@ function SafeWithdrawCard() {
     const uangAman = Math.max(0, kasEst - upcomingDebt - cadangan);
 
     return { kasEst, upcomingDebt, cadangan, uangAman };
-  }, [orders, expenses]);
+  }, [orders, expenses, now]);
 
   return (
     <>
@@ -394,15 +409,28 @@ export default function DashboardPage() {
   const orders = useStore((s) => s.orders);
   const purchases = useStore((s) => s.purchases);
   const [period, setPeriod] = useState<Period>("monthly");
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setNow(Date.now()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const kpi = calcKpi(orders, purchases, period);
   const isOwner = user?.isOwner ?? false;
+  const [chartsOpen, setChartsOpen] = useState(true);
 
   const PERIODS: { key: Period; label: string }[] = [
     { key: "daily", label: "Hari Ini" },
     { key: "weekly", label: "Minggu Ini" },
     { key: "monthly", label: "Bulan Ini" },
   ];
+  const activePeriodLabel = PERIODS.find((item) => item.key === period)?.label ?? "Periode ini";
+  const revenueChange = kpi.pctRevenue;
+  const revenueSummary = revenueChange > 0
+    ? `Omzet naik ${revenueChange}% dibanding periode sebelumnya.`
+    : revenueChange < 0
+      ? `Omzet turun ${Math.abs(revenueChange)}% dibanding periode sebelumnya.`
+      : "Omzet tercatat sama dengan periode sebelumnya.";
 
   return (
     <DashboardLayout
@@ -428,10 +456,30 @@ export default function DashboardPage() {
       {/* Owner Dashboard */}
       {isOwner && (
         <div className="space-y-5">
-          {/* KPI Cards — 6 total (H1: tambah Kas + Uang Aman di kanan) */}
+          <div className="card flex items-start gap-3 border-blue-200 bg-gradient-to-r from-blue-50/80 to-[hsl(var(--card))] dark:border-blue-900/50 dark:from-blue-950/30">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 shrink-0">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold">Ringkasan {activePeriodLabel.toLowerCase()}</h2>
+              <p className="text-sm text-[hsl(var(--foreground))] mt-1">
+                {kpi.netProfit >= 0
+                  ? `Laba bersih usahamu ${formatRp(kpi.netProfit)}.`
+                  : `Usahamu masih mencatat rugi ${formatRp(Math.abs(kpi.netProfit))}.`}
+                {" "}{revenueSummary}
+              </p>
+              {kpi.netProfit < 0 && (
+                <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">
+                  Tidak apa-apa, mulai dengan memeriksa penjualan dan pengeluaran untuk mencari langkah perbaikan.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Four key business figures */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
-              label="Total Omzet"
+              label="Omzet"
               value={kpi.revenue}
               isCurrency
               pct={kpi.pctRevenue}
@@ -447,7 +495,7 @@ export default function DashboardPage() {
               color="green"
             />
             <KpiCard
-              label="Total Pengeluaran"
+              label="Pengeluaran"
               value={kpi.expense}
               isCurrency
               pct={kpi.pctExpense}
@@ -464,25 +512,48 @@ export default function DashboardPage() {
           </div>
 
           {/* H1: Kas + Uang Aman + H2: Skor Kesehatan */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <SafeWithdrawCard />
-            <div className="lg:col-span-2">
-              <HealthScoreCard />
-            </div>
-          </div>
+          {now !== null && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <SafeWithdrawCard now={now} />
+                <div className="lg:col-span-2">
+                  <HealthScoreCard now={now} />
+                </div>
+              </div>
+              <AlertPanel now={now} />
+            </>
+          )}
 
-          {/* H3: Alert Panel diperkaya */}
-          <AlertPanel />
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              <SalesLineChart />
-            </div>
-            <ChannelChart />
-          </div>
-
-          <TopProductsChart />
+          <section className="card space-y-4" aria-labelledby="dashboard-charts-title">
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-3 text-left"
+              aria-expanded={chartsOpen}
+              aria-controls="dashboard-charts-content"
+              onClick={() => setChartsOpen((open) => !open)}
+            >
+              <span>
+                <span id="dashboard-charts-title" className="block font-semibold text-sm">
+                  Grafik usaha
+                </span>
+                <span className="block text-xs text-[hsl(var(--muted-fg))] mt-1">
+                  Tren 30 hari, omzet per kanal, dan produk terlaris
+                </span>
+              </span>
+              {chartsOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+            </button>
+            {chartsOpen && (
+              <div id="dashboard-charts-content" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <SalesLineChart />
+                </div>
+                <ChannelChart />
+                <div className="lg:col-span-3">
+                  <TopProductsChart />
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
 
