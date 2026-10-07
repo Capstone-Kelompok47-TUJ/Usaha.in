@@ -7,10 +7,26 @@ import { can } from "@/lib/permissions";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard, ShoppingCart, Package, Warehouse,
-  Receipt, CreditCard, Truck, Users, BarChart3,
-  FileText, Bot, UsersRound, Activity, LogOut,
-  Settings, PieChart, X, Menu,
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Receipt,
+  CreditCard,
+  Truck,
+  Users,
+  BarChart3,
+  Bot,
+  UsersRound,
+  Activity,
+  LogOut,
+  Settings,
+  PieChart,
+  X,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
 import type { ModuleKey } from "@/types";
@@ -18,9 +34,9 @@ import { useState, useEffect } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────
 interface NavItem {
-  key: ModuleKey | "manajemen_tim" | "log_aktivitas" | "pengaturan";
+  key: ModuleKey | "manajemen_tim" | "log_aktivitas" | "pengaturan" | "dashboard";
   label: string;
-  hint: string;            // deskripsi singkat fungsi menu
+  hint: string;
   href: string;
   icon: React.ReactNode;
   ownerOnly?: boolean;
@@ -30,24 +46,27 @@ interface NavItem {
 }
 
 interface NavGroup {
-  groupLabel: string;
-  emoji: string;
+  groupLabel?: string;
   items: NavItem[];
 }
 
 // ── Nav Config ─────────────────────────────────────────────────────
 const NAV_GROUPS: NavGroup[] = [
   {
-    groupLabel: "Operasional",
-    emoji: "🏪",
+    groupLabel: "Beranda",
     items: [
       {
         key: "dashboard",
-        label: "Ringkasan Hari Ini",
+        label: "Beranda",
         hint: "Kas, peringatan, transaksi terkini",
         href: "/dashboard",
         icon: <LayoutDashboard className="w-4 h-4" />,
       },
+    ],
+  },
+  {
+    groupLabel: "Kerja Harian",
+    items: [
       {
         key: "penjualan",
         label: "Penjualan",
@@ -56,20 +75,33 @@ const NAV_GROUPS: NavGroup[] = [
         icon: <ShoppingCart className="w-4 h-4" />,
       },
       {
-        key: "produk",
-        label: "Produk",
-        hint: "Daftar barang & harga jual",
-        href: "/produk",
-        icon: <Package className="w-4 h-4" />,
+        key: "pengiriman",
+        label: "Pengiriman",
+        hint: "Status kiriman & ekspedisi",
+        href: "/pengiriman",
+        icon: <Truck className="w-4 h-4" />,
+        requiresShipping: true,
       },
       {
-        key: "stok",
-        label: "Stok Barang",
-        hint: "Kelola persediaan & mutasi stok",
-        href: "/stok",
-        icon: <Warehouse className="w-4 h-4" />,
+        key: "pelanggan",
+        label: "Pelanggan",
+        hint: "Data pembeli & kontak",
+        href: "/pelanggan",
+        icon: <Users className="w-4 h-4" />,
+      },
+      {
+        key: "produk",
+        label: "Produk dan Stok",
+        hint: "Katalog barang & persediaan",
+        href: "/produk",
+        icon: <Package className="w-4 h-4" />,
         requiresStock: true,
       },
+    ],
+  },
+  {
+    groupLabel: "Uang",
+    items: [
       {
         key: "pengeluaran",
         label: "Pengeluaran",
@@ -79,32 +111,11 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         key: "pembayaran",
-        label: "Piutang & Pembayaran",
-        hint: "Tagihan & pelunasan pelanggan",
+        label: "Tagihan dan Utang",
+        hint: "Piutang & pelunasan pelanggan",
         href: "/pembayaran",
         icon: <CreditCard className="w-4 h-4" />,
       },
-      {
-        key: "pengiriman",
-        label: "Pengiriman",
-        hint: "Status & kanban paket keluar",
-        href: "/pengiriman",
-        icon: <Truck className="w-4 h-4" />,
-        requiresShipping: true,
-      },
-      {
-        key: "pelanggan",
-        label: "Pelanggan",
-        hint: "Data & segmentasi pembeli",
-        href: "/pelanggan",
-        icon: <Users className="w-4 h-4" />,
-      },
-    ],
-  },
-  {
-    groupLabel: "Laporan & Wawasan",
-    emoji: "📊",
-    items: [
       {
         key: "laporan_keuangan",
         label: "Laporan Keuangan",
@@ -112,25 +123,23 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/keuangan",
         icon: <BarChart3 className="w-4 h-4" />,
       },
-      {
-        key: "laporan_periodik",
-        label: "Laporan Periodik",
-        hint: "Rekap bulanan & cetak laporan",
-        href: "/laporan",
-        icon: <FileText className="w-4 h-4" />,
-      },
+    ],
+  },
+  {
+    groupLabel: "Bantuan Cerdas",
+    items: [
       {
         key: "analitik",
-        label: "Analitik Usaha",
-        hint: "Tren penjualan & produk terlaris",
+        label: "Saran dan Analisis",
+        hint: "Diagnosis laba & anomali",
         href: "/analitik",
         icon: <PieChart className="w-4 h-4" />,
         ownerOnly: true,
       },
       {
         key: "copilot",
-        label: "AI Konsultan",
-        hint: "Tanya AI soal kondisi usahamu",
+        label: "Tanya AI",
+        hint: "Konsultasi bisnis cerdas",
         href: "/copilot",
         icon: <Bot className="w-4 h-4" />,
         ownerOnly: true,
@@ -138,29 +147,27 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    groupLabel: "Kelola",
-    emoji: "⚙️",
+    groupLabel: "Pengaturan",
     items: [
       {
         key: "manajemen_tim",
-        label: "Tim & Karyawan",
-        hint: "Tambah akun & atur hak akses",
+        label: "Tim",
+        hint: "Kelola anggota tim & akses",
         href: "/tim",
         icon: <UsersRound className="w-4 h-4" />,
         ownerOnly: true,
       },
       {
         key: "log_aktivitas",
-        label: "Riwayat Aktivitas",
+        label: "Log Aktivitas",
         hint: "Rekam jejak tindakan di sistem",
         href: "/tim/log",
         icon: <Activity className="w-4 h-4" />,
         ownerOnly: true,
-        parentKey: "manajemen_tim",
       },
       {
         key: "pengaturan",
-        label: "Pengaturan Toko",
+        label: "Pengaturan Usaha",
         hint: "Profil usaha, batas biaya, fee",
         href: "/pengaturan",
         icon: <Settings className="w-4 h-4" />,
@@ -170,10 +177,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// Flatten all items for convenience
-const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
-
-// ── Component ─────────────────────────────────────────────────────
 export function Sidebar() {
   const user = useCurrentUser();
   const logout = useStore((s) => s.logout);
@@ -185,8 +188,35 @@ export function Sidebar() {
   const useStock = activeTenant?.businessSettings?.useStock ?? true;
   const useShipping = activeTenant?.businessSettings?.useShipping ?? true;
 
+  // Sidebar collapse state (desktop)
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+
   // Mobile sidebar open state
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Read collapsed state from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("usaha_in_sidebar_collapsed");
+      if (saved !== null) {
+        setCollapsed(saved === "true");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function toggleCollapse() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("usaha_in_sidebar_collapsed", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -211,6 +241,9 @@ export function Sidebar() {
     if (item.requiresStock && !useStock) return false;
     if (item.requiresShipping && !useShipping) return false;
     if (item.ownerOnly) return user?.isOwner ?? false;
+    if (item.key === "dashboard" || item.key === "manajemen_tim" || item.key === "log_aktivitas" || item.key === "pengaturan") {
+      return true;
+    }
     return can(user, item.key as ModuleKey, "view");
   }
 
@@ -219,147 +252,217 @@ export function Sidebar() {
     return pathname.startsWith(item.href);
   }
 
-  const sidebarContent = (
-    <aside className="w-60 shrink-0 flex flex-col h-full bg-[hsl(var(--sidebar-bg))] border-r border-white/5">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-white/5 shrink-0">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity group"
-        >
-          <LogoIcon className="w-8 h-8 group-hover:scale-105 transition-transform" />
-          <div>
-            <div className="font-bold text-white text-sm leading-tight flex items-center gap-1.5">
-              Usaha.in
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/20">
-                UMKM
-              </span>
-            </div>
-            <div className="text-[10px] text-white/40 leading-tight">
-              {activeTenant?.name ?? "Manajemen Toko"}
-            </div>
-          </div>
-        </Link>
-        {/* Mobile close button */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="lg:hidden p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+  const renderSidebarContent = (isMobile: boolean = false) => {
+    const isIconOnly = collapsed && !isMobile;
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {NAV_GROUPS.map((group) => {
-          const visibleItems = group.items.filter(isVisible);
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div key={group.groupLabel} className="mb-4">
-              {/* Group header */}
-              <div className="flex items-center gap-1.5 px-3 mb-1.5">
-                <span className="text-[10px] leading-none">{group.emoji}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/30 leading-none">
-                  {group.groupLabel}
-                </span>
+    return (
+      <aside
+        className={`flex flex-col h-full bg-[hsl(var(--sidebar-bg))] border-r border-white/5 transition-all duration-200 select-none ${
+          isIconOnly ? "w-[68px]" : "w-60"
+        }`}
+      >
+        {/* Logo / Header */}
+        <div
+          className={`flex items-center justify-between px-3 h-16 border-b border-white/5 shrink-0 ${
+            isIconOnly ? "justify-center px-2" : "px-4"
+          }`}
+        >
+          <Link
+            href="/dashboard"
+            className={`flex items-center gap-2.5 hover:opacity-85 transition-opacity group ${
+              isIconOnly ? "justify-center" : ""
+            }`}
+            title={isIconOnly ? `Usaha.in — ${activeTenant?.name ?? "UMKM"}` : undefined}
+          >
+            <LogoIcon className="w-8 h-8 group-hover:scale-105 transition-transform shrink-0" />
+            {!isIconOnly && (
+              <div className="min-w-0">
+                <div className="font-bold text-white text-sm leading-tight flex items-center gap-1.5">
+                  <span className="truncate">Usaha.in</span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/20 shrink-0">
+                    UMKM
+                  </span>
+                </div>
+                <div className="text-[10px] text-white/40 leading-tight truncate">
+                  {activeTenant?.name ?? "Manajemen Toko"}
+                </div>
               </div>
+            )}
+          </Link>
 
-              {/* Items */}
-              <div className="space-y-0.5">
-                {visibleItems.map((item) => {
-                  const active = isActive(item);
-                  return (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className={`
-                        relative flex items-center gap-3 rounded-lg transition-all group
-                        ${item.parentKey ? "pl-5 pr-3 py-2" : "px-3 py-2"}
-                        ${active
-                          ? "bg-white/12 text-white"
-                          : "text-white/55 hover:bg-white/6 hover:text-white/85"
-                        }
-                      `}
-                    >
-                      {/* Active indicator strip */}
-                      {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-blue-400" />
-                      )}
+          {/* Mobile close button */}
+          {isMobile && (
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Tutup menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
-                      {/* Icon */}
-                      <span className={`shrink-0 transition-colors ${active ? "text-blue-300" : "text-white/35 group-hover:text-white/60"}`}>
-                        {item.icon}
-                      </span>
+        {/* Nav groups */}
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4 custom-scrollbar">
+          {NAV_GROUPS.map((group) => {
+            const visibleItems = group.items.filter(isVisible);
+            if (visibleItems.length === 0) return null;
 
-                      {/* Label + hint */}
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-sm font-medium leading-tight truncate">
-                          {item.label}
+            return (
+              <div key={group.groupLabel || "main"} className="space-y-1">
+                {/* Group label */}
+                {group.groupLabel && !isIconOnly && (
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/30">
+                    {group.groupLabel}
+                  </div>
+                )}
+
+                {/* Items */}
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => {
+                    const active = isActive(item);
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        title={isIconOnly ? `${item.label} (${item.hint})` : undefined}
+                        className={`
+                          relative flex items-center rounded-xl transition-all group cursor-pointer
+                          ${
+                            isIconOnly
+                              ? "justify-center p-2.5 my-1"
+                              : "gap-3 px-3 py-2"
+                          }
+                          ${
+                            active
+                              ? "bg-white/12 text-white font-medium"
+                              : "text-white/60 hover:bg-white/6 hover:text-white/90"
+                          }
+                        `}
+                      >
+                        {/* Active indicator strip */}
+                        {active && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-blue-400" />
+                        )}
+
+                        {/* Icon */}
+                        <span
+                          className={`shrink-0 transition-colors ${
+                            active
+                              ? "text-blue-300"
+                              : "text-white/40 group-hover:text-white/70"
+                          }`}
+                        >
+                          {item.icon}
                         </span>
-                        {!active && (
-                          <span className="block text-[10px] text-white/28 group-hover:text-white/40 leading-tight truncate transition-colors mt-0.5">
-                            {item.hint}
+
+                        {/* Label & hint */}
+                        {!isIconOnly && (
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-sm leading-tight truncate">
+                              {item.label}
+                            </span>
+                            {!active && (
+                              <span className="block text-[10px] text-white/30 group-hover:text-white/45 leading-tight truncate transition-colors mt-0.5">
+                                {item.hint}
+                              </span>
+                            )}
                           </span>
                         )}
-                      </span>
 
-                      {/* AI badge for copilot */}
-                      {item.key === "copilot" && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white uppercase tracking-wide shrink-0">
-                          AI
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
+                        {/* AI badge */}
+                        {!isIconOnly && item.key === "copilot" && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white uppercase tracking-wide shrink-0 shadow-2xs">
+                            AI
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </nav>
+            );
+          })}
+        </nav>
 
-      {/* User card */}
-      <div className="p-3 border-t border-white/5 bg-black/10 shrink-0">
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow">
-              {user?.name?.slice(0, 2).toUpperCase() ?? "U"}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-white truncate leading-tight">
-                {user?.name ?? "Pengguna"}
-              </div>
-              <div className="text-[10px] text-white/50 truncate leading-tight mt-0.5">
-                {user?.isOwner ? "👑 Pemilik Usaha" : (user?.template || "Karyawan")}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            title="Keluar (Logout)"
-            className="p-1.5 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+        {/* Footer / User & Collapse controls */}
+        <div className="p-2 border-t border-white/5 bg-black/15 shrink-0 space-y-1.5">
+          {/* Desktop Collapse Toggle Button */}
+          {!isMobile && (
+            <button
+              onClick={toggleCollapse}
+              id="sidebar-collapse-toggle-btn"
+              title={collapsed ? "Lebarkan menu (Buka Sidebar)" : "Ciutkan menu (Hanya Ikon)"}
+              className={`w-full flex items-center justify-center p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-colors text-xs cursor-pointer ${
+                isIconOnly ? "" : "gap-2"
+              }`}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <>
+                  <PanelLeftClose className="w-4 h-4" />
+                  <span className="text-xs font-medium">Ciutkan Menu</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* User badge */}
+          <div
+            className={`flex items-center rounded-lg bg-white/5 border border-white/5 ${
+              isIconOnly ? "justify-center p-2" : "justify-between gap-2 p-2"
+            }`}
           >
-            <LogOut className="w-4 h-4" />
-          </button>
+            <div
+              className={`flex items-center min-w-0 ${
+                isIconOnly ? "justify-center" : "gap-2.5"
+              }`}
+              title={`${user?.name ?? "Pengguna"} (${user?.isOwner ? "Pemilik Usaha" : "Karyawan"})`}
+            >
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-xs">
+                {user?.name?.slice(0, 2).toUpperCase() ?? "U"}
+              </div>
+              {!isIconOnly && (
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-white truncate leading-tight">
+                    {user?.name ?? "Pengguna"}
+                  </div>
+                  <div className="text-[10px] text-white/50 truncate leading-tight mt-0.5">
+                    {user?.isOwner ? "👑 Pemilik Usaha" : (user?.template || "Karyawan")}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {!isIconOnly && (
+              <button
+                onClick={handleLogout}
+                title="Keluar (Logout)"
+                className="p-1.5 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-    </aside>
-  );
+      </aside>
+    );
+  };
 
   return (
     <>
-      {/* Desktop: always visible */}
-      <div className="hidden lg:flex h-full">
-        {sidebarContent}
+      {/* Desktop: always visible in-flow */}
+      <div className="hidden lg:flex h-full shrink-0">
+        {renderSidebarContent(false)}
       </div>
 
-      {/* Mobile: hamburger button (rendered inside Header slot via portal-like approach) */}
+      {/* Mobile: hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
         id="sidebar-mobile-open-btn"
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-lg bg-[hsl(var(--sidebar-bg))] text-white shadow-lg border border-white/10"
-        aria-label="Buka menu"
+        className="lg:hidden fixed top-3.5 left-4 z-30 p-2 rounded-lg bg-[hsl(var(--sidebar-bg))] text-white shadow-lg border border-white/10"
+        aria-label="Buka menu navigasi"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -368,11 +471,11 @@ export function Sidebar() {
       {mobileOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fade-in"
+            className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs animate-fade-in"
             onClick={() => setMobileOpen(false)}
           />
           <div className="lg:hidden fixed inset-y-0 left-0 z-50 h-full animate-fade-in">
-            {sidebarContent}
+            {renderSidebarContent(true)}
           </div>
         </>
       )}
