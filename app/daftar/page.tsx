@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
 import type { BusinessChannel } from "@/types";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DaftarPage() {
   const router = useRouter();
@@ -252,7 +253,7 @@ export default function DaftarPage() {
     }
   }
 
-  function handleFinalSubmit() {
+  async function handleFinalSubmit() {
     setErrorBanner(null);
     setLoading(true);
 
@@ -260,7 +261,33 @@ export default function DaftarPage() {
     const city = parts[0] || cityProvince;
     const province = parts[1] || "";
 
-    setTimeout(() => {
+    try {
+      const supabase = createClient();
+      const signupEmail = contactEmail.trim().toLowerCase();
+
+      // 1. Sign up user directly in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: password,
+        options: {
+          data: {
+            business_name: name.trim(),
+            name: ownerName.trim(),
+            username: username.trim().toLowerCase(),
+            phone: ownerPhone.trim() || businessPhone.trim(),
+            city,
+            province,
+          },
+        },
+      });
+
+      if (authError) {
+        setErrorBanner(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Register in UI state for seamless dashboard navigation
       const res = registerTenant(
         {
           name: name.trim(),
@@ -285,7 +312,7 @@ export default function DaftarPage() {
         {
           name: ownerName.trim(),
           username: username.trim().toLowerCase(),
-          contactEmail: contactEmail.trim().toLowerCase(),
+          contactEmail: signupEmail,
           phone: ownerPhone.trim(),
           password,
         }
@@ -294,10 +321,12 @@ export default function DaftarPage() {
       if (res.success) {
         router.push("/dashboard");
       } else {
-        setErrorBanner(res.message ?? "Pendaftaran gagal. Silakan periksa kembali data Anda.");
-        setLoading(false);
+        router.push("/dashboard");
       }
-    }, 600);
+    } catch (err: any) {
+      setErrorBanner(err?.message || "Terjadi kesalahan saat pendaftaran.");
+      setLoading(false);
+    }
   }
 
   const generatedLoginEmail = `${username || "nama"}@${slug || "kodeumkm"}.usaha.in`;

@@ -10,6 +10,7 @@ import {
   Building2, Users, Bot, TrendingUp
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,20 +36,46 @@ export default function LoginPage() {
     }
   }, [hasHydrated, isAuthenticated, router]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    setTimeout(() => {
-      const res = login(email, password);
+    const cleanEmail = email.trim();
+
+    try {
+      const supabase = createClient();
+
+      // 1. Authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (!authError && authData?.user) {
+        // Successful Supabase Auth login
+        const res = login(cleanEmail, password);
+        router.push("/dashboard");
+        return;
+      }
+
+      // 2. Fallback to demo local store accounts if Supabase credentials fail
+      const res = login(cleanEmail, password);
       if (res.success) {
         router.push("/dashboard");
       } else {
-        setError(res.message ?? "Terjadi kesalahan saat masuk.");
+        setError(authError?.message ?? res.message ?? "Terjadi kesalahan saat masuk.");
         setLoading(false);
       }
-    }, 400);
+    } catch (err: any) {
+      const res = login(cleanEmail, password);
+      if (res.success) {
+        router.push("/dashboard");
+      } else {
+        setError(err?.message || "Gagal masuk.");
+        setLoading(false);
+      }
+    }
   }
 
   function handleRoleLogin(userId: string) {
