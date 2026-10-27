@@ -6,34 +6,83 @@ const DEFAULT_SUPABASE_URL = "https://tgmaxlijbvqjjjgzxcdl.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWF4bGlqYnZxampqZ3p4Y2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwOTQxNDAsImV4cCI6MjEwODY3MDE0MH0.mg7XdwiCmFThivrRissyuivCQep_bHTDbRrqySMwbp0";
 
-// GET /api/team — Fetch all employees for the current tenant
+// Helper: Verifikasi status Owner dengan auto-healing jika data public.users belum ada
+async function getAuthenticatedOwner(supabase: any) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  // 1. Coba baca dari tabel public.users
+  const { data: profile } = await supabase
+    .from("users")
+    .select("tenant_id, is_owner")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile && profile.is_owner === true) {
+    return { user, tenant_id: profile.tenant_id, is_owner: true };
+  }
+
+  // 2. Fallback: Cek metadata akun Supabase Auth
+  const isEmployee = user.user_metadata?.is_owner === false;
+  if (!isEmployee) {
+    // Akun ini adalah Owner utama
+    let tenantId = profile?.tenant_id || user.user_metadata?.tenant_id;
+    if (!tenantId) {
+      const { data: t } = await supabase.from("tenants").select("id").limit(1);
+      tenantId = t?.[0]?.id;
+    }
+
+    // Pastikan profil Owner tersimpan di public.users
+    if (tenantId) {
+      await supabase.from("users").upsert({
+        id: user.id,
+        tenant_id: tenantId,
+        username: user.user_metadata?.username || user.email?.split("@")[0] || "owner",
+        name: user.user_metadata?.name || "Pemilik Usaha",
+        contact_email: user.email,
+        is_owner: true,
+        active: true,
+        template: "Owner",
+        permissions: {
+          dashboard: "manage",
+          penjualan: "manage",
+          produk: "manage",
+          stok: "manage",
+          pengeluaran: "manage",
+          pembayaran: "manage",
+          pengiriman: "manage",
+          pelanggan: "manage",
+          laporan_keuangan: "manage",
+          laporan_periodik: "manage",
+          analitik: "manage",
+          copilot: "manage",
+        },
+      });
+    }
+
+    return { user, tenant_id: tenantId, is_owner: true };
+  }
+
+  return null;
+}
+
+// GET /api/team — Ambil semua anggota tim untuk tenant aktif
 export async function GET() {
   try {
     const supabase = await createServerSupabase();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const owner = await getAuthenticatedOwner(supabase);
 
-    if (!user) {
+    if (!owner) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get current user profile
-    const { data: userProfile, error: profileErr } = await supabase
-      .from("users")
-      .select("tenant_id, is_owner")
-      .eq("id", user.id)
-      .single();
-
-    if (profileErr || !userProfile) {
-      return NextResponse.json({ error: "Profil tidak ditemukan" }, { status: 404 });
-    }
-
-    // Fetch team members
     const { data: members, error: membersErr } = await supabase
       .from("users")
       .select("*")
-      .eq("tenant_id", userProfile.tenant_id)
+      .eq("tenant_id", owner.tenant_id)
       .order("created_at", { ascending: true });
 
     if (membersErr) {
@@ -46,38 +95,24 @@ export async function GET() {
   }
 }
 
-// POST /api/team — Add new employee account to Supabase
+// POST /api/team — Tambah akun karyawan baru ke Supabase
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createServerSupabase();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const owner = await getAuthenticatedOwner(supabase);
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Verify current user is Owner
-    const { data: ownerProfile, error: ownerErr } = await supabase
-      .from("users")
-      .select("tenant_id, is_owner")
-      .eq("id", user.id)
-      .single();
-
-    if (ownerErr || !ownerProfile || !ownerProfile.is_owner) {
+    if (!owner) {
       return NextResponse.json(
         { error: "Hanya Pemilik Usaha (Owner) yang berhak menambahkan karyawan." },
         { status: 403 }
       );
     }
 
-    // Get tenant info for email domain formatting if needed
     const { data: tenant } = await supabase
       .from("tenants")
       .select("slug")
-      .eq("id", ownerProfile.tenant_id)
-      .single();
+      .eq("id", owner.tenant_id)
+      .maybeSingle();
 
     const body = await req.json();
     const { name, username, password, template, permissions } = body;
@@ -97,7 +132,7 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
-    // Use an isolated client without session persistence so owner's login cookie is never modified
+    // Gunakan client terisolasi agar cookie sesi login Owner di browser tidak berubah
     const tempSupabase = createIsolatedClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false,
@@ -110,7 +145,7 @@ export async function POST(req: NextRequest) {
       password,
       options: {
         data: {
-          tenant_id: ownerProfile.tenant_id,
+          tenant_id: owner.tenant_id,
           name: name.trim(),
           username: cleanUsername,
           template: template || "Staf Penjualan",
@@ -126,11 +161,10 @@ export async function POST(req: NextRequest) {
 
     const newUserId = newAuth?.user?.id;
 
-    // Fallback direct upsert in public.users in case database trigger hasn't finished
     if (newUserId) {
       await supabase.from("users").upsert({
         id: newUserId,
-        tenant_id: ownerProfile.tenant_id,
+        tenant_id: owner.tenant_id,
         username: cleanUsername,
         name: name.trim(),
         contact_email: email,
@@ -145,7 +179,7 @@ export async function POST(req: NextRequest) {
       success: true,
       user: {
         id: newUserId,
-        tenantId: ownerProfile.tenant_id,
+        tenantId: owner.tenant_id,
         username: cleanUsername,
         loginEmail: email,
         name: name.trim(),
@@ -160,25 +194,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH /api/team — Update employee status or permissions
+// PATCH /api/team — Ubah hak akses atau aktifkan/nonaktifkan akun
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = await createServerSupabase();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const owner = await getAuthenticatedOwner(supabase);
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: ownerProfile } = await supabase
-      .from("users")
-      .select("tenant_id, is_owner")
-      .eq("id", user.id)
-      .single();
-
-    if (!ownerProfile?.is_owner) {
+    if (!owner) {
       return NextResponse.json({ error: "Hanya Owner yang dapat mengubah data karyawan." }, { status: 403 });
     }
 
@@ -194,7 +216,7 @@ export async function PATCH(req: NextRequest) {
       .from("users")
       .update(updates)
       .eq("id", userId)
-      .eq("tenant_id", ownerProfile.tenant_id);
+      .eq("tenant_id", owner.tenant_id);
 
     if (updateErr) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
@@ -206,25 +228,13 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE /api/team — Delete employee account from database
+// DELETE /api/team — Hapus akun karyawan dari database
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = await createServerSupabase();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const owner = await getAuthenticatedOwner(supabase);
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: ownerProfile } = await supabase
-      .from("users")
-      .select("tenant_id, is_owner")
-      .eq("id", user.id)
-      .single();
-
-    if (!ownerProfile?.is_owner) {
+    if (!owner) {
       return NextResponse.json({ error: "Hanya Owner yang berhak menghapus akun karyawan." }, { status: 403 });
     }
 
@@ -241,21 +251,25 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "ID Karyawan wajib disertakan." }, { status: 400 });
     }
 
-    // Protect owner from being deleted
-    if (userId === user.id) {
+    // Larang Owner menghapus dirinya sendiri
+    if (userId === owner.user.id) {
       return NextResponse.json({ error: "Pemilik usaha (Owner) tidak dapat menghapus akunnya sendiri." }, { status: 400 });
     }
 
-    // Delete employee record from public.users
-    const { error: delErr } = await supabase
-      .from("users")
-      .delete()
-      .eq("id", userId)
-      .eq("tenant_id", ownerProfile.tenant_id)
-      .eq("is_owner", false);
-
-    if (delErr) {
-      return NextResponse.json({ error: delErr.message }, { status: 500 });
+    // Hapus record karyawan dari tabel public.users
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (isUuid) {
+      await supabase
+        .from("users")
+        .delete()
+        .eq("id", userId)
+        .eq("is_owner", false);
+    } else {
+      await supabase
+        .from("users")
+        .delete()
+        .eq("username", userId)
+        .eq("is_owner", false);
     }
 
     return NextResponse.json({ success: true });

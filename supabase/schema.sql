@@ -534,56 +534,85 @@ ALTER TABLE public.expense_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payrolls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
+-- Tenants
+DROP POLICY IF EXISTS tenant_isolation_tenants ON public.tenants;
 CREATE POLICY tenant_isolation_tenants ON public.tenants
-  FOR ALL USING (id = public.get_auth_tenant_id());
+  FOR ALL USING (id = public.get_auth_tenant_id() OR public.get_auth_tenant_id() IS NULL);
 
+-- Users (Allow user to read and modify their own record OR tenant owner to manage all tenant members)
+DROP POLICY IF EXISTS tenant_isolation_users_select ON public.users;
 CREATE POLICY tenant_isolation_users_select ON public.users
-  FOR SELECT USING (tenant_id = public.get_auth_tenant_id());
+  FOR SELECT USING (id = auth.uid() OR tenant_id = public.get_auth_tenant_id());
 
+DROP POLICY IF EXISTS tenant_isolation_users_modify ON public.users;
 CREATE POLICY tenant_isolation_users_modify ON public.users
-  FOR ALL USING (tenant_id = public.get_auth_tenant_id() AND public.is_auth_owner());
+  FOR ALL USING (id = auth.uid() OR (tenant_id = public.get_auth_tenant_id() AND public.is_auth_owner()));
 
+-- Products
+DROP POLICY IF EXISTS tenant_isolation_products ON public.products;
 CREATE POLICY tenant_isolation_products ON public.products
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Stock Movements
+DROP POLICY IF EXISTS tenant_isolation_stock ON public.stock_movements;
 CREATE POLICY tenant_isolation_stock ON public.stock_movements
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Customers & Suppliers
+DROP POLICY IF EXISTS tenant_isolation_customers ON public.customers;
 CREATE POLICY tenant_isolation_customers ON public.customers
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+DROP POLICY IF EXISTS tenant_isolation_suppliers ON public.suppliers;
 CREATE POLICY tenant_isolation_suppliers ON public.suppliers
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Orders
+DROP POLICY IF EXISTS tenant_isolation_orders ON public.orders;
 CREATE POLICY tenant_isolation_orders ON public.orders
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Order Items
+DROP POLICY IF EXISTS tenant_isolation_order_items ON public.order_items;
 CREATE POLICY tenant_isolation_order_items ON public.order_items
   FOR ALL USING (
     order_id IN (SELECT id FROM public.orders WHERE tenant_id = public.get_auth_tenant_id())
   );
 
+-- Sale Payments
+DROP POLICY IF EXISTS tenant_isolation_sale_payments ON public.sale_payments;
 CREATE POLICY tenant_isolation_sale_payments ON public.sale_payments
   FOR ALL USING (
     order_id IN (SELECT id FROM public.orders WHERE tenant_id = public.get_auth_tenant_id())
   );
 
+-- Purchases
+DROP POLICY IF EXISTS tenant_isolation_purchases ON public.purchases;
 CREATE POLICY tenant_isolation_purchases ON public.purchases
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Expense Categories
+DROP POLICY IF EXISTS tenant_isolation_expense_categories ON public.expense_categories;
 CREATE POLICY tenant_isolation_expense_categories ON public.expense_categories
   FOR ALL USING (tenant_id IS NULL OR tenant_id = public.get_auth_tenant_id());
 
+-- Expenses & Items
+DROP POLICY IF EXISTS tenant_isolation_expenses ON public.expenses;
 CREATE POLICY tenant_isolation_expenses ON public.expenses
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+DROP POLICY IF EXISTS tenant_isolation_expense_items ON public.expense_items;
 CREATE POLICY tenant_isolation_expense_items ON public.expense_items
   FOR ALL USING (
     expense_id IN (SELECT id FROM public.expenses WHERE tenant_id = public.get_auth_tenant_id())
   );
 
+-- Payrolls
+DROP POLICY IF EXISTS tenant_isolation_payrolls ON public.payrolls;
 CREATE POLICY tenant_isolation_payrolls ON public.payrolls
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
+-- Activity Logs
+DROP POLICY IF EXISTS tenant_isolation_activity_logs ON public.activity_logs;
 CREATE POLICY tenant_isolation_activity_logs ON public.activity_logs
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());

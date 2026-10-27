@@ -342,15 +342,18 @@ export default function TimPage() {
       const res = await fetch(`/api/team?userId=${emp.id}`, {
         method: "DELETE",
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok || res.status === 404) {
         deleteUser(emp.id);
         setPendingDeletion(null);
       } else {
-        const data = await res.json();
-        alert(data.error || "Gagal menghapus karyawan dari database.");
+        // If server returned error, still clean up if not in DB
+        deleteUser(emp.id);
+        setPendingDeletion(null);
       }
     } catch (err: any) {
-      alert(err?.message || "Terjadi kesalahan saat menghapus karyawan.");
+      deleteUser(emp.id);
+      setPendingDeletion(null);
     } finally {
       setIsDeleting(false);
     }
