@@ -514,6 +514,45 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function: Delete employee completely from both public.users and auth.users
+CREATE OR REPLACE FUNCTION public.fn_delete_employee(p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  -- Prevent deleting the owner
+  IF EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id AND is_owner IS TRUE) THEN
+    RAISE EXCEPTION 'Tidak dapat menghapus akun Owner';
+  END IF;
+
+  -- 1. Delete from public.users
+  DELETE FROM public.users WHERE id = p_user_id AND is_owner IS NOT TRUE;
+
+  -- 2. Delete from auth.users (so it disappears from Supabase Auth dashboard)
+  DELETE FROM auth.users WHERE id = p_user_id;
+
+  RETURN true;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger: When employee is deleted from public.users, automatically delete from auth.users
+CREATE OR REPLACE FUNCTION public.on_employee_deleted_from_public()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF old.is_owner IS NOT TRUE THEN
+    DELETE FROM auth.users WHERE id = old.id;
+  END IF;
+  RETURN old;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN old;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS tr_delete_auth_user ON public.users;
+CREATE TRIGGER tr_delete_auth_user
+  AFTER DELETE ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.on_employee_deleted_from_public();
+
 -- ============================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================

@@ -256,14 +256,17 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Pemilik usaha (Owner) tidak dapat menghapus akunnya sendiri." }, { status: 400 });
     }
 
-    // Hapus record karyawan dari tabel public.users
+    // Hapus record karyawan dari tabel public.users dan auth.users
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
     if (isUuid) {
-      await supabase
-        .from("users")
-        .delete()
-        .eq("id", userId)
-        .eq("is_owner", false);
+      const { error: rpcErr } = await supabase.rpc("fn_delete_employee", { p_user_id: userId });
+      if (rpcErr) {
+        await supabase
+          .from("users")
+          .delete()
+          .eq("id", userId)
+          .eq("is_owner", false);
+      }
     } else {
       await supabase
         .from("users")
