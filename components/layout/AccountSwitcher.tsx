@@ -3,19 +3,17 @@
 import { useStore } from "@/lib/store";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Circle, LogOut, Shield, User, ArrowRightLeft } from "lucide-react";
+import { ChevronDown, LogOut, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export function AccountSwitcher() {
-  const users = useStore((s) => s.users);
-  const setCurrentUser = useStore((s) => s.setCurrentUser);
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const logout = useStore((s) => s.logout);
   const currentUser = useCurrentUser();
   const activeTenant = getActiveTenant();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [showSwitchSubmenu, setShowSwitchSubmenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // Tutup dropdown saat klik di luar
@@ -23,29 +21,22 @@ export function AccountSwitcher() {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
-        setShowSwitchSubmenu(false);
       }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Filter hanya pengguna pada tenant aktif
-  const currentTenantId = currentUser?.tenantId || activeTenant?.id;
-  const activeUsers = users.filter(
-    (u) => u.active && (!u.tenantId || u.tenantId === currentTenantId)
-  );
-
-  function handleLogout() {
+  async function handleLogout() {
     setOpen(false);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Gagal logout dari Supabase:", e);
+    }
     logout();
     router.push("/login");
-  }
-
-  function handleSwitchUser(userId: string) {
-    setCurrentUser(userId);
-    setOpen(false);
-    setShowSwitchSubmenu(false);
   }
 
   return (
@@ -95,49 +86,6 @@ export function AccountSwitcher() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Quick Account Switcher Section */}
-          <div className="py-2 px-2">
-            <button
-              onClick={() => setShowSwitchSubmenu((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] rounded-lg transition-colors cursor-pointer"
-            >
-              <span className="flex items-center gap-2">
-                <ArrowRightLeft className="w-3.5 h-3.5 text-blue-500" />
-                Ganti Akun Tim
-              </span>
-              <ChevronDown className={`w-3 h-3 text-[hsl(var(--muted-fg))] transition-transform ${showSwitchSubmenu ? "rotate-180" : ""}`} />
-            </button>
-
-            {showSwitchSubmenu && (
-              <div className="mt-1 space-y-1 pl-2">
-                {activeUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => handleSwitchUser(u.id)}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md text-left transition-colors cursor-pointer ${currentUser?.id === u.id
-                        ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold"
-                        : "hover:bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-                      }`}
-                  >
-                    <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                      {u.name.charAt(0)}
-                    </span>
-                    <div className="truncate flex-1">
-                      <div className="truncate">{u.name}</div>
-                      <div className="text-[9px] text-[hsl(var(--muted-fg))] truncate">{u.loginEmail}</div>
-                    </div>
-                    <span className="text-[10px] opacity-70">
-                      {u.isOwner ? "Pemilik" : (u.template?.split(" ")[1] ?? u.template)}
-                    </span>
-                    {currentUser?.id === u.id && (
-                      <Circle className="w-1.5 h-1.5 fill-blue-500 text-blue-500 shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Logout Action */}
