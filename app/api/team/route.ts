@@ -205,3 +205,61 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Internal server error" }, { status: 500 });
   }
 }
+
+// DELETE /api/team — Delete employee account from database
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: ownerProfile } = await supabase
+      .from("users")
+      .select("tenant_id, is_owner")
+      .eq("id", user.id)
+      .single();
+
+    if (!ownerProfile?.is_owner) {
+      return NextResponse.json({ error: "Hanya Owner yang berhak menghapus akun karyawan." }, { status: 403 });
+    }
+
+    let userId: string | null = null;
+    const { searchParams } = new URL(req.url);
+    userId = searchParams.get("userId");
+
+    if (!userId) {
+      const body = await req.json().catch(() => ({}));
+      userId = body?.userId ?? null;
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: "ID Karyawan wajib disertakan." }, { status: 400 });
+    }
+
+    // Protect owner from being deleted
+    if (userId === user.id) {
+      return NextResponse.json({ error: "Pemilik usaha (Owner) tidak dapat menghapus akunnya sendiri." }, { status: 400 });
+    }
+
+    // Delete employee record from public.users
+    const { error: delErr } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", userId)
+      .eq("tenant_id", ownerProfile.tenant_id)
+      .eq("is_owner", false);
+
+    if (delErr) {
+      return NextResponse.json({ error: delErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Internal server error" }, { status: 500 });
+  }
+}

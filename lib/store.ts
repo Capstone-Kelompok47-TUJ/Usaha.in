@@ -78,6 +78,7 @@ interface AppStore {
     template: string
   ) => void;
   toggleUserActive: (userId: string) => void;
+  deleteUser: (userId: string) => void;
 
   // --- SIMULATE ORDER ---
   simulateOrder: (triggeredByUserId: string) => void;
@@ -501,6 +502,25 @@ export const useStore = create<AppStore>()(
           users: s.users.map((u) =>
             u.id === userId ? { ...u, active: newActive } : u
           ),
+          activityLogs: [log, ...activityLogs],
+        }));
+      },
+
+      deleteUser: (userId) => {
+        const { getCurrentUser, activityLogs } = get();
+        const actor = getCurrentUser();
+        const target = get().users.find((u) => u.id === userId);
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: target?.tenantId,
+          userId: actor?.id ?? "owner-1",
+          userName: actor?.name ?? "Pemilik",
+          action: `menghapus akun karyawan ${target?.name ?? userId}`,
+          module: "manajemen_tim",
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          users: s.users.filter((u) => u.id !== userId),
           activityLogs: [log, ...activityLogs],
         }));
       },

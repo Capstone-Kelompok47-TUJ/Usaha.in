@@ -9,7 +9,7 @@ import { ALL_MODULES, TEMPLATES } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
-  Plus, X, UserCog, Power, Edit, Check,
+  Plus, X, UserCog, Power, Edit, Check, Trash2,
 } from "lucide-react";
 import type { User, ModuleKey, Level, TemplateKey } from "@/types";
 
@@ -289,8 +289,11 @@ export default function TimPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<User | undefined>(undefined);
   const [pendingDeactivation, setPendingDeactivation] = useState<User | null>(null);
+  const [pendingDeletion, setPendingDeletion] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const addUser = useStore((s) => s.addUser);
+  const deleteUser = useStore((s) => s.deleteUser);
 
   // Sync team members from Supabase on mount
   useEffect(() => {
@@ -331,6 +334,26 @@ export default function TimPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: emp.id, active: !emp.active }),
     }).catch(console.error);
+  }
+
+  async function handleDeleteUser(emp: User) {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/team?userId=${emp.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        deleteUser(emp.id);
+        setPendingDeletion(null);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Gagal menghapus karyawan dari database.");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Terjadi kesalahan saat menghapus karyawan.");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   function openEdit(emp: User) {
@@ -438,11 +461,15 @@ export default function TimPage() {
                   <button onClick={() => emp.active ? setPendingDeactivation(emp) : handleToggleActive(emp)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       emp.active
-                        ? "border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        ? "border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                         : "border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
                     }`}>
                     <Power className="w-3.5 h-3.5" />
                     {emp.active ? "Nonaktifkan" : "Aktifkan"}
+                  </button>
+                  <button onClick={() => setPendingDeletion(emp)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
+                    <Trash2 className="w-3.5 h-3.5" /> Hapus
                   </button>
                 </div>
               </div>
@@ -469,6 +496,29 @@ export default function TimPage() {
               }}
                 className="flex-1 min-h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
                 Ya, nonaktifkan
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {pendingDeletion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="presentation">
+          <section className="w-full max-w-md rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="delete-user-title">
+            <h2 id="delete-user-title" className="font-bold text-base text-red-600 dark:text-red-400 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" /> Hapus Akun {pendingDeletion.name}?
+            </h2>
+            <p className="text-sm text-[hsl(var(--muted-fg))] mt-2">
+              Akun karyawan ini akan dihapus secara permanen dari sistem dan database Supabase. Karyawan tidak akan dapat masuk kembali ke sistem.
+            </p>
+            <div className="flex gap-2 mt-5">
+              <button type="button" disabled={isDeleting} onClick={() => setPendingDeletion(null)}
+                className="flex-1 min-h-11 rounded-lg border border-[hsl(var(--border))] text-sm font-semibold cursor-pointer hover:bg-[hsl(var(--muted))]">
+                Batal
+              </button>
+              <button type="button" disabled={isDeleting} onClick={() => handleDeleteUser(pendingDeletion)}
+                className="flex-1 min-h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold cursor-pointer disabled:opacity-50">
+                {isDeleting ? "Menghapus..." : "Ya, Hapus Permanen"}
               </button>
             </div>
           </section>
