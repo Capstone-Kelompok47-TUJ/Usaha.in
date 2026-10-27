@@ -430,10 +430,10 @@ export const useStore = create<AppStore>()(
         }
 
         const newUser: User = {
-          id: `emp-${Date.now()}`,
+          id: (userInput as any).id || `emp-${Date.now()}`,
           tenantId,
           username: cleanUsername,
-          loginEmail: `${cleanUsername}@${slug}.usaha.in`,
+          loginEmail: (userInput as any).loginEmail || `${cleanUsername}@${slug}.usaha.in`,
           contactEmail: (userInput as any).contactEmail || `${cleanUsername}@${slug}.usaha.in`,
           phone: (userInput as any).phone || "",
           name: userInput.name,

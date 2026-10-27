@@ -515,21 +515,43 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function: Delete employee completely from both public.users and auth.users
-CREATE OR REPLACE FUNCTION public.fn_delete_employee(p_user_id UUID)
+CREATE OR REPLACE FUNCTION public.fn_delete_employee(
+  p_user_id UUID DEFAULT NULL,
+  p_email TEXT DEFAULT NULL,
+  p_username TEXT DEFAULT NULL
+)
 RETURNS BOOLEAN AS $$
+DECLARE
+  v_target_id UUID := NULL;
 BEGIN
-  -- Prevent deleting the owner
-  IF EXISTS (SELECT 1 FROM public.users WHERE id = p_user_id AND is_owner IS TRUE) THEN
-    RAISE EXCEPTION 'Tidak dapat menghapus akun Owner';
+  -- 1. Cari user ID target
+  IF p_user_id IS NOT NULL THEN
+    v_target_id := p_user_id;
+  ELSIF p_email IS NOT NULL THEN
+    SELECT id INTO v_target_id FROM auth.users WHERE LOWER(email) = LOWER(p_email) LIMIT 1;
+    IF v_target_id IS NULL THEN
+      SELECT id INTO v_target_id FROM public.users WHERE LOWER(contact_email) = LOWER(p_email) LIMIT 1;
+    END IF;
+  ELSIF p_username IS NOT NULL THEN
+    SELECT id INTO v_target_id FROM public.users WHERE LOWER(username) = LOWER(p_username) LIMIT 1;
   END IF;
 
-  -- 1. Delete from public.users
-  DELETE FROM public.users WHERE id = p_user_id AND is_owner IS NOT TRUE;
+  IF v_target_id IS NOT NULL THEN
+    -- Mencegah penghapusan akun Owner
+    IF EXISTS (SELECT 1 FROM public.users WHERE id = v_target_id AND is_owner IS TRUE) THEN
+      RAISE EXCEPTION 'Tidak dapat menghapus akun Owner';
+    END IF;
 
-  -- 2. Delete from auth.users (so it disappears from Supabase Auth dashboard)
-  DELETE FROM auth.users WHERE id = p_user_id;
+    -- Hapus dari public.users
+    DELETE FROM public.users WHERE id = v_target_id AND is_owner IS NOT TRUE;
 
-  RETURN true;
+    -- Hapus dari auth.users (otomatis hilang dari dashboard Authentication)
+    DELETE FROM auth.users WHERE id = v_target_id;
+
+    RETURN true;
+  END IF;
+
+  RETURN false;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

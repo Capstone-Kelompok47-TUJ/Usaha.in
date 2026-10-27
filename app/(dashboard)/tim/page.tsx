@@ -372,7 +372,12 @@ export default function TimPage() {
   async function handleDeleteUser(emp: User) {
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/team?userId=${emp.id}`, {
+      const params = new URLSearchParams();
+      if (emp.id) params.set("userId", emp.id);
+      if (emp.loginEmail) params.set("email", emp.loginEmail);
+      if (emp.username) params.set("username", emp.username);
+
+      const res = await fetch(`/api/team?${params.toString()}`, {
         method: "DELETE",
       });
       const data = await res.json().catch(() => ({}));
@@ -380,7 +385,6 @@ export default function TimPage() {
         deleteUser(emp.id);
         setPendingDeletion(null);
       } else {
-        // If server returned error, still clean up if not in DB
         deleteUser(emp.id);
         setPendingDeletion(null);
       }

@@ -238,41 +238,43 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Hanya Owner yang berhak menghapus akun karyawan." }, { status: 403 });
     }
 
-    let userId: string | null = null;
     const { searchParams } = new URL(req.url);
-    userId = searchParams.get("userId");
+    let userId = searchParams.get("userId");
+    const email = searchParams.get("email");
+    const username = searchParams.get("username");
 
     if (!userId) {
       const body = await req.json().catch(() => ({}));
       userId = body?.userId ?? null;
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: "ID Karyawan wajib disertakan." }, { status: 400 });
+    if (!userId && !email && !username) {
+      return NextResponse.json({ error: "Identitas Karyawan wajib disertakan." }, { status: 400 });
     }
 
     // Larang Owner menghapus dirinya sendiri
-    if (userId === owner.user.id) {
+    if (userId === owner.user.id || (email && email.toLowerCase() === owner.user.email?.toLowerCase())) {
       return NextResponse.json({ error: "Pemilik usaha (Owner) tidak dapat menghapus akunnya sendiri." }, { status: 400 });
     }
 
-    // Hapus record karyawan dari tabel public.users dan auth.users
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
+    // Panggil fungsi RPC untuk menghapus akun dari auth.users & public.users
+    await supabase.rpc("fn_delete_employee", {
+      p_user_id: isUuid ? userId : null,
+      p_email: email || null,
+      p_username: username || null,
+    });
+
+    // Hapus juga secara langsung dari public.users sebagai backup
     if (isUuid) {
-      const { error: rpcErr } = await supabase.rpc("fn_delete_employee", { p_user_id: userId });
-      if (rpcErr) {
-        await supabase
-          .from("users")
-          .delete()
-          .eq("id", userId)
-          .eq("is_owner", false);
-      }
-    } else {
-      await supabase
-        .from("users")
-        .delete()
-        .eq("username", userId)
-        .eq("is_owner", false);
+      await supabase.from("users").delete().eq("id", userId).eq("is_owner", false);
+    }
+    if (email) {
+      await supabase.from("users").delete().eq("contact_email", email).eq("is_owner", false);
+    }
+    if (username) {
+      await supabase.from("users").delete().eq("username", username).eq("is_owner", false);
     }
 
     return NextResponse.json({ success: true });
