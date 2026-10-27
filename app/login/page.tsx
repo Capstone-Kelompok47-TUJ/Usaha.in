@@ -41,26 +41,40 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const cleanEmail = email.trim();
+    const inputIdentifier = email.trim();
+    let loginEmail = inputIdentifier;
 
     try {
       const supabase = createClient();
 
-      // 1. Authenticate with Supabase Auth
+      // Jika pengguna login menggunakan username (tanpa @), cari email yang sesuai
+      if (!inputIdentifier.includes("@")) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("contact_email")
+          .ilike("username", inputIdentifier)
+          .maybeSingle();
+
+        if (userProfile?.contact_email) {
+          loginEmail = userProfile.contact_email;
+        }
+      }
+
+      // 1. Autentikasi langsung ke Supabase Auth dengan kata sandi
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
+        email: loginEmail,
         password,
       });
 
       if (!authError && authData?.user) {
-        // Successful Supabase Auth login
-        const res = login(cleanEmail, password);
+        // Berhasil login di Supabase Auth
+        const res = login(loginEmail, password);
         router.push("/dashboard");
         return;
       }
 
       // 2. Fallback to demo local store accounts if Supabase credentials fail
-      const res = login(cleanEmail, password);
+      const res = login(loginEmail, password);
       if (res.success) {
         router.push("/dashboard");
       } else {
@@ -68,7 +82,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (err: any) {
-      const res = login(cleanEmail, password);
+      const res = login(loginEmail, password);
       if (res.success) {
         router.push("/dashboard");
       } else {

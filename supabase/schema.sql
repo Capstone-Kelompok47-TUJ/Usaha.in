@@ -576,6 +576,52 @@ CREATE TRIGGER tr_delete_auth_user
   EXECUTE FUNCTION public.on_employee_deleted_from_public();
 
 -- ============================================================
+-- RPC: UPDATE USER PROFILE & PASSWORD (AUTH + PUBLIC SYNC)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.fn_update_user_profile(
+  p_user_id UUID,
+  p_name TEXT,
+  p_username TEXT,
+  p_new_password TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_clean_username TEXT;
+BEGIN
+  -- Bersihkan username
+  v_clean_username := lower(regexp_replace(COALESCE(p_username, ''), '[^a-zA-Z0-9._@]', '', 'g'));
+
+  -- 1. Update tabel public.users
+  UPDATE public.users
+  SET
+    name = COALESCE(NULLIF(p_name, ''), name),
+    username = COALESCE(NULLIF(v_clean_username, ''), username)
+  WHERE id = p_user_id;
+
+  -- 2. Update auth.users metadata
+  UPDATE auth.users
+  SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || 
+    jsonb_strip_nulls(jsonb_build_object(
+      'name', NULLIF(p_name, ''),
+      'username', NULLIF(v_clean_username, '')
+    ))
+  WHERE id = p_user_id;
+
+  -- 3. Jika ada kata sandi baru, hash dengan blowfish dan perbarui auth.users
+  IF p_new_password IS NOT NULL AND length(p_new_password) >= 6 THEN
+    UPDATE auth.users
+    SET encrypted_password = crypt(p_new_password, gen_salt('bf'))
+    WHERE id = p_user_id;
+  END IF;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.fn_update_user_profile(UUID, TEXT, TEXT, TEXT) TO authenticated, service_role;
+
+
+-- ============================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================
 

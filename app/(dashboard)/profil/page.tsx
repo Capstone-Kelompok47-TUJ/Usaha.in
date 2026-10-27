@@ -136,23 +136,23 @@ export default function ProfilPage() {
     setIsSavingPassword(true);
 
     try {
-      // 1. Update ke Supabase Auth
-      const supabase = createClient();
-      const { error: clientErr } = await supabase.auth.updateUser({
-        password: newPassword,
+      // 1. Update ke Supabase Auth melalui server API endpoint
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengubah kata sandi.");
+      }
 
-      if (clientErr) {
-        // Fallback melalui server endpoint
-        const res = await fetch("/api/profile", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ newPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || clientErr.message);
-        }
+      // 2. Sinkronkan juga pada client session aktif
+      try {
+        const supabase = createClient();
+        await supabase.auth.updateUser({ password: newPassword });
+      } catch (cErr) {
+        console.warn("Client auth password sync notice:", cErr);
       }
 
       setNewPassword("");

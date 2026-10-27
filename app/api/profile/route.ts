@@ -87,19 +87,57 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (Object.keys(metaUpdates).length > 0) {
-      // Update auth user metadata
-      await supabase.auth.updateUser({
+      // 2a. Update auth user metadata di Supabase Auth
+      const { error: metaErr } = await supabase.auth.updateUser({
         data: metaUpdates,
       });
 
-      // Update tabel public.users
-      const { error: dbErr } = await supabase
+      if (metaErr) {
+        console.warn("Peringatan saat update auth metadata:", metaErr.message);
+      }
+
+      // 2b. Update ke tabel public.users
+      const { data: updatedRows, error: dbErr } = await supabase
         .from("users")
         .update(dbUpdates)
-        .eq("id", authUser.id);
+        .eq("id", authUser.id)
+        .select();
 
       if (dbErr) {
-        console.error("Gagal update tabel public.users:", dbErr);
+        console.warn("Gagal update public.users:", dbErr.message);
+      }
+
+      // 2c. Jika baris belum ada di public.users, lakukan upsert agar tersinkron sempurna
+      if (!updatedRows || updatedRows.length === 0) {
+        let tenantId = authUser.user_metadata?.tenant_id;
+        if (!tenantId) {
+          const { data: t } = await supabase.from("tenants").select("id").limit(1);
+          tenantId = t?.[0]?.id;
+        }
+
+        await supabase.from("users").upsert({
+          id: authUser.id,
+          tenant_id: tenantId,
+          username: dbUpdates.username || authUser.user_metadata?.username || "user",
+          name: dbUpdates.name || authUser.user_metadata?.name || "User",
+          contact_email: authUser.email,
+          is_owner: authUser.user_metadata?.is_owner ?? true,
+          active: true,
+          template: authUser.user_metadata?.template || "Owner",
+        });
+      }
+
+      // 2d. Panggil RPC fn_update_user_profile jika tersedia di database
+      try {
+        await supabase.rpc("fn_update_user_profile", {
+          p_user_id: authUser.id,
+          p_name: metaUpdates.name || null,
+          p_username: metaUpdates.username || null,
+          p_new_password: newPassword || null,
+        });
+      } catch (rpcErr) {
+        // RPC opsional jika belum dieksekusi di database SQL editor
+        console.warn("RPC fn_update_user_profile notice:", rpcErr);
       }
     }
 
