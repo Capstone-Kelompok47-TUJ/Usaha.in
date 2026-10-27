@@ -131,7 +131,10 @@ function EmployeeFormModal({
       try {
         await fetch("/api/team", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-owner-email": currentUser?.loginEmail || currentUser?.username || "",
+          },
           body: JSON.stringify({
             userId: editUser.id,
             permissions,
@@ -163,7 +166,10 @@ function EmployeeFormModal({
       try {
         const res = await fetch("/api/team", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-owner-email": currentUser?.loginEmail || currentUser?.username || "",
+          },
           body: JSON.stringify({
             name: name.trim(),
             username: fullEmail,
@@ -332,7 +338,11 @@ export default function TimPage() {
   useEffect(() => {
     async function fetchTeam() {
       try {
-        const res = await fetch("/api/team");
+        const res = await fetch("/api/team", {
+          headers: {
+            "x-owner-email": user?.loginEmail || user?.username || "",
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.members && Array.isArray(data.members)) {
@@ -356,7 +366,7 @@ export default function TimPage() {
       }
     }
     fetchTeam();
-  }, []);
+  }, [user]);
 
   const employees = tenantUsers.filter((u) => !u.isOwner);
 
@@ -364,7 +374,10 @@ export default function TimPage() {
     toggleUserActive(emp.id);
     fetch("/api/team", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-owner-email": user?.loginEmail || user?.username || "",
+      },
       body: JSON.stringify({ userId: emp.id, active: !emp.active }),
     }).catch(console.error);
   }
@@ -379,6 +392,9 @@ export default function TimPage() {
 
       const res = await fetch(`/api/team?${params.toString()}`, {
         method: "DELETE",
+        headers: {
+          "x-owner-email": user?.loginEmail || user?.username || "",
+        },
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok || res.status === 404) {

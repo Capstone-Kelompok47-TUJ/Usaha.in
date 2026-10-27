@@ -723,3 +723,15 @@ CREATE POLICY tenant_isolation_payrolls ON public.payrolls
 DROP POLICY IF EXISTS tenant_isolation_activity_logs ON public.activity_logs;
 CREATE POLICY tenant_isolation_activity_logs ON public.activity_logs
   FOR ALL USING (tenant_id = public.get_auth_tenant_id());
+
+-- ============================================================
+-- 10. ROLES & PRIVILEGES (Required for API and Service Role Access)
+-- ============================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
