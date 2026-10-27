@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // GET /api/profile — Mengambil profil user yang sedang login
 export async function GET() {
@@ -14,8 +15,9 @@ export async function GET() {
       return NextResponse.json({ error: "Sesi tidak valid atau telah berakhir." }, { status: 401 });
     }
 
-    // Ambil data detail profil dari tabel public.users
-    const { data: dbUser } = await supabase
+    // Ambil data detail profil dari tabel public.users menggunakan admin client
+    const adminClient = createAdminClient();
+    const { data: dbUser } = await adminClient
       .from("users")
       .select("*")
       .eq("id", authUser.id)
@@ -40,6 +42,7 @@ export async function GET() {
 // PATCH /api/profile — Memperbarui profil (nama, username) dan kata sandi
 export async function PATCH(req: NextRequest) {
   try {
+    // 1. Verifikasi sesi pengguna yang sedang login
     const supabase = await createServerSupabase();
     const {
       data: { user: authUser },
@@ -53,25 +56,9 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { name, username, newPassword } = body;
 
-    // 1. Jika ada perubahan password
-    if (newPassword) {
-      if (typeof newPassword !== "string" || newPassword.length < 6) {
-        return NextResponse.json(
-          { error: "Kata sandi baru minimal harus 6 karakter." },
-          { status: 400 }
-        );
-      }
+    // Admin client untuk operasi yang memerlukan Service Role (bypass RLS + akses auth.users)
+    const adminClient = createAdminClient();
 
-      const { error: passErr } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (passErr) {
-        return NextResponse.json({ error: passErr.message }, { status: 400 });
-      }
-    }
-
-    // 2. Jika ada perubahan nama atau username
     const metaUpdates: Record<string, any> = {};
     const dbUpdates: Record<string, any> = {};
 
@@ -86,18 +73,20 @@ export async function PATCH(req: NextRequest) {
       dbUpdates.username = cleanUsername;
     }
 
+    // 2. Update nama dan username jika ada perubahan
     if (Object.keys(metaUpdates).length > 0) {
-      // 2a. Update auth user metadata di Supabase Auth
-      const { error: metaErr } = await supabase.auth.updateUser({
-        data: metaUpdates,
-      });
+      // 2a. Update metadata di auth.users via Admin API (Service Role)
+      const { error: adminMetaErr } = await adminClient.auth.admin.updateUserById(
+        authUser.id,
+        { user_metadata: { ...authUser.user_metadata, ...metaUpdates } }
+      );
 
-      if (metaErr) {
-        console.warn("Peringatan saat update auth metadata:", metaErr.message);
+      if (adminMetaErr) {
+        console.warn("Admin metadata update error:", adminMetaErr.message);
       }
 
-      // 2b. Update ke tabel public.users
-      const { data: updatedRows, error: dbErr } = await supabase
+      // 2b. Update tabel public.users (bypass RLS via Service Role)
+      const { data: updatedRows, error: dbErr } = await adminClient
         .from("users")
         .update(dbUpdates)
         .eq("id", authUser.id)
@@ -107,15 +96,15 @@ export async function PATCH(req: NextRequest) {
         console.warn("Gagal update public.users:", dbErr.message);
       }
 
-      // 2c. Jika baris belum ada di public.users, lakukan upsert agar tersinkron sempurna
+      // 2c. Jika profil belum ada di public.users, buat dengan upsert
       if (!updatedRows || updatedRows.length === 0) {
         let tenantId = authUser.user_metadata?.tenant_id;
         if (!tenantId) {
-          const { data: t } = await supabase.from("tenants").select("id").limit(1);
+          const { data: t } = await adminClient.from("tenants").select("id").limit(1);
           tenantId = t?.[0]?.id;
         }
 
-        await supabase.from("users").upsert({
+        await adminClient.from("users").upsert({
           id: authUser.id,
           tenant_id: tenantId,
           username: dbUpdates.username || authUser.user_metadata?.username || "user",
@@ -126,18 +115,25 @@ export async function PATCH(req: NextRequest) {
           template: authUser.user_metadata?.template || "Owner",
         });
       }
+    }
 
-      // 2d. Panggil RPC fn_update_user_profile jika tersedia di database
-      try {
-        await supabase.rpc("fn_update_user_profile", {
-          p_user_id: authUser.id,
-          p_name: metaUpdates.name || null,
-          p_username: metaUpdates.username || null,
-          p_new_password: newPassword || null,
-        });
-      } catch (rpcErr) {
-        // RPC opsional jika belum dieksekusi di database SQL editor
-        console.warn("RPC fn_update_user_profile notice:", rpcErr);
+    // 3. Update password jika ada
+    if (newPassword) {
+      if (typeof newPassword !== "string" || newPassword.length < 6) {
+        return NextResponse.json(
+          { error: "Kata sandi baru minimal harus 6 karakter." },
+          { status: 400 }
+        );
+      }
+
+      // Gunakan Admin API untuk update password (tidak perlu sesi aktif user)
+      const { error: passErr } = await adminClient.auth.admin.updateUserById(
+        authUser.id,
+        { password: newPassword }
+      );
+
+      if (passErr) {
+        return NextResponse.json({ error: passErr.message }, { status: 400 });
       }
     }
 

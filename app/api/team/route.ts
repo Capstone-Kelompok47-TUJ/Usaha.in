@@ -1,10 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
-import { createClient as createIsolatedClient } from "@supabase/supabase-js";
-
-const DEFAULT_SUPABASE_URL = "https://tgmaxlijbvqjjjgzxcdl.supabase.co";
-const DEFAULT_SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWF4bGlqYnZxampqZ3p4Y2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwOTQxNDAsImV4cCI6MjEwODY3MDE0MH0.mg7XdwiCmFThivrRissyuivCQep_bHTDbRrqySMwbp0";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Helper: Verifikasi status Owner dengan auto-healing jika data public.users belum ada
 async function getAuthenticatedOwner(supabase: any) {
@@ -14,8 +10,10 @@ async function getAuthenticatedOwner(supabase: any) {
 
   if (!user) return null;
 
-  // 1. Coba baca dari tabel public.users
-  const { data: profile } = await supabase
+  const adminClient = createAdminClient();
+
+  // 1. Coba baca dari tabel public.users (via admin, bypass RLS)
+  const { data: profile } = await adminClient
     .from("users")
     .select("tenant_id, is_owner")
     .eq("id", user.id)
@@ -25,19 +23,18 @@ async function getAuthenticatedOwner(supabase: any) {
     return { user, tenant_id: profile.tenant_id, is_owner: true };
   }
 
-  // 2. Fallback: Cek metadata akun Supabase Auth
+  // 2. Fallback: Cek metadata akun Auth
   const isEmployee = user.user_metadata?.is_owner === false;
   if (!isEmployee) {
-    // Akun ini adalah Owner utama
     let tenantId = profile?.tenant_id || user.user_metadata?.tenant_id;
     if (!tenantId) {
-      const { data: t } = await supabase.from("tenants").select("id").limit(1);
+      const { data: t } = await adminClient.from("tenants").select("id").limit(1);
       tenantId = t?.[0]?.id;
     }
 
     // Pastikan profil Owner tersimpan di public.users
     if (tenantId) {
-      await supabase.from("users").upsert({
+      await adminClient.from("users").upsert({
         id: user.id,
         tenant_id: tenantId,
         username: user.user_metadata?.username || user.email?.split("@")[0] || "owner",
@@ -79,7 +76,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: members, error: membersErr } = await supabase
+    const adminClient = createAdminClient();
+    const { data: members, error: membersErr } = await adminClient
       .from("users")
       .select("*")
       .eq("tenant_id", owner.tenant_id)
@@ -108,7 +106,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: tenant } = await supabase
+    const adminClient = createAdminClient();
+
+    const { data: tenant } = await adminClient
       .from("tenants")
       .select("slug")
       .eq("id", owner.tenant_id)
@@ -129,29 +129,18 @@ export async function POST(req: NextRequest) {
       ? cleanUsername
       : `${cleanUsername}@${tenant?.slug || "usaha"}.usaha.in`;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-
-    // Gunakan client terisolasi agar cookie sesi login Owner di browser tidak berubah
-    const tempSupabase = createIsolatedClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
-
-    const { data: newAuth, error: authError } = await tempSupabase.auth.signUp({
+    // Gunakan Admin API untuk membuat user baru (bypass email konfirmasi)
+    const { data: newAuth, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          tenant_id: owner.tenant_id,
-          name: name.trim(),
-          username: cleanUsername,
-          template: template || "Staf Penjualan",
-          permissions: permissions || {},
-          is_owner: false,
-        },
+      email_confirm: true, // Langsung konfirmasi, tidak perlu verifikasi email
+      user_metadata: {
+        tenant_id: owner.tenant_id,
+        name: name.trim(),
+        username: cleanUsername,
+        template: template || "Staf Penjualan",
+        permissions: permissions || {},
+        is_owner: false,
       },
     });
 
@@ -162,7 +151,7 @@ export async function POST(req: NextRequest) {
     const newUserId = newAuth?.user?.id;
 
     if (newUserId) {
-      await supabase.from("users").upsert({
+      await adminClient.from("users").upsert({
         id: newUserId,
         tenant_id: owner.tenant_id,
         username: cleanUsername,
@@ -204,6 +193,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Hanya Owner yang dapat mengubah data karyawan." }, { status: 403 });
     }
 
+    const adminClient = createAdminClient();
     const body = await req.json();
     const { userId, active, permissions, template } = body;
 
@@ -212,7 +202,7 @@ export async function PATCH(req: NextRequest) {
     if (permissions) updates.permissions = permissions;
     if (template) updates.template = template;
 
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await adminClient
       .from("users")
       .update(updates)
       .eq("id", userId)
@@ -254,27 +244,58 @@ export async function DELETE(req: NextRequest) {
 
     // Larang Owner menghapus dirinya sendiri
     if (userId === owner.user.id || (email && email.toLowerCase() === owner.user.email?.toLowerCase())) {
-      return NextResponse.json({ error: "Pemilik usaha (Owner) tidak dapat menghapus akunnya sendiri." }, { status: 400 });
+      return NextResponse.json({ error: "Pemilik usaha tidak dapat menghapus akunnya sendiri." }, { status: 400 });
     }
 
+    const adminClient = createAdminClient();
+
+    // Cari user ID target jika yang dikirim bukan UUID
+    let targetUserId: string | null = userId;
     const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
 
-    // Panggil fungsi RPC untuk menghapus akun dari auth.users & public.users
-    await supabase.rpc("fn_delete_employee", {
-      p_user_id: isUuid ? userId : null,
-      p_email: email || null,
-      p_username: username || null,
-    });
+    if (!isUuid) {
+      // Cari berdasarkan email atau username di tabel public.users
+      let query = adminClient.from("users").select("id").eq("is_owner", false);
+      if (email) {
+        query = query.eq("contact_email", email.toLowerCase());
+      } else if (username) {
+        query = query.ilike("username", username);
+      }
+      const { data: found } = await query.maybeSingle();
+      targetUserId = found?.id ?? null;
+    }
 
-    // Hapus juga secara langsung dari public.users sebagai backup
-    if (isUuid) {
-      await supabase.from("users").delete().eq("id", userId).eq("is_owner", false);
+    if (!targetUserId) {
+      return NextResponse.json({ error: "Akun karyawan tidak ditemukan." }, { status: 404 });
     }
-    if (email) {
-      await supabase.from("users").delete().eq("contact_email", email).eq("is_owner", false);
+
+    // Pastikan bukan Owner yang akan dihapus
+    const { data: targetProfile } = await adminClient
+      .from("users")
+      .select("is_owner, tenant_id")
+      .eq("id", targetUserId)
+      .maybeSingle();
+
+    if (targetProfile?.is_owner === true) {
+      return NextResponse.json({ error: "Pemilik usaha tidak dapat dihapus." }, { status: 400 });
     }
-    if (username) {
-      await supabase.from("users").delete().eq("username", username).eq("is_owner", false);
+
+    if (targetProfile?.tenant_id !== owner.tenant_id) {
+      return NextResponse.json({ error: "Karyawan bukan bagian dari usaha Anda." }, { status: 403 });
+    }
+
+    // 1. Hapus dari public.users terlebih dahulu
+    await adminClient
+      .from("users")
+      .delete()
+      .eq("id", targetUserId)
+      .eq("is_owner", false);
+
+    // 2. Hapus dari auth.users menggunakan Admin API (Service Role)
+    const { error: authDeleteErr } = await adminClient.auth.admin.deleteUser(targetUserId);
+
+    if (authDeleteErr) {
+      console.warn("Peringatan saat hapus dari auth.users:", authDeleteErr.message);
     }
 
     return NextResponse.json({ success: true });
