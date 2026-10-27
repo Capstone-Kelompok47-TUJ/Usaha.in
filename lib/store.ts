@@ -79,7 +79,7 @@ interface AppStore {
   ) => void;
   toggleUserActive: (userId: string) => void;
   deleteUser: (userId: string) => void;
-  updateUserProfile: (userId: string, updates: { name?: string; username?: string }) => void;
+  updateUserProfile: (userId: string, updates: { name?: string; username?: string; loginEmail?: string }) => void;
 
   // --- SIMULATE ORDER ---
   simulateOrder: (triggeredByUserId: string) => void;
@@ -528,9 +528,16 @@ export const useStore = create<AppStore>()(
 
       updateUserProfile: (userId, updates) => {
         set((s) => ({
-          users: s.users.map((u) =>
-            u.id === userId ? { ...u, ...updates } : u
-          ),
+          users: s.users.map((u) => {
+            if (u.id !== userId) return u;
+            const updated = { ...u, ...updates };
+            // Jika username berubah dan belum ada loginEmail eksplisit, sesuaikan email otomatis
+            if (updates.username && u.loginEmail && u.loginEmail.includes("@") && !updates.loginEmail) {
+              const domain = u.loginEmail.split("@")[1];
+              updated.loginEmail = `${updates.username}@${domain}`;
+            }
+            return updated;
+          }),
         }));
       },
 

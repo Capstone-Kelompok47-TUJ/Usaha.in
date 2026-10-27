@@ -42,11 +42,27 @@ export default function ProfilPage() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Sinkronisasi data awal saat currentUser tersedia
+  // Sinkronisasi data awal saat currentUser tersedia dan pastikan email sesuai username
   useEffect(() => {
     if (currentUser) {
       if (!name) setName(currentUser.name || "");
       if (!username) setUsername(currentUser.username || "");
+
+      // Jika loginEmail belum sinkron dengan username, sesuaikan di store
+      if (
+        currentUser.username &&
+        currentUser.loginEmail &&
+        currentUser.loginEmail.includes("@")
+      ) {
+        const domain = currentUser.loginEmail.split("@")[1];
+        const expectedEmail = `${currentUser.username}@${domain}`;
+        if (currentUser.loginEmail !== expectedEmail) {
+          updateUserProfile(currentUser.id, {
+            username: currentUser.username,
+            loginEmail: expectedEmail,
+          });
+        }
+      }
     }
   }, [currentUser]);
 
@@ -68,16 +84,29 @@ export default function ProfilPage() {
       return;
     }
 
+    // Email otomatis mengikuti username baru
+    let newEmail = currentUser?.loginEmail;
+    if (currentUser?.loginEmail && currentUser.loginEmail.includes("@")) {
+      const domain = currentUser.loginEmail.split("@")[1];
+      newEmail = `${cleanUsername}@${domain}`;
+    }
+
     setIsSavingProfile(true);
 
     try {
       // 1. Update ke Supabase Auth & public.users via API endpoint
       const res = await fetch("/api/profile", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": currentUser?.id || "",
+          "x-user-email": currentUser?.loginEmail || "",
+        },
         body: JSON.stringify({
           name: trimmedName,
           username: cleanUsername,
+          userId: currentUser?.id,
+          currentEmail: currentUser?.loginEmail,
         }),
       });
 
@@ -87,13 +116,17 @@ export default function ProfilPage() {
         throw new Error(data.error || "Gagal memperbarui profil.");
       }
 
+      const finalEmail = data.user?.loginEmail || data.user?.email || newEmail;
+
       // 2. Update via Supabase Client langsung jika ada sesi aktif
       try {
         const supabase = createClient();
         await supabase.auth.updateUser({
+          email: finalEmail,
           data: {
             name: trimmedName,
             username: cleanUsername,
+            email: finalEmail,
           },
         });
       } catch (clientErr) {
@@ -105,11 +138,12 @@ export default function ProfilPage() {
         updateUserProfile(currentUser.id, {
           name: trimmedName,
           username: cleanUsername,
+          loginEmail: finalEmail,
         });
       }
 
-      setProfileMessage({ type: "success", text: "Profil berhasil diperbarui!" });
-      addToast("Profil Anda berhasil disimpan.", "success");
+      setProfileMessage({ type: "success", text: "Profil berhasil diperbarui! Email login otomatis disesuaikan." });
+      addToast("Profil dan email login Anda berhasil diperbarui.", "success");
     } catch (err: any) {
       setProfileMessage({ type: "error", text: err?.message || "Terjadi kesalahan saat menyimpan profil." });
       addToast(err?.message || "Gagal memperbarui profil.", "error");
@@ -167,7 +201,11 @@ export default function ProfilPage() {
     }
   }
 
-  const userEmail = currentUser?.loginEmail || (currentUser as any)?.email || "—";
+  let userEmail = currentUser?.loginEmail || (currentUser as any)?.email || "—";
+  if (currentUser?.username && userEmail.includes("@")) {
+    const domain = userEmail.split("@")[1];
+    userEmail = `${currentUser.username}@${domain}`;
+  }
   const userRole = currentUser?.isOwner ? "Pemilik Usaha" : (currentUser?.template || "Karyawan");
 
   return (
