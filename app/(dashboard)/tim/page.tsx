@@ -549,7 +549,7 @@ export default function TimPage() {
               <Trash2 className="w-5 h-5" /> Hapus Akun {pendingDeletion.name}?
             </h2>
             <p className="text-sm text-[hsl(var(--muted-fg))] mt-2">
-              Akun karyawan ini akan dihapus secara permanen dari sistem dan database Supabase. Karyawan tidak akan dapat masuk kembali ke sistem.
+              Akun karyawan ini akan dihapus secara permanen dari sistem. Karyawan tidak akan dapat masuk kembali ke sistem toko.
             </p>
             <div className="flex gap-2 mt-5">
               <button type="button" disabled={isDeleting} onClick={() => setPendingDeletion(null)}
