@@ -3,7 +3,8 @@
 import { useStore } from "@/lib/store";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Shield } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, LogOut, Shield, User as UserIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -65,14 +66,22 @@ export function AccountSwitcher() {
       {open && (
         <div className="absolute right-0 mt-2 w-72 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl z-50 py-2 animate-fade-in divide-y divide-[hsl(var(--border))]">
           {/* User profile header */}
-          <div className="px-4 py-3">
+          <Link
+            href="/profil"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-3 hover:bg-[hsl(var(--muted))]/50 transition-colors group cursor-pointer"
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                 {currentUser?.name?.charAt(0) ?? "U"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{currentUser?.name}</p>
-                <p className="text-xs text-[hsl(var(--muted-fg))] truncate">{currentUser?.loginEmail || (currentUser as any)?.email}</p>
+                <p className="font-semibold text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {currentUser?.name}
+                </p>
+                <p className="text-xs text-[hsl(var(--muted-fg))] truncate">
+                  {currentUser?.loginEmail || (currentUser as any)?.email}
+                </p>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     <Shield className="w-2.5 h-2.5" />
@@ -86,17 +95,27 @@ export function AccountSwitcher() {
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
 
-          {/* Logout Action */}
-          <div className="p-1.5">
+          {/* Menu Actions */}
+          <div className="p-1.5 space-y-1">
+            <Link
+              href="/profil"
+              id="header-profile-link"
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] rounded-lg transition-colors cursor-pointer"
+            >
+              <UserIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Profil Saya</span>
+            </Link>
+
             <button
               onClick={handleLogout}
               id="header-logout-btn"
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              Keluar (Logout)
+              <span>Keluar (Logout)</span>
             </button>
           </div>
         </div>

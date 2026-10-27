@@ -79,6 +79,7 @@ interface AppStore {
   ) => void;
   toggleUserActive: (userId: string) => void;
   deleteUser: (userId: string) => void;
+  updateUserProfile: (userId: string, updates: { name?: string; username?: string }) => void;
 
   // --- SIMULATE ORDER ---
   simulateOrder: (triggeredByUserId: string) => void;
@@ -522,6 +523,14 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           users: s.users.filter((u) => u.id !== userId),
           activityLogs: [log, ...activityLogs],
+        }));
+      },
+
+      updateUserProfile: (userId, updates) => {
+        set((s) => ({
+          users: s.users.map((u) =>
+            u.id === userId ? { ...u, ...updates } : u
+          ),
         }));
       },
 
