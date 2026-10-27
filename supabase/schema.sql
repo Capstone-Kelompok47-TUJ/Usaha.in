@@ -250,17 +250,56 @@ DECLARE
   v_tenant_id UUID;
   v_business_name TEXT;
   v_slug TEXT;
+  v_is_employee BOOLEAN;
 BEGIN
+  -- 1. Check if this is an employee account being added to an existing tenant
+  IF new.raw_user_meta_data->>'tenant_id' IS NOT NULL THEN
+    v_tenant_id := (new.raw_user_meta_data->>'tenant_id')::UUID;
+    
+    INSERT INTO public.users (
+      id, tenant_id, username, name, contact_email, phone, is_owner, template, permissions
+    ) VALUES (
+      new.id,
+      v_tenant_id,
+      COALESCE(new.raw_user_meta_data->>'username', SPLIT_PART(new.email, '@', 1)),
+      COALESCE(new.raw_user_meta_data->>'name', SPLIT_PART(new.email, '@', 1)),
+      new.email,
+      new.raw_user_meta_data->>'phone',
+      false,
+      COALESCE(new.raw_user_meta_data->>'template', 'Karyawan'),
+      COALESCE(
+        (new.raw_user_meta_data->'permissions')::jsonb,
+        '{
+          "dashboard": "view",
+          "penjualan": "view",
+          "produk": "view",
+          "stok": "view",
+          "pengeluaran": "none",
+          "pembayaran": "none",
+          "pengiriman": "none",
+          "pelanggan": "none",
+          "laporan_keuangan": "none",
+          "laporan_periodik": "none",
+          "analitik": "none",
+          "copilot": "none"
+        }'::jsonb
+      )
+    );
+
+    RETURN new;
+  END IF;
+
+  -- 2. Otherwise, this is a new UMKM Owner registration
   v_business_name := COALESCE(new.raw_user_meta_data->>'business_name', 'Toko Usaha Saya');
   v_slug := LOWER(REGEXP_REPLACE(v_business_name, '[^a-zA-Z0-9]+', '', 'g'));
   IF v_slug = '' THEN v_slug := 'usaha-' || SUBSTRING(new.id::TEXT, 1, 6); END IF;
 
-  -- 1. Create Tenant
+  -- Create Tenant
   INSERT INTO public.tenants (name, slug, city, phone)
   VALUES (v_business_name, v_slug || '-' || SUBSTRING(new.id::TEXT, 1, 4), 'Bandung', COALESCE(new.raw_user_meta_data->>'phone', ''))
   RETURNING id INTO v_tenant_id;
 
-  -- 2. Create User as Owner with Full Access
+  -- Create User as Owner with Full Access
   INSERT INTO public.users (
     id, tenant_id, username, name, contact_email, phone, is_owner, template, permissions
   ) VALUES (

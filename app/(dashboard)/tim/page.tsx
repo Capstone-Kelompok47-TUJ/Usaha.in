@@ -7,7 +7,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { ALL_MODULES, TEMPLATES } from "@/lib/permissions";
 import { redirect } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus, X, UserCog, Power, Edit, Check,
 } from "lucide-react";
@@ -108,13 +108,31 @@ function EmployeeFormModal({
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     if (editUser) {
-      updateUserPermissions(editUser.id, permissions, template as string);
-      onClose();
+      setSubmitting(true);
+      try {
+        await fetch("/api/team", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: editUser.id,
+            permissions,
+            template,
+          }),
+        });
+        updateUserPermissions(editUser.id, permissions, template as string);
+        onClose();
+      } catch (err: any) {
+        setError(err?.message || "Gagal memperbarui data karyawan.");
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9._]/g, "");
       if (!cleanUser) {
@@ -126,18 +144,42 @@ function EmployeeFormModal({
         return;
       }
 
-      const res = addUser({
-        name: name.trim(),
-        username: cleanUser,
-        password,
-        template: template as string,
-        permissions,
-      });
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/team", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            username: cleanUser,
+            password,
+            template: template as string,
+            permissions,
+          }),
+        });
 
-      if (res.success) {
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || "Gagal menambahkan akun karyawan ke database.");
+          setSubmitting(false);
+          return;
+        }
+
+        // Also add to local store for instant UI feedback
+        addUser({
+          id: data?.user?.id,
+          name: name.trim(),
+          username: cleanUser,
+          password,
+          template: template as string,
+          permissions,
+        } as any);
+
         onClose();
-      } else {
-        setError(res.message ?? "Gagal menambahkan karyawan.");
+      } catch (err: any) {
+        setError(err?.message || "Terjadi kesalahan jaringan.");
+      } finally {
+        setSubmitting(false);
       }
     }
   }
@@ -222,8 +264,9 @@ function EmployeeFormModal({
           </div>
 
           <button type="submit"
-            className="w-full py-2.5 rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20">
-            {editUser ? "Simpan Perubahan" : "Buat Akun Karyawan"}
+            disabled={submitting}
+            className="w-full py-2.5 rounded-lg bg-blue-600 disabled:opacity-50 text-white font-semibold text-sm hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20">
+            {submitting ? "Menyimpan ke Database..." : editUser ? "Simpan Perubahan" : "Buat Akun Karyawan"}
           </button>
         </form>
       </div>
@@ -247,7 +290,48 @@ export default function TimPage() {
   const [editTarget, setEditTarget] = useState<User | undefined>(undefined);
   const [pendingDeactivation, setPendingDeactivation] = useState<User | null>(null);
 
+  const addUser = useStore((s) => s.addUser);
+
+  // Sync team members from Supabase on mount
+  useEffect(() => {
+    async function fetchTeam() {
+      try {
+        const res = await fetch("/api/team");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.members && Array.isArray(data.members)) {
+            data.members.forEach((m: any) => {
+              const exists = tenantUsers.some((u) => u.id === m.id || u.username === m.username);
+              if (!exists && !m.is_owner) {
+                addUser({
+                  id: m.id,
+                  name: m.name,
+                  username: m.username,
+                  password: "●●●●●●",
+                  template: m.template || "Karyawan",
+                  permissions: m.permissions || {},
+                } as any);
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Gagal sinkronisasi data tim:", e);
+      }
+    }
+    fetchTeam();
+  }, []);
+
   const employees = tenantUsers.filter((u) => !u.isOwner);
+
+  function handleToggleActive(emp: User) {
+    toggleUserActive(emp.id);
+    fetch("/api/team", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: emp.id, active: !emp.active }),
+    }).catch(console.error);
+  }
 
   function openEdit(emp: User) {
     setEditTarget(emp);
@@ -351,7 +435,7 @@ export default function TimPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] text-xs font-medium hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer">
                     <Edit className="w-3.5 h-3.5" /> Ubah
                   </button>
-                  <button onClick={() => emp.active ? setPendingDeactivation(emp) : toggleUserActive(emp.id)}
+                  <button onClick={() => emp.active ? setPendingDeactivation(emp) : handleToggleActive(emp)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       emp.active
                         ? "border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -380,7 +464,7 @@ export default function TimPage() {
                 Jangan nonaktifkan
               </button>
               <button type="button" onClick={() => {
-                toggleUserActive(pendingDeactivation.id);
+                handleToggleActive(pendingDeactivation);
                 setPendingDeactivation(null);
               }}
                 className="flex-1 min-h-11 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
