@@ -79,9 +79,21 @@ function EmployeeFormModal({
   const updateUserPermissions = useStore((s) => s.updateUserPermissions);
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
+  const currentUser = useCurrentUser();
+
+  // Domain UMKM mengikuti domain Owner (misal: @kopijawa.usaha.in atau @kopimasihpacaran.usaha.in)
+  let tenantDomain = "usaha.in";
+  if (currentUser?.loginEmail && currentUser.loginEmail.includes("@") && currentUser.loginEmail.endsWith(".usaha.in")) {
+    tenantDomain = currentUser.loginEmail.split("@")[1];
+  } else if (activeTenant?.slug) {
+    tenantDomain = `${activeTenant.slug.toLowerCase().replace(/[^a-z0-9-]/g, "")}.usaha.in`;
+  } else if (activeTenant?.name) {
+    tenantDomain = `${activeTenant.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.usaha.in`;
+  }
+
   const [name, setName] = useState(editUser?.name ?? "");
-  const [username, setUsername] = useState(editUser?.username ?? "");
-  const [password, setPassword] = useState(editUser?.password ?? "");
+  const [username, setUsername] = useState(editUser?.username ? editUser.username.replace(`@${tenantDomain}`, "") : "");
+  const [password, setPassword] = useState(editUser?.password ?? "88888888");
   const [template, setTemplate] = useState<TemplateKey | string>(editUser?.template ?? "Staf Penjualan");
   const [permissions, setPermissions] = useState<Record<ModuleKey, Level>>(
     editUser?.permissions ?? TEMPLATES["Staf Penjualan"]
@@ -136,13 +148,16 @@ function EmployeeFormModal({
     } else {
       const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9._]/g, "");
       if (!cleanUser) {
-        setError("Nama pengguna wajib diisi.");
+        setError("Nama ID / username login wajib diisi.");
         return;
       }
-      if (password.length < 6) {
+      const initialPassword = password.trim() || "88888888";
+      if (initialPassword.length < 6) {
         setError("Kata sandi minimal 6 karakter.");
         return;
       }
+
+      const fullEmail = `${cleanUser}@${tenantDomain}`;
 
       setSubmitting(true);
       try {
@@ -151,8 +166,8 @@ function EmployeeFormModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim(),
-            username: cleanUser,
-            password,
+            username: fullEmail,
+            password: initialPassword,
             template: template as string,
             permissions,
           }),
@@ -170,7 +185,8 @@ function EmployeeFormModal({
           id: data?.user?.id,
           name: name.trim(),
           username: cleanUser,
-          password,
+          loginEmail: fullEmail,
+          password: initialPassword,
           template: template as string,
           permissions,
         } as any);
@@ -213,23 +229,40 @@ function EmployeeFormModal({
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
               </div>
               <div>
-                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Email / ID Login</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._@]/g, ""))}
-                  required
-                  placeholder="dewi@usaha.id atau dewi"
-                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
-                />
+                <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Email / ID Login Karyawan</label>
+                <div className="flex items-center rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] focus-within:ring-2 focus-within:ring-blue-500/30 overflow-hidden">
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => {
+                      const clean = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, "");
+                      setUsername(clean);
+                    }}
+                    required
+                    placeholder="dewi"
+                    className="flex-1 px-3 py-2 bg-transparent text-sm focus:outline-none font-mono"
+                  />
+                  <span className="px-3 py-2 bg-[hsl(var(--muted))] text-xs font-mono text-[hsl(var(--muted-fg))] border-l border-[hsl(var(--border))] shrink-0 font-semibold select-none">
+                    @{tenantDomain}
+                  </span>
+                </div>
                 <p className="text-[10px] text-[hsl(var(--muted-fg))] mt-1">
-                  Digunakan karyawan untuk masuk ke sistem Usaha.in
+                  Format login: <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">{username || "nama"}@{tenantDomain}</span>
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-[hsl(var(--muted-fg))] block mb-1">Kata Sandi Awal</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Minimal 6 karakter"
-                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="88888888"
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
+                />
+                <p className="text-[10px] text-[hsl(var(--muted-fg))] mt-1">
+                  Kata sandi awal otomatis diatur ke: <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">88888888</span>
+                </p>
               </div>
             </div>
           )}
