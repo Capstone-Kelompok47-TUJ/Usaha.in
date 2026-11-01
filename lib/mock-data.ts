@@ -497,48 +497,8 @@ export const INITIAL_STOCK_MOVEMENTS: StockMovement[] = [
 // LOG AKTIVITAS AWAL
 // ============================================================
 
-export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [
-  {
-    id: "LOG-001",
-    userId: "owner-1",
-    userName: "Pak Ahmad (Pemilik)",
-    action: "mengatur penugasan Sari sebagai Staf Penjualan",
-    module: "manajemen_tim",
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "LOG-002",
-    userId: "owner-1",
-    userName: "Pak Ahmad (Pemilik)",
-    action: "mengatur penugasan Budi sebagai Staf Gudang",
-    module: "manajemen_tim",
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "LOG-003",
-    userId: "owner-1",
-    userName: "Pak Ahmad (Pemilik)",
-    action: "mengatur penugasan Rina sebagai Staf Keuangan",
-    module: "manajemen_tim",
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "LOG-004",
-    userId: "emp-sari",
-    userName: "Sari",
-    action: "menambah pesanan #ORD-001 dari Shopee",
-    module: "penjualan",
-    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "LOG-005",
-    userId: "emp-budi",
-    userName: "Budi",
-    action: "memindahkan pesanan #ORD-002 ke status Diproses",
-    module: "pengiriman",
-    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-  },
-];
+export const INITIAL_ACTIVITY_LOGS: ActivityLog[] = [];
+// Log awal dikosongkan — setiap toko hanya punya log dari aktivitas nyata mereka sendiri.
 
 // ============================================================
 // GENERATOR DATA AWAL UNTUK TENANT BARU

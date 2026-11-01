@@ -21,7 +21,10 @@ const MODULE_LABEL: Record<string, string> = {
 
 export default function LogAktivitasPage() {
   const user = useCurrentUser();
-  const activityLogs = useStore((s) => s.activityLogs);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const activityLogs = useStore((s) =>
+    s.activityLogs.filter((log) => log.tenantId === activeTenantId)
+  );
 
   if (!user?.isOwner) redirect("/tidak-ada-akses");
 
