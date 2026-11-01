@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -21,12 +22,17 @@ const MODULE_LABEL: Record<string, string> = {
 
 export default function LogAktivitasPage() {
   const user = useCurrentUser();
+  const rawLogs = useStore((s) => s.activityLogs);
   const activeTenantId = useStore((s) => s.activeTenantId);
-  const activityLogs = useStore((s) =>
-    s.activityLogs.filter((log) => log.tenantId === activeTenantId)
-  );
 
-  if (!user?.isOwner) redirect("/tidak-ada-akses");
+  const activityLogs = useMemo(() => {
+    if (!Array.isArray(rawLogs)) return [];
+    return rawLogs.filter((log) => log.tenantId === activeTenantId);
+  }, [rawLogs, activeTenantId]);
+
+  if (user && !user.isOwner) {
+    redirect("/tidak-ada-akses");
+  }
 
   return (
     <DashboardLayout title="Log Aktivitas" subtitle="Riwayat semua tindakan yang tercatat">

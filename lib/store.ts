@@ -721,6 +721,7 @@ export const useStore = create<AppStore>()(
 
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: get().activeTenantId,
           userId: triggeredByUserId,
           userName: actor?.name ?? "Sistem",
           action: `menambah pesanan ${newOrderId} dari ${channelLabelMap[channel]} — ${product.name} ×${finalQty}`,
@@ -769,6 +770,7 @@ export const useStore = create<AppStore>()(
         };
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: get().activeTenantId,
           userId: actor?.id ?? "owner-1",
           userName: actor?.name ?? "Pemilik",
           action: `menambah pembelian ${newPurchase.id} — ${purchaseData.qty} unit produk`,
@@ -1119,6 +1121,7 @@ export const useStore = create<AppStore>()(
         const actor = users.find((u) => u.id === userId);
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: actor?.tenantId ?? get().activeTenantId,
           userId,
           userName: actor?.name ?? "Karyawan",
           action: `memindahkan pesanan ${orderId} ke status "${newStatus}"`,
@@ -1139,6 +1142,7 @@ export const useStore = create<AppStore>()(
         const actor = users.find((u) => u.id === userId);
         const log: ActivityLog = {
           id: genId("LOG"),
+          tenantId: actor?.tenantId ?? get().activeTenantId,
           userId,
           userName: actor?.name ?? "Karyawan",
           action: `menandai pesanan ${orderId} sebagai LUNAS`,
