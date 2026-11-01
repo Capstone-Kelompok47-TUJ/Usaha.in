@@ -1,5 +1,6 @@
 "use client";
 
+import React, { isValidElement } from "react";
 import { FolderOpen } from "lucide-react";
 
 export interface EmptyStateProps {
@@ -32,10 +33,15 @@ export function EmptyState({
   const primaryText = actionLabel || actionText;
   const secondaryText = secondaryActionLabel || secondaryActionText;
 
-  // Render icon whether it's a ComponentType or ReactNode
+  // Render icon whether it's a ComponentType (function/forwardRef) or ReactNode
   let renderedIcon: React.ReactNode = null;
   if (IconProp) {
-    if (typeof IconProp === "function") {
+    if (isValidElement(IconProp)) {
+      renderedIcon = IconProp;
+    } else if (
+      typeof IconProp === "function" ||
+      (typeof IconProp === "object" && IconProp !== null && "$$typeof" in (IconProp as object))
+    ) {
       const IconComponent = IconProp as React.ComponentType<{ className?: string }>;
       renderedIcon = <IconComponent className="w-7 h-7" />;
     } else {

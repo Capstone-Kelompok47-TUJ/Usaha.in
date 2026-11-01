@@ -200,7 +200,7 @@ export default function StokPage() {
         {/* Empty state if no products */}
         {products.length === 0 ? (
           <EmptyState
-            icon={Package}
+            icon={<Package className="w-7 h-7 text-[hsl(var(--muted-fg))]" />}
             title="Belum ada data produk untuk dipantau"
             description="Daftarkan produk Anda terlebih dahulu di menu Produk & Stok untuk melacak persediaan fisik dan rekomendasi belanja."
             actionLabel="Tambah Produk Baru"

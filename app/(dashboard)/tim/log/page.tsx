@@ -54,7 +54,7 @@ export default function LogAktivitasPage() {
 
         {activityLogs.length === 0 ? (
           <EmptyState
-            icon={Activity}
+            icon={<Activity className="w-7 h-7 text-[hsl(var(--muted-fg))]" />}
             title="Belum ada riwayat aktivitas"
             description="Aktivitas operasional tim seperti input pesanan baru atau penyesuaian stok akan tercatat otomatis di sini."
           />

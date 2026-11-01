@@ -94,7 +94,7 @@ export function DashboardLayout({ title, subtitle, children }: DashboardLayoutPr
     if (e.key.toLowerCase() === "n" && !e.ctrlKey && !e.metaKey && !e.altKey) {
       // Search for add/new button on active page
       const newBtn = document.querySelector(
-        '[data-shortcut="new"], #btn-tambah, #btn-input, button:has-text("+"), button[title*="Tambah"], button[title*="Input"]'
+        '[data-shortcut="new"], #btn-tambah, #btn-input, button[data-action="new"], button[title*="Tambah"], button[title*="Input"]'
       ) as HTMLButtonElement;
 
       if (newBtn) {
