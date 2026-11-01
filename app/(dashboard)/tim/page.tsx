@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { ALL_MODULES, TEMPLATES } from "@/lib/permissions";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   Plus, X, UserCog, Power, Edit, Check, Trash2,
@@ -320,12 +320,15 @@ export default function TimPage() {
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const toggleUserActive = useStore((s) => s.toggleUserActive);
 
+  const router = useRouter();
   const activeTenant = getActiveTenant();
   const tenantUsers = getTenantUsers();
 
-  if (user && !user.isOwner) {
-    redirect("/tidak-ada-akses");
-  }
+  useEffect(() => {
+    if (user && !user.isOwner) {
+      router.push("/tidak-ada-akses");
+    }
+  }, [user, router]);
 
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<User | undefined>(undefined);

@@ -430,6 +430,7 @@ export default function DashboardPage() {
   const user = useCurrentUser();
   const rawOrders = useStore((s) => s.orders);
   const rawPurchases = useStore((s) => s.purchases);
+  const rawExpenses = useStore((s) => s.expenses);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const orders = useMemo(
     () => rawOrders.filter((o) => o.tenantId === activeTenantId),
@@ -439,6 +440,10 @@ export default function DashboardPage() {
     () => rawPurchases.filter((p) => p.tenantId === activeTenantId),
     [rawPurchases, activeTenantId]
   );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
   const [period, setPeriod] = useState<Period>("monthly");
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -446,7 +451,7 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const kpi = calcKpi(orders, purchases, period);
+  const kpi = calcKpi(orders, purchases, period, expenses);
   const isOwner = user?.isOwner ?? false;
   const [chartsOpen, setChartsOpen] = useState(true);
 

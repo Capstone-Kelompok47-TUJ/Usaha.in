@@ -146,8 +146,8 @@ export default function CopilotPage() {
 
   function buildContext(): CopilotContext {
     const monthly = calcChannelFinance(orders, purchases, "monthly");
-    const weekly = calcFinanceSummary(orders, purchases, "weekly");
-    const monthlySum = calcFinanceSummary(orders, purchases, "monthly");
+    const weekly = calcFinanceSummary(orders, purchases, "weekly", expenses);
+    const monthlySum = calcFinanceSummary(orders, purchases, "monthly", expenses);
 
     const marketplaceA = monthly.find((c) => c.channel === "marketplace_a");
     const marketplaceB = monthly.find((c) => c.channel === "marketplace_b");

@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatDateTime } from "@/lib/finance";
-import { redirect } from "next/navigation";
 import { Activity } from "lucide-react";
 
 const MODULE_LABEL: Record<string, string> = {
@@ -21,18 +21,21 @@ const MODULE_LABEL: Record<string, string> = {
 };
 
 export default function LogAktivitasPage() {
+  const router = useRouter();
   const user = useCurrentUser();
   const rawLogs = useStore((s) => s.activityLogs);
   const activeTenantId = useStore((s) => s.activeTenantId);
 
   const activityLogs = useMemo(() => {
     if (!Array.isArray(rawLogs)) return [];
-    return rawLogs.filter((log) => log.tenantId === activeTenantId);
+    return rawLogs.filter((log) => log && log.tenantId === activeTenantId);
   }, [rawLogs, activeTenantId]);
 
-  if (user && !user.isOwner) {
-    redirect("/tidak-ada-akses");
-  }
+  useEffect(() => {
+    if (user && !user.isOwner) {
+      router.push("/tidak-ada-akses");
+    }
+  }, [user, router]);
 
   return (
     <DashboardLayout title="Log Aktivitas" subtitle="Riwayat semua tindakan yang tercatat">
@@ -71,27 +74,35 @@ export default function LogAktivitasPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activityLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors">
-                      <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))] whitespace-nowrap">
-                        {formatDateTime(log.timestamp)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                            {log.userName.charAt(0)}
+                  {activityLogs.map((log) => {
+                    const userName =
+                      typeof log?.userName === "string" && log.userName.trim()
+                        ? log.userName.trim()
+                        : "Pengguna";
+                    const initial = userName.charAt(0).toUpperCase() || "U";
+
+                    return (
+                      <tr key={log.id} className="border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors">
+                        <td className="px-4 py-3 text-xs text-[hsl(var(--muted-fg))] whitespace-nowrap">
+                          {formatDateTime(log.timestamp)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                              {initial}
+                            </div>
+                            <span className="font-medium text-sm">{userName}</span>
                           </div>
-                          <span className="font-medium text-sm">{log.userName}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] font-medium">
-                          {MODULE_LABEL[log.module] ?? log.module}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm">{log.action}</td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] font-medium">
+                            {MODULE_LABEL[log.module] ?? log.module}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">{log.action ?? "-"}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

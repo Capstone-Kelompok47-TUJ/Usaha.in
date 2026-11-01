@@ -2,9 +2,7 @@
 // USAHA.IN — Finance Calculations (Pure Functions)
 // ============================================================
 
-import type { Order, Purchase, FinanceSummary, ChannelFinance, Channel } from "@/types";
-
-const OPERATIONAL_EXPENSE_MONTHLY = 2_500_000; // pengeluaran tetap per bulan
+import type { Order, Purchase, FinanceSummary, ChannelFinance, Channel, Expense } from "@/types";
 
 /**
  * Filter pesanan berdasarkan rentang tanggal.
@@ -31,13 +29,14 @@ export function filterOrdersByPeriod(
 }
 
 /**
- * Hitung ringkasan keuangan dari list pesanan + pembelian.
+ * Hitung ringkasan keuangan dari list pesanan + pembelian + pengeluaran aktual.
  * Rumus: Laba = Pendapatan − HPP − Admin Fee − Ongkir − Operasional
  */
 export function calcFinanceSummary(
   orders: Order[],
   purchases: Purchase[],
-  period: "daily" | "weekly" | "monthly"
+  period: "daily" | "weekly" | "monthly",
+  expenses: Expense[] = []
 ): FinanceSummary {
   const filteredOrders = filterOrdersByPeriod(orders, period);
 
@@ -60,9 +59,24 @@ export function calcFinanceSummary(
     );
   }, 0);
 
-  // Operasional proporsional ke periode
-  const factor = period === "daily" ? 1 / 30 : period === "weekly" ? 7 / 30 : 1;
-  const operationalExpense = Math.round(OPERATIONAL_EXPENSE_MONTHLY * factor);
+  // Operasional dihitung dari pengeluaran aktual toko (bukan angka tebakan/demo)
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (period === "daily") {
+    cutoff.setDate(now.getDate() - 1);
+  } else if (period === "weekly") {
+    cutoff.setDate(now.getDate() - 7);
+  } else {
+    cutoff.setDate(now.getDate() - 30);
+  }
+
+  const operationalExpense = (expenses || [])
+    .filter((e) => {
+      if (e.isPrive) return false;
+      const d = new Date(e.date);
+      return !isNaN(d.getTime()) && d >= cutoff;
+    })
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const netProfit = revenue - cogs - adminFee - shippingCost - operationalExpense;
 
@@ -110,9 +124,10 @@ export function calcChannelFinance(
 export function calcKpi(
   orders: Order[],
   purchases: Purchase[],
-  period: "daily" | "weekly" | "monthly"
+  period: "daily" | "weekly" | "monthly",
+  expenses: Expense[] = []
 ) {
-  const current = calcFinanceSummary(orders, purchases, period);
+  const current = calcFinanceSummary(orders, purchases, period, expenses);
 
   // Periode sebelumnya untuk persentase perubahan
   const prevOrders = orders.filter((o) => {
@@ -166,23 +181,37 @@ export function formatRp(amount: number): string {
 /**
  * Format tanggal ke format Indonesia.
  */
-export function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(dateStr));
+export function formatDate(dateStr?: string): string {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return "-";
+  }
 }
 
 /**
  * Format datetime ke format Indonesia.
  */
-export function formatDateTime(dateStr: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dateStr));
+export function formatDateTime(dateStr?: string): string {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return "-";
+  }
 }

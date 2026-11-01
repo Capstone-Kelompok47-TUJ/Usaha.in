@@ -6,17 +6,19 @@ import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useStore } from "@/lib/store";
 import { calcFinanceSummary, formatRp } from "@/lib/finance";
-import { redirect } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
 import { SalesLineChart, ChannelChart, TopProductsChart } from "@/components/dashboard/Charts";
 import type { Channel } from "@/types";
 
 type Period = "daily" | "weekly" | "monthly";
 
 export default function LaporanPage() {
+  const router = useRouter();
   const { canView } = usePermission("laporan_periodik");
   const rawOrders = useStore((s) => s.orders);
   const rawPurchases = useStore((s) => s.purchases);
+  const rawExpenses = useStore((s) => s.expenses);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const orders = useMemo(
     () => rawOrders.filter((o) => o.tenantId === activeTenantId),
@@ -26,11 +28,19 @@ export default function LaporanPage() {
     () => rawPurchases.filter((p) => p.tenantId === activeTenantId),
     [rawPurchases, activeTenantId]
   );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
   const [period, setPeriod] = useState<Period>("monthly");
 
-  if (!canView) redirect("/tidak-ada-akses");
+  useEffect(() => {
+    if (!canView) {
+      router.push("/tidak-ada-akses");
+    }
+  }, [canView, router]);
 
-  const summary = calcFinanceSummary(orders, purchases, period);
+  const summary = calcFinanceSummary(orders, purchases, period, expenses);
   const PERIODS: { key: Period; label: string }[] = [
     { key: "daily", label: "Hari Ini" },
     { key: "weekly", label: "Minggu Ini" },
