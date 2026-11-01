@@ -233,8 +233,8 @@ export default function CopilotPage() {
       cashReserve,
       overdueReceivables,
       topExpenseCategories,
-      healthScore: 82,
-      healthStatus: "Sehat",
+      healthScore: orders.length > 0 ? 80 : 0,
+      healthStatus: orders.length > 0 ? "Sehat" : "Belum Ada Data",
     };
   }
 

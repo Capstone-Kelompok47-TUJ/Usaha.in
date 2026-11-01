@@ -93,6 +93,28 @@ function calcHealthScore(
   const runwayDays = avgDailyExp > 0 ? kasEst / avgDailyExp : 60;
   const runwayScore = clamp(runwayDays / 60, 0, 1) * 100;
 
+  const hasData = paid30.length > 0 || expenses30.length > 0 || inventoryValue > 0 || orders.length > 0;
+  if (!hasData) {
+    return {
+      hasData: false,
+      total: 0,
+      label: "Belum Ada Data",
+      color: "slate",
+      components: [
+        { name: "Margin Bersih", score: 0, weight: 30, detail: "Belum ada transaksi penjualan" },
+        { name: "Perputaran Stok", score: 0, weight: 20, detail: "Belum ada data stok produk" },
+        { name: "Umur Piutang", score: 0, weight: 20, detail: "Belum ada tagihan piutang" },
+        { name: "Kas Runway", score: 0, weight: 30, detail: "Belum ada mutasi kas operasional" },
+      ],
+      kasEst: 0,
+      runwayDays: 0,
+      netProfit30: 0,
+      netRevenue30: 0,
+      opEx30: 0,
+      selling30: 0,
+    };
+  }
+
   const total = Math.round(
     marginScore * 0.30 +
     stockScore * 0.20 +
@@ -101,6 +123,7 @@ function calcHealthScore(
   );
 
   return {
+    hasData: true,
     total,
     label: total >= 80 ? "Sehat" : total >= 60 ? "Waspada" : "Perlu Perhatian",
     color: total >= 80 ? "emerald" : total >= 60 ? "amber" : "red",
@@ -147,22 +170,26 @@ function HealthScoreCard({ now }: { now: number }) {
   const weakestComponent = score.components.reduce((weakest, component) =>
     component.score < weakest.score ? component : weakest
   );
-  const advice = score.total >= 80
-    ? "Pertahankan kebiasaan mencatat transaksi dan memeriksa kondisi usaha secara rutin."
-    : weakestComponent.name === "Margin Bersih"
-      ? "Periksa kembali harga jual dan modal barang agar laba dari setiap penjualan tetap cukup."
-      : weakestComponent.name === "Perputaran Stok"
-        ? "Mulai dengan memeriksa barang yang paling lama tersimpan dan sesuaikan rencana belanja."
-        : weakestComponent.name === "Umur Piutang"
-          ? "Dahulukan menghubungi pembeli yang tagihannya sudah lewat tempo."
-          : "Tinjau biaya wajib dan pemasukan yang diperkirakan masuk dalam beberapa minggu ke depan.";
+  const advice = !score.hasData
+    ? "Belum ada transaksi tercatat. Mulai catat pesanan atau pengeluaran untuk mengaktifkan analisis kesehatan usaha."
+    : score.total >= 80
+      ? "Pertahankan kebiasaan mencatat transaksi dan memeriksa kondisi usaha secara rutin."
+      : weakestComponent.name === "Margin Bersih"
+        ? "Periksa kembali harga jual dan modal barang agar laba dari setiap penjualan tetap cukup."
+        : weakestComponent.name === "Perputaran Stok"
+          ? "Mulai dengan memeriksa barang yang paling lama tersimpan dan sesuaikan rencana belanja."
+          : weakestComponent.name === "Umur Piutang"
+            ? "Dahulukan menghubungi pembeli yang tagihannya sudah lewat tempo."
+            : "Tinjau biaya wajib dan pemasukan yang diperkirakan masuk dalam beberapa minggu ke depan.";
 
   const colorMap: Record<string, string> = {
+    slate: "text-slate-500 dark:text-slate-400",
     emerald: "text-emerald-600 dark:text-emerald-400",
     amber: "text-amber-600 dark:text-amber-400",
     red: "text-red-600 dark:text-red-400",
   };
   const bgMap: Record<string, string> = {
+    slate: "bg-slate-400 dark:bg-slate-600",
     emerald: "bg-emerald-500",
     amber: "bg-amber-500",
     red: "bg-red-500",
@@ -177,7 +204,7 @@ function HealthScoreCard({ now }: { now: number }) {
         onClick={() => setOpen((o) => !o)}>
         <div className="flex items-center gap-3">
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl ${bgMap[score.color]}`}>
-            {score.total}
+            {score.hasData ? score.total : "—"}
           </div>
           <div className="text-left">
             <p className="text-xs text-[hsl(var(--muted-fg))]">Skor Kesehatan Usaha</p>
