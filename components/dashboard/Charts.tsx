@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend,
@@ -28,7 +29,12 @@ const CHANNEL_LABELS: Record<string, string> = {
 
 // ====== Sales Line Chart ======
 export function SalesLineChart() {
-  const orders = useStore((s) => s.orders);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
 
   // Hitung penjualan per hari (30 hari terakhir)
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -89,7 +95,12 @@ export function SalesLineChart() {
 
 // ====== Channel Bar/Pie Chart ======
 export function ChannelChart() {
-  const orders = useStore((s) => s.orders);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
 
   const channels: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
   const data = channels.map((ch) => {
@@ -151,8 +162,17 @@ export function ChannelChart() {
 
 // ====== Top Products Chart ======
 export function TopProductsChart() {
-  const orders = useStore((s) => s.orders);
-  const products = useStore((s) => s.products);
+  const rawOrders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
 
   // Hitung qty terjual per produk
   const productSales: Record<string, number> = {};

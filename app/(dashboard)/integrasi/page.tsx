@@ -22,6 +22,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useStore } from "@/lib/store";
 import { WhatsAppLogo, ShopeeLogo, TokopediaLogo } from "@/components/icons/BrandLogos";
 
 type Platform = "whatsapp" | "shopee" | "tokopedia";
@@ -72,7 +73,7 @@ const CHANNELS: Record<Platform, PlatformConfig> = {
     features: ["Invoice WhatsApp Otomatis", "Notifikasi Resi Transaksi", "Manajemen Chat Terpusat"],
     fields: [
       { key: "phone", label: "Nomor WhatsApp Business", placeholder: "+62 812-3456-7890", type: "tel", helper: "Gunakan nomor aktif dengan kode negara, contoh: +6281234567890." },
-      { key: "businessName", label: "Nama Bisnis di WhatsApp", placeholder: "Toko Sejahtera Utami" },
+      { key: "businessName", label: "Nama Bisnis di WhatsApp", placeholder: "Nama Toko Anda" },
     ],
   },
   shopee: {
@@ -91,9 +92,9 @@ const CHANNELS: Record<Platform, PlatformConfig> = {
     buttonStyle: "bg-[#EE4D2D] hover:bg-[#d83e20] text-white shadow-orange-500/20",
     features: ["Sinkronisasi Stok Realtime", "Auto-Import Pesanan Baru", "Integrasi Seller Centre"],
     fields: [
-      { key: "shopName", label: "Nama Toko Shopee", placeholder: "Toko Sejahtera Official" },
+      { key: "shopName", label: "Nama Toko Shopee", placeholder: "Nama Toko Shopee Anda" },
       { key: "shopId", label: "Shop ID Shopee", placeholder: "Contoh: 987654321", helper: "Dapat ditemukan pada menu Profil Toko di Shopee Seller Centre." },
-      { key: "sellerEmail", label: "Email Penjual Shopee", placeholder: "pemilik@tokosejahtera.com", type: "email", helper: "Jangan masukkan kata sandi akun Anda." },
+      { key: "sellerEmail", label: "Email Penjual Shopee", placeholder: "toko@email.com", type: "email", helper: "Jangan masukkan kata sandi akun Anda." },
     ],
   },
   tokopedia: {
@@ -112,9 +113,9 @@ const CHANNELS: Record<Platform, PlatformConfig> = {
     buttonStyle: "bg-[#03AC0E] hover:bg-[#02920c] text-white shadow-green-500/20",
     features: ["Kelola Multi-Varian", "Sinkron Resi Otomatis", "Rekap Penjualan Terpadu"],
     fields: [
-      { key: "storeName", label: "Nama Toko Tokopedia", placeholder: "Toko Sejahtera Indonesia" },
-      { key: "storeUrl", label: "URL Domain Toko", placeholder: "https://www.tokopedia.com/tokosejahtera", type: "url", helper: "Salin alamat link toko dari halaman profil Tokopedia Anda." },
-      { key: "accountEmail", label: "Email Penjual Tokopedia", placeholder: "pemilik@tokosejahtera.com", type: "email", helper: "Gunakan email akun toko. Sandi akun Anda tidak pernah diminta." },
+      { key: "storeName", label: "Nama Toko Tokopedia", placeholder: "Nama Toko Tokopedia Anda" },
+      { key: "storeUrl", label: "URL Domain Toko", placeholder: "https://www.tokopedia.com/tokoanda", type: "url", helper: "Salin alamat link toko dari halaman profil Tokopedia Anda." },
+      { key: "accountEmail", label: "Email Penjual Tokopedia", placeholder: "toko@email.com", type: "email", helper: "Gunakan email akun toko. Sandi akun Anda tidak pernah diminta." },
     ],
   },
 };
@@ -138,6 +139,11 @@ interface DemoSettings {
 
 export default function IntegrasiPage() {
   const user = useCurrentUser();
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const storageKey = activeTenantId
+    ? `usaha-in-channel-integrations-${activeTenantId}`
+    : STORAGE_KEY;
+
   const [settings, setSettings] = useState<DemoSettings>({
     values: DEFAULT_VALUES,
     connectedAt: EMPTY_CONNECTIONS,
@@ -150,37 +156,39 @@ export default function IntegrasiPage() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved) as Partial<DemoSettings>;
-          setSettings({
-            values: {
-              whatsapp: { ...DEFAULT_VALUES.whatsapp, ...parsed.values?.whatsapp },
-              shopee: { ...DEFAULT_VALUES.shopee, ...parsed.values?.shopee },
-              tokopedia: { ...DEFAULT_VALUES.tokopedia, ...parsed.values?.tokopedia },
-            },
-            connectedAt: { ...EMPTY_CONNECTIONS, ...parsed.connectedAt },
-          });
-        }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      } finally {
-        setHasLoadedSettings(true);
+    setHasLoadedSettings(false);
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<DemoSettings>;
+        setSettings({
+          values: {
+            whatsapp: { ...DEFAULT_VALUES.whatsapp, ...parsed.values?.whatsapp },
+            shopee: { ...DEFAULT_VALUES.shopee, ...parsed.values?.shopee },
+            tokopedia: { ...DEFAULT_VALUES.tokopedia, ...parsed.values?.tokopedia },
+          },
+          connectedAt: { ...EMPTY_CONNECTIONS, ...parsed.connectedAt },
+        });
+      } else {
+        setSettings({
+          values: DEFAULT_VALUES,
+          connectedAt: EMPTY_CONNECTIONS,
+        });
       }
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+    } catch {
+      localStorage.removeItem(storageKey);
+    } finally {
+      setHasLoadedSettings(true);
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     if (hasLoadedSettings) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(storageKey, JSON.stringify(settings));
     }
-  }, [hasLoadedSettings, settings]);
+  }, [hasLoadedSettings, settings, storageKey]);
 
-  if (!user?.isOwner) redirect("/tidak-ada-akses");
+  if (user && !user.isOwner) redirect("/tidak-ada-akses");
 
   const connectedCount = Object.values(settings.connectedAt).filter(Boolean).length;
   const activeChannel = selectedPlatform ? CHANNELS[selectedPlatform] : null;

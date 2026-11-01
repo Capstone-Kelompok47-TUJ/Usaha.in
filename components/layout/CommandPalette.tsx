@@ -52,13 +52,31 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const orders = useStore((s) => s.orders);
-  const products = useStore((s) => s.products);
-  const customers = useStore((s) => s.customers);
-  const expenses = useStore((s) => s.expenses);
+  const rawOrders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const rawCustomers = useStore((s) => s.customers);
+  const rawExpenses = useStore((s) => s.expenses);
+  const activeTenantId = useStore((s) => s.activeTenantId);
   const expenseCategories = useStore((s) => s.expenseCategories);
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
+
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
 
   const useStock = activeTenant?.businessSettings?.useStock ?? true;
   const useShipping = activeTenant?.businessSettings?.useShipping ?? true;

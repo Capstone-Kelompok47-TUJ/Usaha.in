@@ -564,7 +564,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik",
           action: `menambahkan akun karyawan baru: ${newUser.name} (${newUser.loginEmail})`,
           module: "manajemen_tim",
@@ -587,7 +587,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: target?.tenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik",
           action: `mengubah penugasan ${target?.name ?? userId} ke template ${template}`,
           module: "manajemen_tim",
@@ -609,7 +609,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: target?.tenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik",
           action: `${newActive ? "mengaktifkan" : "menonaktifkan"} akun ${target?.name ?? userId}`,
           module: "manajemen_tim",
@@ -630,7 +630,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: target?.tenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik",
           action: `menghapus akun karyawan ${target?.name ?? userId}`,
           module: "manajemen_tim",
@@ -798,7 +798,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik",
           action: `menambah pembelian ${newPurchase.id} — ${purchaseData.qty} unit produk`,
           module: "pembelian",
@@ -855,7 +855,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Owner",
           action: `menambah pengeluaran ${newExpense.id} — ${cat?.name ?? expenseData.categoryId} Rp${expenseData.amount.toLocaleString()}`,
           module: "pengeluaran",
@@ -886,7 +886,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Owner",
           action: `melunasi pengeluaran ${expenseId}`,
           module: "pengeluaran",
@@ -950,7 +950,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik Usaha",
           action: `memperbarui pengaturan usaha: ${name} (${businessType})`,
           module: "pengaturan",
@@ -1006,7 +1006,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Owner",
           action: `menginput penjualan manual ${newOrderId} — ${orderData.items.length} item, total ${formatRp(orderData.subtotal)}`,
           module: "penjualan",
@@ -1047,7 +1047,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik Usaha",
           action: `membatalkan pesanan ${orderId}`,
           module: "penjualan",
@@ -1085,7 +1085,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik Usaha",
           action: `menambah produk baru: ${newProduct.name} (${newProduct.sku})`,
           module: "produk",
@@ -1126,7 +1126,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik Usaha",
           action: `penyesuaian stok ${product.name}: ${delta > 0 ? "+" : ""}${delta} (${note})`,
           module: "stok",
@@ -1209,7 +1209,7 @@ export const useStore = create<AppStore>()(
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
-          userId: actor?.id ?? "owner-1",
+          userId: actor?.id ?? get().currentUserId ?? "system",
           userName: actor?.name ?? "Pemilik Usaha",
           action: `mencatat pembayaran ${formatRp(amount)} untuk pesanan ${orderId} → status ${newStatus}`,
           module: "pembayaran",
@@ -1257,31 +1257,48 @@ export const useStore = create<AppStore>()(
     }),
     {
       name: "usaha-in-store",
-      version: 3,
+      version: 4,
       migrate: (persistedState: any, version: number) => {
-        if (!version || version < 3) {
-          // Bersihkan total semua data demo lama dari localStorage pengguna
+        // v4: Wipe semua data transaksi/seed lama. Pertahankan user & tenant agar tidak perlu login ulang.
+        if (!version || version < 4) {
+          const cleanTenantId = persistedState?.activeTenantId === "tenant-tokosejahtera" ? "" : (persistedState?.activeTenantId ?? "");
+          const cleanUserId = persistedState?.currentUserId === "owner-1" ? "" : (persistedState?.currentUserId ?? "");
           return {
             ...INITIAL_STATE,
-            isAuthenticated: persistedState?.isAuthenticated ?? false,
-            currentUserId: persistedState?.currentUserId === "owner-1" ? "" : (persistedState?.currentUserId ?? ""),
-            activeTenantId: persistedState?.activeTenantId === "tenant-tokosejahtera" ? "" : (persistedState?.activeTenantId ?? ""),
-            users: (persistedState?.users || []).filter((u: any) => u.tenantId && u.tenantId !== "tenant-tokosejahtera" && u.id !== "owner-1"),
-            tenants: (persistedState?.tenants || []).filter((t: any) => t.id && t.id !== "tenant-tokosejahtera"),
-            products: (persistedState?.products || []).filter((p: any) => p.tenantId && p.tenantId !== "tenant-tokosejahtera"),
-            orders: (persistedState?.orders || []).filter((o: any) => o.tenantId && o.tenantId !== "tenant-tokosejahtera"),
-            expenses: (persistedState?.expenses || []).filter((e: any) => e.tenantId && e.tenantId !== "tenant-tokosejahtera"),
-            customers: (persistedState?.customers || []).filter((c: any) => c.tenantId && c.tenantId !== "tenant-tokosejahtera"),
-            suppliers: (persistedState?.suppliers || []).filter((s: any) => s.tenantId && s.tenantId !== "tenant-tokosejahtera"),
-            purchases: (persistedState?.purchases || []).filter((p: any) => p.tenantId && p.tenantId !== "tenant-tokosejahtera"),
-            stockMovements: (persistedState?.stockMovements || []).filter((m: any) => m.tenantId && m.tenantId !== "tenant-tokosejahtera"),
-            activityLogs: (persistedState?.activityLogs || []).filter((l: any) => l.tenantId && l.tenantId !== "tenant-tokosejahtera"),
+            isAuthenticated: cleanTenantId ? (persistedState?.isAuthenticated ?? false) : false,
+            currentUserId: cleanUserId,
+            activeTenantId: cleanTenantId,
+            users: (persistedState?.users || []).filter((u: any) =>
+              u.tenantId && u.tenantId !== "tenant-tokosejahtera" && u.id !== "owner-1"
+            ),
+            tenants: (persistedState?.tenants || []).filter((t: any) =>
+              t.id && t.id !== "tenant-tokosejahtera"
+            ),
+            products: [],
+            orders: [],
+            expenses: [],
+            customers: [],
+            suppliers: [],
+            purchases: [],
+            stockMovements: [],
+            activityLogs: [],
           };
         }
         return persistedState;
       },
       onRehydrateStorage: () => (state) => {
         if (state) {
+          const isOldSeed = (id?: string) =>
+            typeof id === "string" && (
+              id.includes("-101") ||
+              id.includes("-102") ||
+              id.startsWith("PRD-tenant-") ||
+              id.startsWith("ORD-tenant-") ||
+              id.startsWith("EXP-tenant-") ||
+              id.startsWith("CUST-tenant-") ||
+              id.startsWith("SUP-tenant-")
+            );
+
           if (state.activeTenantId === "tenant-tokosejahtera") {
             state.activeTenantId = "";
             state.isAuthenticated = false;
@@ -1292,12 +1309,12 @@ export const useStore = create<AppStore>()(
           }
           state.tenants = (state.tenants || []).filter((t) => t.id && t.id !== "tenant-tokosejahtera");
           state.users = (state.users || []).filter((u) => u.tenantId && u.tenantId !== "tenant-tokosejahtera" && u.id !== "owner-1");
-          state.products = (state.products || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera");
-          state.orders = (state.orders || []).filter((o) => o.tenantId && o.tenantId !== "tenant-tokosejahtera");
-          state.expenses = (state.expenses || []).filter((e) => e.tenantId && e.tenantId !== "tenant-tokosejahtera");
-          state.customers = (state.customers || []).filter((c) => c.tenantId && c.tenantId !== "tenant-tokosejahtera");
-          state.suppliers = (state.suppliers || []).filter((s) => s.tenantId && s.tenantId !== "tenant-tokosejahtera");
-          state.purchases = (state.purchases || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera");
+          state.products = (state.products || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera" && !isOldSeed(p.id));
+          state.orders = (state.orders || []).filter((o) => o.tenantId && o.tenantId !== "tenant-tokosejahtera" && !isOldSeed(o.id));
+          state.expenses = (state.expenses || []).filter((e) => e.tenantId && e.tenantId !== "tenant-tokosejahtera" && !isOldSeed(e.id));
+          state.customers = (state.customers || []).filter((c) => c.tenantId && c.tenantId !== "tenant-tokosejahtera" && !isOldSeed(c.id));
+          state.suppliers = (state.suppliers || []).filter((s) => s.tenantId && s.tenantId !== "tenant-tokosejahtera" && !isOldSeed(s.id));
+          state.purchases = (state.purchases || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera" && !isOldSeed(p.id));
           state.stockMovements = (state.stockMovements || []).filter((m) => m.tenantId && m.tenantId !== "tenant-tokosejahtera");
           state.activityLogs = (state.activityLogs || []).filter((l) => l.tenantId && l.tenantId !== "tenant-tokosejahtera");
         }

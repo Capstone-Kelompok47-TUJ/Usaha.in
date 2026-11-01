@@ -36,11 +36,15 @@ const PRODUCT_TYPE_COLOR: Record<ProductType, string> = {
 // ============================================================
 
 function StockLedgerDrawer({ product, onClose }: { product: Product; onClose: () => void }) {
-  const movements = useStore((s) =>
-    s.stockMovements
-      .filter((m) => m.productId === product.id)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 25)
+  const rawMovements = useStore((s) => s.stockMovements);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const movements = useMemo(
+    () =>
+      rawMovements
+        .filter((m) => m.productId === product.id && m.tenantId === activeTenantId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 25),
+    [rawMovements, product.id, activeTenantId]
   );
   const { canView: canViewFinance } = usePermission("laporan_keuangan");
 
