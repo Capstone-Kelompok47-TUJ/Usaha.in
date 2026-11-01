@@ -143,8 +143,17 @@ function AdjustStockModal({ product, onClose }: { product: Product; onClose: () 
 
 export default function StokPage() {
   const { canView, canManage } = usePermission("stok");
-  const products = useStore((s) => s.products);
-  const orders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
   const [adjustTarget, setAdjustTarget] = useState<Product | null>(null);
 
   if (!canView) redirect("/tidak-ada-akses");

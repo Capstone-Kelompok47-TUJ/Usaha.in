@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { usePermission } from "@/hooks/usePermission";
@@ -36,8 +37,17 @@ const CHANNEL_LABEL: Record<string, string> = {
 };
 
 function KanbanCard({ order, canManage, userId }: { order: Order; canManage: boolean; userId?: string }) {
-  const customers = useStore((s) => s.customers);
-  const products = useStore((s) => s.products);
+  const rawCustomers = useStore((s) => s.customers);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const moveShipmentStatus = useStore((s) => s.moveShipmentStatus);
   const customer = customers.find((c) => c.id === order.customerId);
   const nextStatus = NEXT_STATUS[order.shipmentStatus];
@@ -77,7 +87,12 @@ function KanbanCard({ order, canManage, userId }: { order: Order; canManage: boo
 export default function PengirimanPage() {
   const { canView, canManage } = usePermission("pengiriman");
   const user = useCurrentUser();
-  const orders = useStore((s) => s.orders);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
 
   if (!canView) redirect("/tidak-ada-akses");
 

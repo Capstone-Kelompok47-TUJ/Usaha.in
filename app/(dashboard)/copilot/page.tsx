@@ -9,7 +9,7 @@ import { findCopilotResponse, QUICK_QUESTIONS } from "@/lib/copilot-scenarios";
 import type { CopilotContext } from "@/lib/copilot-scenarios";
 import type { CopilotMessage } from "@/types";
 import { redirect } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 
 function TypingIndicator() {
@@ -93,13 +93,35 @@ function MessageBubble({ msg }: { msg: CopilotMessage }) {
 
 export default function CopilotPage() {
   const user = useCurrentUser();
-  const orders = useStore((s) => s.orders);
-  const purchases = useStore((s) => s.purchases);
-  const products = useStore((s) => s.products);
-  const expenses = useStore((s) => s.expenses);
+  const rawOrders = useStore((s) => s.orders);
+  const rawPurchases = useStore((s) => s.purchases);
+  const rawProducts = useStore((s) => s.products);
+  const rawExpenses = useStore((s) => s.expenses);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const purchases = useMemo(
+    () => rawPurchases.filter((p) => p.tenantId === activeTenantId),
+    [rawPurchases, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
-  const customers = useStore((s) => s.customers);
 
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {

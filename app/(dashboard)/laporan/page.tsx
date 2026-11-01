@@ -7,7 +7,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { useStore } from "@/lib/store";
 import { calcFinanceSummary, formatRp } from "@/lib/finance";
 import { redirect } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { SalesLineChart, ChannelChart, TopProductsChart } from "@/components/dashboard/Charts";
 import type { Channel } from "@/types";
 
@@ -15,8 +15,17 @@ type Period = "daily" | "weekly" | "monthly";
 
 export default function LaporanPage() {
   const { canView } = usePermission("laporan_periodik");
-  const orders = useStore((s) => s.orders);
-  const purchases = useStore((s) => s.purchases);
+  const rawOrders = useStore((s) => s.orders);
+  const rawPurchases = useStore((s) => s.purchases);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const purchases = useMemo(
+    () => rawPurchases.filter((p) => p.tenantId === activeTenantId),
+    [rawPurchases, activeTenantId]
+  );
   const [period, setPeriod] = useState<Period>("monthly");
 
   if (!canView) redirect("/tidak-ada-akses");

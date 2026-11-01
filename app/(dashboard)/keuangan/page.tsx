@@ -93,10 +93,23 @@ function FinRow({
 
 export default function KeuanganPage() {
   const { canView } = usePermission("laporan_keuangan");
-  const orders = useStore((s) => s.orders);
-  const expenses = useStore((s) => s.expenses);
+  const rawOrders = useStore((s) => s.orders);
+  const rawExpenses = useStore((s) => s.expenses);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const expenseCategories = useStore((s) => s.expenseCategories);
-  const products = useStore((s) => s.products);
 
   if (!canView) redirect("/tidak-ada-akses");
 

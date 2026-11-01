@@ -18,9 +18,14 @@ export default function PengaturanPage() {
   const user = useCurrentUser();
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
+  const activeTenantId = useStore((s) => s.activeTenantId);
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
-  const expenses = useStore((s) => s.expenses);
+  const rawExpenses = useStore((s) => s.expenses);
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
 
   const updateTenantSettings = useStore((s) => s.updateTenantSettings);
   const addExpenseCategory = useStore((s) => s.addExpenseCategory);
@@ -34,8 +39,8 @@ export default function PengaturanPage() {
   }
 
   // --- 1. Info Usaha State ---
-  const [businessName, setBusinessName] = useState(activeTenant?.name ?? "Usaha Kopi Makmur");
-  const [businessCategory, setBusinessCategory] = useState(activeTenant?.businessType ?? "Kuliner & Minuman");
+  const [businessName, setBusinessName] = useState(activeTenant?.name ?? "");
+  const [businessCategory, setBusinessCategory] = useState(activeTenant?.businessType ?? "Kuliner & F&B");
   const [businessType, setBusinessType] = useState<BusinessType>(
     activeTenant?.businessSettings?.businessType ?? "dagang"
   );
@@ -43,12 +48,20 @@ export default function PengaturanPage() {
   const [useShipping, setUseShipping] = useState(activeTenant?.businessSettings?.useShipping ?? true);
 
   // --- Saldo Awal State ---
-  const [initialCash, setInitialCash] = useState(activeTenant?.businessSettings?.initialCash ?? 15000000);
+  const [initialCash, setInitialCash] = useState(activeTenant?.businessSettings?.initialCash ?? 0);
   const [initialReceivable, setInitialReceivable] = useState(activeTenant?.businessSettings?.initialReceivable ?? 0);
   const [initialPayable, setInitialPayable] = useState(activeTenant?.businessSettings?.initialPayable ?? 0);
 
-  const orders = useStore((s) => s.orders);
-  const products = useStore((s) => s.products);
+  const rawOrders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const isInitialLocked = (orders.length > 0 || expenses.length > 0) || (activeTenant?.businessSettings?.initialLocked ?? false);
   const initialStockValue = useMemo(() => {
     return products.reduce((s, p) => s + Math.max(0, p.stock) * (p.avgCost ?? p.buyPrice), 0);

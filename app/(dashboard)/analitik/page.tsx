@@ -20,12 +20,30 @@ type AnalitikTab = "pvm" | "health" | "anomali" | "repeat_order" | "tindakan";
 
 export default function AnalitikPage() {
   const user = useCurrentUser();
-  const orders = useStore((s) => s.orders);
-  const products = useStore((s) => s.products);
-  const expenses = useStore((s) => s.expenses);
+  const rawOrders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const rawExpenses = useStore((s) => s.expenses);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
-  const customers = useStore((s) => s.customers);
 
   const [activeTab, setActiveTab] = useState<AnalitikTab>("pvm");
   const [pvmPeriod, setPvmPeriod] = useState<"weekly" | "monthly">("weekly");

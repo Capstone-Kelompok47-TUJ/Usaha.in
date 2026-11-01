@@ -157,9 +157,9 @@ const SHIPMENT_STATUSES: ShipmentStatus[] = [
 
 const INITIAL_STATE = {
   tenants: INITIAL_TENANTS,
-  activeTenantId: "tenant-tokosejahtera",
+  activeTenantId: "",
   users: INITIAL_USERS,
-  currentUserId: "owner-1",
+  currentUserId: "",
   isAuthenticated: false,
   products: INITIAL_PRODUCTS,
   stockMovements: INITIAL_STOCK_MOVEMENTS,
@@ -374,9 +374,32 @@ export const useStore = create<AppStore>()(
 
       setAuthenticatedUser: (userData) => {
         const { users, tenants } = get();
-        let targetTenant = tenants.find((t) => t.id === userData.tenantId);
-        if (!targetTenant && tenants.length > 0) {
-          targetTenant = tenants[0];
+        const tenantId = userData.tenantId || `tenant-${userData.id}`;
+        let targetTenant = tenants.find((t) => t.id === tenantId);
+        let updatedTenants = [...tenants];
+
+        if (!targetTenant) {
+          targetTenant = {
+            id: tenantId,
+            name: (userData as any).businessName || `Usaha ${userData.name || "Saya"}`,
+            slug: userData.username || `umkm-${userData.id.slice(0, 8)}`,
+            businessType: "Kuliner & F&B",
+            businessSettings: {
+              businessType: "dagang",
+              useStock: true,
+              useProduction: false,
+              useShipping: true,
+              useCredit: true,
+              defaultShopeeFeePct: 7.5,
+              defaultTokopediaFeePct: 3.5,
+            },
+            city: "",
+            province: "",
+            phone: "",
+            channels: ["marketplace", "chat", "offline"],
+            createdAt: new Date().toISOString(),
+          };
+          updatedTenants.push(targetTenant);
         }
 
         const existingIndex = users.findIndex(
@@ -387,12 +410,12 @@ export const useStore = create<AppStore>()(
         );
 
         let activeUser: User;
-        const tenantId = userData.tenantId || targetTenant?.id || "tenant-default";
 
         if (existingIndex >= 0) {
           activeUser = {
             ...users[existingIndex],
             id: userData.id,
+            tenantId,
             name: userData.name || users[existingIndex].name,
             username: userData.username || users[existingIndex].username,
             loginEmail: userData.email,
@@ -406,9 +429,10 @@ export const useStore = create<AppStore>()(
           const updatedUsers = [...users];
           updatedUsers[existingIndex] = activeUser;
           set({
+            tenants: updatedTenants,
             users: updatedUsers,
             currentUserId: activeUser.id,
-            activeTenantId: activeUser.tenantId || targetTenant?.id,
+            activeTenantId: tenantId,
             isAuthenticated: true,
           });
         } else {
@@ -427,9 +451,10 @@ export const useStore = create<AppStore>()(
             permissions: userData.permissions || (userData.isOwner ? FULL_ACCESS : NO_ACCESS),
           };
           set({
+            tenants: updatedTenants,
             users: [activeUser, ...users],
             currentUserId: activeUser.id,
-            activeTenantId: activeUser.tenantId,
+            activeTenantId: tenantId,
             isAuthenticated: true,
           });
         }
@@ -479,12 +504,14 @@ export const useStore = create<AppStore>()(
 
       getActiveTenant: () => {
         const { tenants, activeTenantId } = get();
-        return tenants.find((t) => t.id === activeTenantId) ?? tenants[0] ?? null;
+        if (!activeTenantId) return null;
+        return tenants.find((t) => t.id === activeTenantId) ?? null;
       },
 
       getTenantUsers: () => {
         const { users, activeTenantId } = get();
-        return users.filter((u) => !u.tenantId || u.tenantId === activeTenantId);
+        if (!activeTenantId) return [];
+        return users.filter((u) => u.tenantId === activeTenantId);
       },
 
       // ----- USER ACTIONS -----
@@ -502,8 +529,8 @@ export const useStore = create<AppStore>()(
         const { activityLogs, getCurrentUser, getActiveTenant, users, activeTenantId } = get();
         const actor = getCurrentUser();
         const activeTenant = getActiveTenant();
-        const tenantId = activeTenantId || activeTenant?.id || "tenant-tokosejahtera";
-        const slug = activeTenant?.slug || "tokosejahtera";
+        const tenantId = activeTenantId || activeTenant?.id || "";
+        const slug = activeTenant?.slug || "usaha";
 
         const cleanUsername = (userInput.username || userInput.name.toLowerCase().replace(/\s+/g, "")).trim().toLowerCase();
 
@@ -1230,6 +1257,51 @@ export const useStore = create<AppStore>()(
     }),
     {
       name: "usaha-in-store",
+      version: 3,
+      migrate: (persistedState: any, version: number) => {
+        if (!version || version < 3) {
+          // Bersihkan total semua data demo lama dari localStorage pengguna
+          return {
+            ...INITIAL_STATE,
+            isAuthenticated: persistedState?.isAuthenticated ?? false,
+            currentUserId: persistedState?.currentUserId === "owner-1" ? "" : (persistedState?.currentUserId ?? ""),
+            activeTenantId: persistedState?.activeTenantId === "tenant-tokosejahtera" ? "" : (persistedState?.activeTenantId ?? ""),
+            users: (persistedState?.users || []).filter((u: any) => u.tenantId && u.tenantId !== "tenant-tokosejahtera" && u.id !== "owner-1"),
+            tenants: (persistedState?.tenants || []).filter((t: any) => t.id && t.id !== "tenant-tokosejahtera"),
+            products: (persistedState?.products || []).filter((p: any) => p.tenantId && p.tenantId !== "tenant-tokosejahtera"),
+            orders: (persistedState?.orders || []).filter((o: any) => o.tenantId && o.tenantId !== "tenant-tokosejahtera"),
+            expenses: (persistedState?.expenses || []).filter((e: any) => e.tenantId && e.tenantId !== "tenant-tokosejahtera"),
+            customers: (persistedState?.customers || []).filter((c: any) => c.tenantId && c.tenantId !== "tenant-tokosejahtera"),
+            suppliers: (persistedState?.suppliers || []).filter((s: any) => s.tenantId && s.tenantId !== "tenant-tokosejahtera"),
+            purchases: (persistedState?.purchases || []).filter((p: any) => p.tenantId && p.tenantId !== "tenant-tokosejahtera"),
+            stockMovements: (persistedState?.stockMovements || []).filter((m: any) => m.tenantId && m.tenantId !== "tenant-tokosejahtera"),
+            activityLogs: (persistedState?.activityLogs || []).filter((l: any) => l.tenantId && l.tenantId !== "tenant-tokosejahtera"),
+          };
+        }
+        return persistedState;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (state.activeTenantId === "tenant-tokosejahtera") {
+            state.activeTenantId = "";
+            state.isAuthenticated = false;
+          }
+          if (state.currentUserId === "owner-1") {
+            state.currentUserId = "";
+            state.isAuthenticated = false;
+          }
+          state.tenants = (state.tenants || []).filter((t) => t.id && t.id !== "tenant-tokosejahtera");
+          state.users = (state.users || []).filter((u) => u.tenantId && u.tenantId !== "tenant-tokosejahtera" && u.id !== "owner-1");
+          state.products = (state.products || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera");
+          state.orders = (state.orders || []).filter((o) => o.tenantId && o.tenantId !== "tenant-tokosejahtera");
+          state.expenses = (state.expenses || []).filter((e) => e.tenantId && e.tenantId !== "tenant-tokosejahtera");
+          state.customers = (state.customers || []).filter((c) => c.tenantId && c.tenantId !== "tenant-tokosejahtera");
+          state.suppliers = (state.suppliers || []).filter((s) => s.tenantId && s.tenantId !== "tenant-tokosejahtera");
+          state.purchases = (state.purchases || []).filter((p) => p.tenantId && p.tenantId !== "tenant-tokosejahtera");
+          state.stockMovements = (state.stockMovements || []).filter((m) => m.tenantId && m.tenantId !== "tenant-tokosejahtera");
+          state.activityLogs = (state.activityLogs || []).filter((l) => l.tenantId && l.tenantId !== "tenant-tokosejahtera");
+        }
+      },
       // Persist semua kecuali toasts
       partialize: (s) => ({
         tenants: s.tenants,

@@ -79,7 +79,12 @@ function amountPaid(order: Order): number {
 
 function RecordPaymentModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const recordPayment = useStore((s) => s.recordPayment);
-  const customers = useStore((s) => s.customers);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const customer = customers.find((c) => c.id === order.customerId);
 
   const due = amountDue(order);
@@ -203,8 +208,17 @@ function RecordPaymentModal({ order, onClose }: { order: Order; onClose: () => v
 export default function PembayaranPage() {
   const { canView, canManage } = usePermission("pembayaran");
   const user = useCurrentUser();
-  const orders = useStore((s) => s.orders);
-  const customers = useStore((s) => s.customers);
+  const rawOrders = useStore((s) => s.orders);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const addToast = useStore((s) => s.addToast);
 
   if (!canView) redirect("/tidak-ada-akses");

@@ -323,7 +323,9 @@ export default function TimPage() {
   const activeTenant = getActiveTenant();
   const tenantUsers = getTenantUsers();
 
-  if (!user?.isOwner) redirect("/tidak-ada-akses");
+  if (user && !user.isOwner) {
+    redirect("/tidak-ada-akses");
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<User | undefined>(undefined);

@@ -9,7 +9,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatRp, formatDate } from "@/lib/finance";
 import { redirect } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { ExpenseItem } from "@/types";
 import {
   Plus, X, AlertTriangle, CheckCircle2, Clock,
@@ -63,7 +63,12 @@ function BudgetIndicator({ used, limit }: { used: number; limit: number }) {
 // ============================================================
 
 function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; isPrive?: boolean }) {
-  const products = useStore((s) => s.products);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
   const addExpense = useStore((s) => s.addExpense);
@@ -406,10 +411,14 @@ const GROUP_COLOR: Record<string, string> = {
 export default function PengeluaranPage() {
   const { canView, canManage } = usePermission("pengeluaran");
   const user = useCurrentUser();
-  const expenses = useStore((s) => s.expenses);
+  const rawExpenses = useStore((s) => s.expenses);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const expenses = useMemo(
+    () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
+    [rawExpenses, activeTenantId]
+  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const markExpensePaid = useStore((s) => s.markExpensePaid);
-  const activeTenantId = useStore((s) => s.activeTenantId);
 
   if (!canView) redirect("/tidak-ada-akses");
 

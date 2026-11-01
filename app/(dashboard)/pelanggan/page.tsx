@@ -87,8 +87,17 @@ function calcAvgInterval(dates: string[]): number | null {
 export default function PelangganPage() {
   const { canView } = usePermission("pelanggan");
   const user = useCurrentUser();
-  const customers = useStore((s) => s.customers);
-  const orders = useStore((s) => s.orders);
+  const rawCustomers = useStore((s) => s.customers);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
 
   if (!canView) redirect("/tidak-ada-akses");
 

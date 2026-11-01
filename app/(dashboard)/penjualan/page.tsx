@@ -13,7 +13,7 @@ import {
   Upload, AlertTriangle, CheckCircle2, Ban, Crown,
   ChevronRight, FileUp,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import type { Channel, PaymentStatus, ShipmentStatus, Order, OrderItem, Product } from "@/types";
 import { unzipSync } from "fflate";
 
@@ -174,8 +174,17 @@ function AddManualOrderModal({
   onClose: () => void;
   initialChannel: Channel;
 }) {
-  const products = useStore((s) => s.products);
-  const customers = useStore((s) => s.customers);
+  const rawProducts = useStore((s) => s.products);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const addOrder = useStore((s) => s.addOrder);
 
   const [channel, setChannel] = useState<Channel>(initialChannel);
@@ -538,8 +547,17 @@ function AddManualOrderModal({
 function OrderDetailDrawer({ order, onClose, canManage, isOwner }: {
   order: Order; onClose: () => void; canManage: boolean; isOwner: boolean;
 }) {
-  const products = useStore((s) => s.products);
-  const customers = useStore((s) => s.customers);
+  const rawProducts = useStore((s) => s.products);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
   const voidOrder = useStore((s) => s.voidOrder);
   const customer = customers.find((c) => c.id === order.customerId);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
@@ -872,8 +890,17 @@ function normalizeImportDate(value: string): string {
 }
 
 function ImportCsvModal({ onClose, channel }: { onClose: () => void; channel: Channel }) {
-  const products = useStore((s) => s.products);
-  const orders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const rawOrders = useStore((s) => s.orders);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
   const addOrder = useStore((s) => s.addOrder);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -1227,8 +1254,17 @@ function AddExampleOrderButton({ userId }: { userId: string }) {
 export default function PenjualanPage() {
   const { canView, canManage } = usePermission("penjualan");
   const user = useCurrentUser();
-  const orders = useStore((s) => s.orders);
-  const customers = useStore((s) => s.customers);
+  const rawOrders = useStore((s) => s.orders);
+  const rawCustomers = useStore((s) => s.customers);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const orders = useMemo(
+    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
+    [rawOrders, activeTenantId]
+  );
+  const customers = useMemo(
+    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
+    [rawCustomers, activeTenantId]
+  );
 
   const [search, setSearch] = useState("");
   const [filterChannel, setFilterChannel] = useState<Channel | "">("");

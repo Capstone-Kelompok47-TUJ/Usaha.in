@@ -13,7 +13,7 @@ import {
   AlertTriangle, Package, X, History, TrendingDown,
   TrendingUp, Plus, ToggleLeft, ToggleRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Product, ProductType, Channel } from "@/types";
 
 // ============================================================
@@ -313,7 +313,12 @@ function AddProductModal({ onClose }: { onClose: () => void }) {
 export default function ProdukPage() {
   const { canView, canManage } = usePermission("produk");
   const { canView: canViewFinance } = usePermission("laporan_keuangan");
-  const products = useStore((s) => s.products);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const [selected, setSelected] = useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filterType, setFilterType] = useState<ProductType | "">("");
