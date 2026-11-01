@@ -18,7 +18,7 @@ import {
   INITIAL_CUSTOMERS, INITIAL_ACTIVITY_LOGS, createInitialTenantData,
   INITIAL_EXPENSE_CATEGORIES, INITIAL_EXPENSES,
 } from "@/lib/mock-data";
-import { FULL_ACCESS } from "@/lib/permissions";
+import { FULL_ACCESS, NO_ACCESS } from "@/lib/permissions";
 import { formatRp } from "@/lib/finance";
 
 
@@ -51,6 +51,16 @@ interface AppStore {
   // Auth & Registration
   isAuthenticated: boolean;
   login: (email: string, password: string) => { success: boolean; message?: string };
+  setAuthenticatedUser: (userData: {
+    id: string;
+    email: string;
+    name: string;
+    username: string;
+    isOwner?: boolean;
+    tenantId?: string;
+    template?: string;
+    permissions?: Record<ModuleKey, Level>;
+  }) => void;
   logout: () => void;
   registerTenant: (
     tenantData: Omit<Tenant, "id" | "createdAt">,
@@ -360,6 +370,85 @@ export const useStore = create<AppStore>()(
 
         get().addToast(`Selamat datang kembali, ${user.name}!`, "success");
         return { success: true };
+      },
+
+      setAuthenticatedUser: (userData) => {
+        const { users, tenants } = get();
+        let targetTenant = tenants.find((t) => t.id === userData.tenantId);
+        if (!targetTenant && tenants.length > 0) {
+          targetTenant = tenants[0];
+        }
+
+        const existingIndex = users.findIndex(
+          (u) =>
+            u.id === userData.id ||
+            u.loginEmail?.toLowerCase() === userData.email.toLowerCase() ||
+            (userData.username && u.username?.toLowerCase() === userData.username.toLowerCase())
+        );
+
+        let activeUser: User;
+        const tenantId = userData.tenantId || targetTenant?.id || "tenant-default";
+
+        if (existingIndex >= 0) {
+          activeUser = {
+            ...users[existingIndex],
+            id: userData.id,
+            name: userData.name || users[existingIndex].name,
+            username: userData.username || users[existingIndex].username,
+            loginEmail: userData.email,
+            isOwner: userData.isOwner ?? users[existingIndex].isOwner,
+            template: userData.template || users[existingIndex].template,
+            permissions:
+              userData.permissions ||
+              users[existingIndex].permissions ||
+              (userData.isOwner ? FULL_ACCESS : users[existingIndex].permissions),
+          };
+          const updatedUsers = [...users];
+          updatedUsers[existingIndex] = activeUser;
+          set({
+            users: updatedUsers,
+            currentUserId: activeUser.id,
+            activeTenantId: activeUser.tenantId || targetTenant?.id,
+            isAuthenticated: true,
+          });
+        } else {
+          activeUser = {
+            id: userData.id,
+            tenantId,
+            username: userData.username || userData.email.split("@")[0],
+            name: userData.name || userData.email.split("@")[0],
+            loginEmail: userData.email,
+            contactEmail: userData.email,
+            phone: "",
+            password: "",
+            isOwner: userData.isOwner ?? true,
+            active: true,
+            template: userData.template || (userData.isOwner ? "Owner" : "Karyawan"),
+            permissions: userData.permissions || (userData.isOwner ? FULL_ACCESS : NO_ACCESS),
+          };
+          set({
+            users: [activeUser, ...users],
+            currentUserId: activeUser.id,
+            activeTenantId: activeUser.tenantId,
+            isAuthenticated: true,
+          });
+        }
+
+        const log: ActivityLog = {
+          id: genId("LOG"),
+          tenantId: activeUser.tenantId,
+          userId: activeUser.id,
+          userName: activeUser.name,
+          action: "berhasil masuk ke sistem (login via Supabase Auth)",
+          module: "manajemen_tim",
+          timestamp: new Date().toISOString(),
+        };
+
+        set((s) => ({
+          activityLogs: [log, ...s.activityLogs],
+        }));
+
+        get().addToast(`Selamat datang kembali, ${activeUser.name}!`, "success");
       },
 
       logout: () => {

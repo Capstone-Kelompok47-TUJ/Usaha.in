@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck,
-  CheckCircle2, Sparkles, AlertCircle, ArrowLeft,
+  CheckCircle2, AlertCircle, ArrowLeft,
   Building2, Users, Bot, TrendingUp
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
@@ -14,10 +14,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const login = useStore((s) => s.login);
+  const setAuthenticatedUser = useStore((s) => s.setAuthenticatedUser);
   const isAuthenticated = useStore((s) => s.isAuthenticated);
-  const users = useStore((s) => s.users);
-  const tenants = useStore((s) => s.tenants);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,57 +58,66 @@ export default function LoginPage() {
         }
       }
 
-      // 1. Autentikasi langsung ke Supabase Auth dengan kata sandi
+      // Autentikasi langsung dan murni ke Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password,
       });
 
-      if (!authError && authData?.user) {
-        // Berhasil login di Supabase Auth
-        const res = login(loginEmail, password);
-        router.push("/dashboard");
+      if (authError || !authData?.user) {
+        let message = "Alamat email atau kata sandi salah. Silakan periksa kembali.";
+        if (authError?.message?.includes("Email not confirmed")) {
+          message = "Alamat email belum dikonfirmasi. Periksa kotak masuk email Anda.";
+        } else if (authError?.message?.includes("Invalid login credentials")) {
+          message = "Alamat email atau kata sandi salah. Pastikan akun sudah terdaftar.";
+        } else if (authError?.message) {
+          message = authError.message;
+        }
+        setError(message);
+        setLoading(false);
         return;
       }
 
-      // 2. Fallback to demo local store accounts if Supabase credentials fail
-      const res = login(loginEmail, password);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(authError?.message ?? res.message ?? "Terjadi kesalahan saat masuk.");
-        setLoading(false);
+      // Ambil detail profil pengguna dari Supabase
+      const userMeta = authData.user.user_metadata || {};
+      let dbProfile: any = null;
+      try {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+        dbProfile = profile;
+      } catch (dbErr) {
+        console.warn("Gagal membaca profil dari tabel database:", dbErr);
       }
-    } catch (err: any) {
-      const res = login(loginEmail, password);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(err?.message || "Gagal masuk.");
-        setLoading(false);
-      }
-    }
-  }
 
-  function handleRoleLogin(userId: string) {
-    const targetUser = users.find((u) => u.id === userId);
-    const targetTenant = targetUser && tenants.find((t) => t.id === targetUser.tenantId);
-    if (!targetUser || !targetTenant) {
-      setError("Akun demo tidak tersedia. Muat ulang halaman lalu coba lagi.");
-      return;
+      const resolvedName =
+        dbProfile?.name || userMeta.name || authData.user.email?.split("@")[0] || "User";
+      const resolvedUsername =
+        dbProfile?.username || userMeta.username || authData.user.email?.split("@")[0] || "user";
+      const resolvedIsOwner = dbProfile?.is_owner ?? (userMeta.is_owner ?? true);
+      const resolvedTenantId = dbProfile?.tenant_id || userMeta.tenant_id;
+      const resolvedTemplate =
+        dbProfile?.template || userMeta.template || (resolvedIsOwner ? "Owner" : "Karyawan");
+      const resolvedPermissions = dbProfile?.permissions || userMeta.permissions;
+
+      setAuthenticatedUser({
+        id: authData.user.id,
+        email: authData.user.email || loginEmail,
+        name: resolvedName,
+        username: resolvedUsername,
+        isOwner: resolvedIsOwner,
+        tenantId: resolvedTenantId,
+        template: resolvedTemplate,
+        permissions: resolvedPermissions,
+      });
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.message || "Terjadi kesalahan koneksi saat masuk ke sistem.");
+      setLoading(false);
     }
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      const demoLogin = `${targetUser.username}@${targetTenant.slug}.usaha.in`;
-      const res = login(demoLogin, targetUser.password);
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        setError(res.message ?? "Gagal masuk.");
-        setLoading(false);
-      }
-    }, 250);
   }
 
   return (
@@ -188,7 +195,7 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert("Gunakan pilihan Akun Contoh di bawah atau hubungi pemilik usaha untuk reset kata sandi.")}
+                  onClick={() => alert("Silakan hubungi Pemilik Usaha Anda untuk mereset kata sandi.")}
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
                   Lupa sandi?
@@ -252,48 +259,6 @@ export default function LoginPage() {
             <Link href="/daftar" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
               Daftar Sekarang
             </Link>
-          </div>
-
-          {/* Akun Contoh — 1-Klik Masuk */}
-          <div className="mt-8 pt-6 border-t border-[hsl(var(--border))]">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                Akun Demo Contoh (Toko Sejahtera):
-              </span>
-              <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                1-Klik Masuk
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleRoleLogin("owner-1")}
-              className="w-full p-3.5 rounded-xl border border-amber-200/90 dark:border-amber-900/40 bg-gradient-to-r from-amber-50/70 via-orange-50/30 to-transparent dark:from-amber-950/30 dark:via-orange-950/20 dark:to-transparent hover:border-amber-400 hover:shadow-md hover:shadow-amber-500/10 text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg shrink-0">
-                    👑
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-[hsl(var(--foreground))] group-hover:text-amber-600 transition-colors flex items-center gap-1.5">
-                      Pak Ahmad <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">Owner</span>
-                    </div>
-                    <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 truncate">
-                      ahmad@tokosejahtera.usaha.in
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 shrink-0 group-hover:translate-x-0.5 transition-transform">
-                  <span>Masuk Demo</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-            </button>
-            <p className="text-[10.5px] text-[hsl(var(--muted-fg))] mt-2.5 text-center">
-              *Role staf (Kasir, Gudang, Keuangan) dapat diganti langsung melalui switcher di dalam Dashboard.
-            </p>
           </div>
         </div>
 

@@ -172,7 +172,7 @@ export default function LandingPage() {
               href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] font-semibold text-sm transition-all flex items-center justify-center gap-2"
             >
-              <span>Masuk Akun Demo</span>
+              <span>Masuk ke Akun</span>
             </Link>
           </div>
 
