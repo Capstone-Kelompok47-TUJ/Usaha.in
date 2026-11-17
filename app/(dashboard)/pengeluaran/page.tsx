@@ -13,7 +13,7 @@ import { useState, useMemo } from "react";
 import type { ExpenseItem } from "@/types";
 import {
   Plus, X, AlertTriangle, CheckCircle2, Clock,
-  TrendingDown, Wallet, CreditCard, Crown,
+  TrendingDown, Wallet, CreditCard, Crown, Package, Boxes, Sparkles,
 } from "lucide-react";
 
 // ============================================================
@@ -64,6 +64,7 @@ function BudgetIndicator({ used, limit }: { used: number; limit: number }) {
 
 function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; isPrive?: boolean }) {
   const rawProducts = useStore((s) => s.products);
+  const rawMaterials = useStore((s) => s.rawMaterials ?? []);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const products = useMemo(
     () => rawProducts.filter((p) => p.tenantId === activeTenantId),
@@ -89,41 +90,137 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
   });
 
   const [items, setItems] = useState<ExpenseItem[]>([]);
+  const [stockType, setStockType] = useState<"dagang" | "produksi" | "kemasan">("dagang");
   const [showBudgetWarning, setShowBudgetWarning] = useState(false);
   const [budgetExceedReason, setBudgetExceedReason] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const selectedCat = expenseCategories.find((c) => c.id === form.categoryId);
+  const isKemasanCategory = Boolean(
+    selectedCat?.id === "cat-kemasan" ||
+    selectedCat?.stockKind === "kemasan" ||
+    selectedCat?.name.toLowerCase().includes("kemasan")
+  );
+  const isStockRelated = Boolean(
+    selectedCat?.isStockRelated ||
+    selectedCat?.stockKind ||
+    selectedCat?.id === "cat-belanja-dagang" ||
+    selectedCat?.id === "cat-belanja-bahan" ||
+    selectedCat?.id === "cat-belanja-stok" ||
+    isKemasanCategory
+  );
+
   const budgetLimit = budgets[form.categoryId] ?? 0;
   const usedBudget = getExpenseSumByCategory(form.categoryId);
 
-  function addStockItem() {
-    setItems([...items, { productId: products[0]?.id ?? "", qty: 1, unitCost: products[0]?.buyPrice ?? 0 }]);
+  function addStockItem(typeOverride?: "dagang" | "produksi" | "kemasan") {
+    const type = typeOverride ?? (isKemasanCategory ? "kemasan" : stockType);
+    if (type === "kemasan") {
+      setItems((prev) => [
+        ...prev,
+        {
+          kind: "kemasan",
+          target: "kemasan",
+          productName: "",
+          packageQty: 1,
+          packageUnitSize: 1,
+          unit: "pcs",
+          qty: 1,
+          unitCost: 0,
+          totalCost: 0,
+        },
+      ]);
+    } else if (type === "produksi") {
+      setItems((prev) => [
+        ...prev,
+        {
+          kind: "produksi",
+          target: "produksi",
+          productName: "",
+          packageQty: 1,
+          packageUnitSize: 1000,
+          unit: "gram",
+          qty: 1000,
+          unitCost: 0,
+          totalCost: 0,
+        },
+      ]);
+    } else {
+      setItems((prev) => [
+        ...prev,
+        {
+          kind: "dagang",
+          target: "dagang",
+          productId: "",
+          productName: "",
+          qty: 1,
+          unitCost: 0,
+          totalCost: 0,
+        },
+      ]);
+    }
   }
 
-  function updateItem(idx: number, field: keyof ExpenseItem, value: string | number) {
-    setItems(items.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+  function updateItem(idx: number, updates: Partial<ExpenseItem>) {
+    setErrors((prev) => {
+      if (!prev.items && !prev.amount) return prev;
+      const next = { ...prev };
+      delete next.items;
+      delete next.amount;
+      return next;
+    });
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...updates } : it)));
   }
 
   function removeItem(idx: number) {
-    setItems(items.filter((_, i) => i !== idx));
+    setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // Auto-calculate amount from items
-  const itemsTotal = items.reduce((s, it) => s + it.qty * it.unitCost, 0);
-  const effectiveAmount = selectedCat?.isStockRelated && items.length > 0 ? itemsTotal : form.amount;
+  // Active items based on current category and stockType
+  const activeItems = useMemo(() => {
+    if (isKemasanCategory) {
+      return items.filter((it) => it.kind === "kemasan");
+    }
+    if (stockType === "produksi") {
+      return items.filter((it) => it.kind === "produksi");
+    }
+    return items.filter((it) => it.kind === "dagang" || !it.kind);
+  }, [items, isKemasanCategory, stockType]);
+
+  // Auto-calculate amount from active items
+  const itemsTotal = activeItems.reduce((s, it) => {
+    if (it.totalCost && it.totalCost > 0) return s + it.totalCost;
+    return s + it.qty * it.unitCost;
+  }, 0);
+  const effectiveAmount = isStockRelated && activeItems.length > 0 ? itemsTotal : form.amount;
 
   function validate() {
     const errs: Record<string, string> = {};
     if (!form.date) errs.date = "Tanggal wajib diisi";
     if (!form.categoryId) errs.categoryId = "Kategori wajib dipilih";
-    if (selectedCat?.isStockRelated && items.length === 0) errs.items = "Tambahkan barang yang dibeli agar stok toko ikut bertambah.";
-    if (selectedCat?.isStockRelated && items.some((item) => !item.productId || item.qty <= 0 || item.unitCost <= 0)) {
-      errs.items = "Pilih produk, jumlah lebih dari 0, dan harga modal untuk setiap barang.";
+    if (isStockRelated && activeItems.length === 0) {
+      errs.items = isKemasanCategory
+        ? "Tambahkan minimal satu kemasan yang dibeli."
+        : stockType === "produksi"
+        ? "Tambahkan minimal satu bahan mentah yang dibeli."
+        : "Tambahkan minimal satu produk jadi yang dibeli.";
     }
-    if (effectiveAmount <= 0) errs.amount = selectedCat?.isStockRelated
-      ? "Total belanja stok harus lebih dari Rp0."
-      : "Nominal pengeluaran harus lebih dari Rp0.";
+    if (isStockRelated && activeItems.some((item) => {
+      if (item.kind === "kemasan") {
+        return !item.productName?.trim() || (item.packageQty ?? 0) <= 0 || (item.totalCost ?? 0) <= 0;
+      }
+      if (item.kind === "produksi") {
+        return !item.productName?.trim() || (item.packageQty ?? 0) <= 0 || (item.totalCost ?? 0) <= 0;
+      }
+      return !item.productName?.trim() || item.qty <= 0 || (item.totalCost ?? 0) <= 0;
+    })) {
+      errs.items = "Lengkapi nama, jumlah, dan total bayar untuk semua item belanja.";
+    }
+    if (effectiveAmount <= 0) {
+      errs.amount = isStockRelated
+        ? "Total belanja harus lebih dari Rp0."
+        : "Nominal pengeluaran harus lebih dari Rp0.";
+    }
     if (!form.paid && !form.dueDate) errs.dueDate = "Tanggal jatuh tempo wajib diisi jika belum lunas";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -134,6 +231,49 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
       setErrors((current) => ({ ...current, budgetExceedReason: "Tuliskan alasan agar pengeluaran di atas batas dapat dicatat." }));
       return;
     }
+
+    const processedItems: ExpenseItem[] | undefined = isStockRelated && activeItems.length > 0
+      ? items.map((it) => {
+          if (it.kind === "kemasan") {
+            const totalUnits = (it.packageQty || 1) * (it.packageUnitSize || 1);
+            const unitCost = totalUnits > 0 ? Math.round((it.totalCost || 0) / totalUnits) : 0;
+            return {
+              ...it,
+              kind: "kemasan" as const,
+              target: "kemasan" as const,
+              qty: totalUnits,
+              unitCost,
+              totalCost: it.totalCost || 0,
+              unit: it.unit || "pcs",
+            };
+          } else if (it.kind === "produksi") {
+            const totalUnits = (it.packageQty || 1) * (it.packageUnitSize || 1);
+            const unitCost = totalUnits > 0 ? Math.round((it.totalCost || 0) / totalUnits) : 0;
+            return {
+              ...it,
+              kind: "produksi" as const,
+              target: "produksi" as const,
+              qty: totalUnits,
+              unitCost,
+              totalCost: it.totalCost || 0,
+              unit: it.unit || "gram",
+            };
+          } else {
+            const qty = it.qty > 0 ? it.qty : 1;
+            const unitCost = Math.round((it.totalCost || 0) / qty);
+            return {
+              ...it,
+              kind: "dagang" as const,
+              target: "dagang" as const,
+              qty,
+              unitCost,
+              totalCost: it.totalCost || 0,
+              unit: "pcs",
+            };
+          }
+        })
+      : undefined;
+
     addExpense({
       date: form.date,
       categoryId: form.categoryId,
@@ -142,7 +282,7 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
       dueDate: form.paid ? undefined : form.dueDate || undefined,
       vendor: form.vendor || undefined,
       note: form.note || undefined,
-      items: selectedCat?.isStockRelated && items.length > 0 ? items : undefined,
+      items: processedItems,
       budgetExceedReason: showBudgetWarning ? budgetExceedReason : undefined,
       isPrive,
     });
@@ -191,11 +331,47 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Pilih kategori dahulu *</label>
               <select value={form.categoryId}
                 onChange={(e) => {
-                  setItems([]);
+                  const newCatId = e.target.value;
+                  const cat = categories.find((c) => c.id === newCatId);
+                  const isKem = Boolean(cat?.id === "cat-kemasan" || cat?.stockKind === "kemasan" || cat?.name.toLowerCase().includes("kemasan"));
+                  const isStk = Boolean(cat?.isStockRelated || cat?.stockKind || isKem || newCatId === "cat-belanja-stok" || newCatId === "cat-belanja-dagang" || newCatId === "cat-belanja-bahan");
+
                   setShowBudgetWarning(false);
                   setBudgetExceedReason("");
                   setErrors({});
-                  setForm({ ...form, categoryId: e.target.value });
+                  setForm({ ...form, categoryId: newCatId });
+
+                  if (isKem) {
+                    setStockType("kemasan");
+                    setItems([
+                      {
+                        kind: "kemasan",
+                        target: "kemasan",
+                        productName: "",
+                        packageQty: 1,
+                        packageUnitSize: 1,
+                        unit: "pcs",
+                        qty: 1,
+                        unitCost: 0,
+                        totalCost: 0,
+                      },
+                    ]);
+                  } else if (isStk) {
+                    setStockType("dagang");
+                    setItems([
+                      {
+                        kind: "dagang",
+                        target: "dagang",
+                        productId: "",
+                        productName: "",
+                        qty: 1,
+                        unitCost: 0,
+                        totalCost: 0,
+                      },
+                    ]);
+                  } else {
+                    setItems([]);
+                  }
                 }}
                 className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 ${errors.categoryId ? "border-red-500" : "border-[hsl(var(--border))] focus:ring-blue-500/30"}`}>
                 <option value="">Pilih kategori pengeluaran</option>
@@ -249,55 +425,493 @@ function AddExpenseModal({ onClose, isPrive = false }: { onClose: () => void; is
           )}
 
           {/* Items stok jika kategori stock-related */}
-          {selectedCat?.isStockRelated && !isPrive && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-[hsl(var(--muted-fg))]">Item Stok</label>
-                <button type="button" onClick={addStockItem}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Tambah Item
-                </button>
-              </div>
-              {items.length === 0 ? (
-                <p className="text-xs text-[hsl(var(--muted-fg))] text-center py-3 rounded-lg border border-dashed border-[hsl(var(--border))]">
-                  Klik &quot;Tambah Item&quot; untuk menambah produk yang dibeli
-                </p>
+          {isStockRelated && !isPrive && (
+            <div className="space-y-3">
+              {/* JIKA KATEGORI KEMASAN: Tampilkan Langsung Form Kemasan & Packing */}
+              {isKemasanCategory ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Kemasan & Perlengkapan Packing yang Dibeli</label>
+                      <p className="text-[11px] text-[hsl(var(--muted-fg))]">Input kardus, bubble wrap, polymailer, cup, kantong, dll. Modal per pcs otomatis dihitung & disimpan ke persediaan.</p>
+                    </div>
+                    <button type="button" onClick={() => addStockItem("kemasan")}
+                      className="text-xs text-amber-600 hover:text-amber-700 font-semibold flex items-center gap-1 shrink-0">
+                      <Plus className="w-3.5 h-3.5" /> Tambah Kemasan
+                    </button>
+                  </div>
+                  {errors.items && <p className="text-[11px] text-red-500 mb-2">{errors.items}</p>}
+                  {items.filter(it => it.kind === "kemasan").length === 0 ? (
+                    <div className="text-center py-4 rounded-xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
+                      <p className="text-xs text-[hsl(var(--muted-fg))]">Klik &quot;Tambah Kemasan&quot; untuk mencatat kardus, box, atau plastik packing</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {items.map((item, idx) => {
+                        if (item.kind !== "kemasan") return null;
+                        const totalUnits = (item.packageQty || 1) * (item.packageUnitSize || 1);
+                        const unitCost = totalUnits > 0 && (item.totalCost ?? 0) > 0 ? Math.round((item.totalCost ?? 0) / totalUnits) : 0;
+                        return (
+                          <div key={idx} className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Nama Kemasan / Packing</label>
+                                <input
+                                  type="text"
+                                  list="kemasan-suggestions"
+                                  value={item.productName || ""}
+                                  onChange={(e) => updateItem(idx, { productName: e.target.value })}
+                                  placeholder="Contoh: Kardus Box Uk. 20x15 / Bubble Wrap 50m / Cup Dingin 16oz"
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:ring-1 focus:ring-amber-500/30"
+                                />
+                                <datalist id="kemasan-suggestions">
+                                  {rawMaterials.filter(m => m.category === "kemasan").map(m => (
+                                    <option key={m.id} value={m.name} />
+                                  ))}
+                                </datalist>
+                              </div>
+                              <button type="button" onClick={() => removeItem(idx)} className="p-1 rounded hover:bg-red-50 text-[hsl(var(--muted-fg))] hover:text-red-500 mt-4">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Beli (Pack/Roll)</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={item.packageQty || ""}
+                                  onChange={(e) => {
+                                    const pq = Math.max(1, parseInt(e.target.value) || 0);
+                                    const pus = item.packageUnitSize || 1;
+                                    const tot = pq * pus;
+                                    const tCost = item.totalCost || 0;
+                                    updateItem(idx, {
+                                      packageQty: pq,
+                                      qty: tot,
+                                      unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                    });
+                                  }}
+                                  placeholder="Contoh: 1"
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Isi / Kemasan</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={item.packageUnitSize || ""}
+                                  onChange={(e) => {
+                                    const pus = Math.max(1, parseInt(e.target.value) || 0);
+                                    const pq = item.packageQty || 1;
+                                    const tot = pq * pus;
+                                    const tCost = item.totalCost || 0;
+                                    updateItem(idx, {
+                                      packageUnitSize: pus,
+                                      qty: tot,
+                                      unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                    });
+                                  }}
+                                  placeholder="Contoh: 100"
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Satuan</label>
+                                <select
+                                  value={item.unit || "pcs"}
+                                  onChange={(e) => updateItem(idx, { unit: e.target.value })}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                >
+                                  <option value="pcs">pcs</option>
+                                  <option value="lembar">lembar</option>
+                                  <option value="roll">roll</option>
+                                  <option value="meter">meter</option>
+                                  <option value="pack">pack</option>
+                                  <option value="box">box</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Total Bayar (Rp)</label>
+                              <input
+                                type="number"
+                                min={0}
+                                value={item.totalCost || ""}
+                                onChange={(e) => {
+                                  const tCost = Math.max(0, parseInt(e.target.value) || 0);
+                                  const tot = (item.packageQty || 1) * (item.packageUnitSize || 1);
+                                  updateItem(idx, {
+                                    totalCost: tCost,
+                                    unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                  });
+                                }}
+                                placeholder="Contoh: 120000"
+                                className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs pt-1 border-t border-[hsl(var(--border))]/50">
+                              <span className="text-[11px] text-[hsl(var(--muted-fg))]">
+                                Total Stok: <strong className="text-[hsl(var(--foreground))]">{totalUnits.toLocaleString()} {item.unit || "pcs"}</strong>
+                              </span>
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                {unitCost > 0 ? `${formatRp(unitCost)} / ${item.unit || "pcs"}` : "—"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="text-right text-xs font-semibold text-amber-600">
+                        Total Belanja Kemasan: {formatRp(itemsTotal)}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <div className="space-y-2">
-                  {items.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_80px_100px_auto] gap-2 items-center">
-                      <select value={item.productId}
-                        onChange={(e) => {
-                          const p = products.find(p => p.id === e.target.value);
-                          updateItem(idx, "productId", e.target.value);
-                          if (p) updateItem(idx, "unitCost", p.buyPrice);
+                /* JIKA KATEGORI BELANJA STOK: Hanya 2 Pilihan (Produk Jadi vs Produksi Sendiri) */
+                <div>
+                  <div className="mb-3">
+                    <label className="text-xs font-semibold text-[hsl(var(--foreground))] block mb-1.5">
+                      Tipe Belanja Persediaan:
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[hsl(var(--muted))]/70 border border-[hsl(var(--border))]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStockType("dagang");
+                          setErrors({});
+                          if (items.length === 0 || !items.some(it => (it.kind === "dagang" || !it.kind) && it.productName?.trim())) {
+                            setItems([
+                              {
+                                kind: "dagang",
+                                target: "dagang",
+                                productId: "",
+                                productName: "",
+                                qty: 1,
+                                unitCost: 0,
+                                totalCost: 0,
+                              },
+                            ]);
+                          }
                         }}
-                        className="px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30">
-                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
-                      <input type="number" min={1} value={item.qty}
-                        onChange={(e) => updateItem(idx, "qty", +e.target.value)}
-                        className="px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                        placeholder="Contoh: 20" />
-                      <input type="number" min={0} value={item.unitCost}
-                        onChange={(e) => updateItem(idx, "unitCost", +e.target.value)}
-                        className="px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                        placeholder="Contoh: 12000" />
-                      <button type="button" onClick={() => removeItem(idx)} className="p-1 rounded text-[hsl(var(--muted-fg))] hover:text-red-500">
-                        <X className="w-3.5 h-3.5" />
+                        className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          stockType === "dagang"
+                            ? "bg-[hsl(var(--card))] text-blue-600 dark:text-blue-400 shadow-xs border border-[hsl(var(--border))]"
+                            : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
+                        }`}
+                      >
+                        <Package className="w-3.5 h-3.5" />
+                        Produk Jadi (Reseller)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStockType("produksi");
+                          setErrors({});
+                          if (items.length === 0 || !items.some(it => it.kind === "produksi" && it.productName?.trim())) {
+                            setItems([
+                              {
+                                kind: "produksi",
+                                target: "produksi",
+                                productName: "",
+                                packageQty: 1,
+                                packageUnitSize: 1000,
+                                unit: "gram",
+                                qty: 1000,
+                                unitCost: 0,
+                                totalCost: 0,
+                              },
+                            ]);
+                          }
+                        }}
+                        className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          stockType === "produksi"
+                            ? "bg-[hsl(var(--card))] text-violet-600 dark:text-violet-400 shadow-xs border border-[hsl(var(--border))]"
+                            : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
+                        }`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Produksi Sendiri (Olahan)
                       </button>
                     </div>
-                  ))}
-                  <div className="text-right text-xs font-semibold text-blue-600 mt-1">
-                    Total: {formatRp(itemsTotal)}
                   </div>
+
+                  {/* 1. PRODUK JADI */}
+                  {stockType === "dagang" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Produk Jadi yang Dibeli (Siap Jual)</label>
+                          <p className="text-[11px] text-[hsl(var(--muted-fg))]">Input barang siap jual, jumlah pcs, & total harga beli. Modal per pcs otomatis dihitung.</p>
+                        </div>
+                        <button type="button" onClick={() => addStockItem("dagang")}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 shrink-0">
+                          <Plus className="w-3.5 h-3.5" /> Tambah Produk Jadi
+                        </button>
+                      </div>
+                      {errors.items && <p className="text-[11px] text-red-500 mb-2">{errors.items}</p>}
+                      {items.filter(it => it.kind === "dagang" || !it.kind).length === 0 ? (
+                        <div className="text-center py-4 rounded-xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
+                          <p className="text-xs text-[hsl(var(--muted-fg))]">Klik &quot;Tambah Produk Jadi&quot; untuk mencatat produk kulakan/grosir</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {items.map((item, idx) => {
+                            if (item.kind && item.kind !== "dagang") return null;
+                            const unitCost = item.qty > 0 && (item.totalCost ?? 0) > 0 ? Math.round((item.totalCost ?? 0) / item.qty) : 0;
+                            return (
+                              <div key={idx} className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1">
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Nama Produk Jadi</label>
+                                    <input
+                                      type="text"
+                                      list="dagang-suggestions"
+                                      value={item.productName || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const matched = products.find(p => p.name.toLowerCase() === val.toLowerCase());
+                                        if (matched) {
+                                          updateItem(idx, {
+                                            productName: val,
+                                            productId: matched.id,
+                                            ...(item.totalCost ? {} : matched.buyPrice > 0 ? {
+                                              totalCost: matched.buyPrice * (item.qty || 1),
+                                              unitCost: matched.buyPrice,
+                                            } : {}),
+                                          });
+                                        } else {
+                                          updateItem(idx, {
+                                            productName: val,
+                                            productId: "",
+                                          });
+                                        }
+                                      }}
+                                      placeholder="Contoh: Kemeja Flannel / Sepatu Sneakers"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:ring-1 focus:ring-blue-500/30"
+                                    />
+                                    <datalist id="dagang-suggestions">
+                                      {products.map(p => (
+                                        <option key={p.id} value={p.name} />
+                                      ))}
+                                    </datalist>
+                                  </div>
+                                  <button type="button" onClick={() => removeItem(idx)} className="p-1 rounded hover:bg-red-50 text-[hsl(var(--muted-fg))] hover:text-red-500 mt-4">
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Jumlah (Pcs)</label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={item.qty || ""}
+                                      onChange={(e) => {
+                                        const q = Math.max(1, parseInt(e.target.value) || 0);
+                                        const tCost = item.totalCost || 0;
+                                        updateItem(idx, {
+                                          qty: q,
+                                          unitCost: q > 0 ? Math.round(tCost / q) : 0,
+                                        });
+                                      }}
+                                      placeholder="Contoh: 12"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Total Bayar (Rp)</label>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      value={item.totalCost || ""}
+                                      onChange={(e) => {
+                                        const t = Math.max(0, parseInt(e.target.value) || 0);
+                                        const q = item.qty || 1;
+                                        updateItem(idx, {
+                                          totalCost: t,
+                                          unitCost: q > 0 ? Math.round(t / q) : 0,
+                                        });
+                                      }}
+                                      placeholder="Contoh: 360000"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-1 border-t border-[hsl(var(--border))]/50">
+                                  <span className="text-[11px] text-[hsl(var(--muted-fg))]">Modal Pokok (HPP) / Pcs:</span>
+                                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {unitCost > 0 ? `${formatRp(unitCost)} / pcs` : "—"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="text-right text-xs font-semibold text-blue-600">
+                            Total Belanja: {formatRp(itemsTotal)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2. PRODUKSI SENDIRI */}
+                  {stockType === "produksi" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <label className="text-xs font-semibold text-[hsl(var(--foreground))]">Bahan Baku Olahan Produksi Sendiri</label>
+                          <p className="text-[11px] text-[hsl(var(--muted-fg))]">Input bahan mentah dapur. Sistem akan menghitung modal per takaran & menyimpan ke stok.</p>
+                        </div>
+                        <button type="button" onClick={() => addStockItem("produksi")}
+                          className="text-xs text-violet-600 hover:text-violet-700 font-semibold flex items-center gap-1 shrink-0">
+                          <Plus className="w-3.5 h-3.5" /> Tambah Bahan Mentah
+                        </button>
+                      </div>
+                      {errors.items && <p className="text-[11px] text-red-500 mb-2">{errors.items}</p>}
+                      {items.filter(it => it.kind === "produksi").length === 0 ? (
+                        <div className="text-center py-4 rounded-xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
+                          <p className="text-xs text-[hsl(var(--muted-fg))]">Klik &quot;Tambah Bahan Mentah&quot; untuk mencatat bahan dapur yang dibeli</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {items.map((item, idx) => {
+                            if (item.kind !== "produksi") return null;
+                            const totalUnits = (item.packageQty || 1) * (item.packageUnitSize || 1);
+                            const unitCost = totalUnits > 0 && (item.totalCost ?? 0) > 0 ? Math.round((item.totalCost ?? 0) / totalUnits) : 0;
+                            return (
+                              <div key={idx} className="p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1">
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Nama Bahan Mentah</label>
+                                    <input
+                                      type="text"
+                                      list="produksi-suggestions"
+                                      value={item.productName || ""}
+                                      onChange={(e) => updateItem(idx, { productName: e.target.value })}
+                                      placeholder="Contoh: Biji Kopi Arabika / Tepung Terigu / Daging Sapi"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:ring-1 focus:ring-violet-500/30"
+                                    />
+                                    <datalist id="produksi-suggestions">
+                                      {rawMaterials.filter(m => (m.category ?? "produksi") === "produksi").map(m => (
+                                        <option key={m.id} value={m.name} />
+                                      ))}
+                                    </datalist>
+                                  </div>
+                                  <button type="button" onClick={() => removeItem(idx)} className="p-1 rounded hover:bg-red-50 text-[hsl(var(--muted-fg))] hover:text-red-500 mt-4">
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Beli (Kemasan)</label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={item.packageQty || ""}
+                                      onChange={(e) => {
+                                        const pq = Math.max(1, parseInt(e.target.value) || 0);
+                                        const pus = item.packageUnitSize || 1;
+                                        const tot = pq * pus;
+                                        const tCost = item.totalCost || 0;
+                                        updateItem(idx, {
+                                          packageQty: pq,
+                                          qty: tot,
+                                          unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                        });
+                                      }}
+                                      placeholder="Contoh: 2"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Isi / Kemasan</label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={item.packageUnitSize || ""}
+                                      onChange={(e) => {
+                                        const pus = Math.max(1, parseInt(e.target.value) || 0);
+                                        const pq = item.packageQty || 1;
+                                        const tot = pq * pus;
+                                        const tCost = item.totalCost || 0;
+                                        updateItem(idx, {
+                                          packageUnitSize: pus,
+                                          qty: tot,
+                                          unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                        });
+                                      }}
+                                      placeholder="Contoh: 1000"
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Satuan</label>
+                                    <select
+                                      value={item.unit || "gram"}
+                                      onChange={(e) => updateItem(idx, { unit: e.target.value })}
+                                      className="w-full px-2 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                    >
+                                      <option value="gram">gram (g)</option>
+                                      <option value="ml">ml / cc</option>
+                                      <option value="kg">kg</option>
+                                      <option value="liter">liter</option>
+                                      <option value="pcs">pcs / butir</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-[hsl(var(--muted-fg))] uppercase">Total Bayar (Rp)</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={item.totalCost || ""}
+                                    onChange={(e) => {
+                                      const tCost = Math.max(0, parseInt(e.target.value) || 0);
+                                      const tot = (item.packageQty || 1) * (item.packageUnitSize || 1);
+                                      updateItem(idx, {
+                                        totalCost: tCost,
+                                        unitCost: tot > 0 ? Math.round(tCost / tot) : 0,
+                                      });
+                                    }}
+                                    placeholder="Contoh: 150000"
+                                    className="w-full px-2.5 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs"
+                                  />
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-1 border-t border-[hsl(var(--border))]/50">
+                                  <span className="text-[11px] text-[hsl(var(--muted-fg))]">
+                                    Total Stok: <strong className="text-[hsl(var(--foreground))]">{totalUnits.toLocaleString()} {item.unit || "gram"}</strong>
+                                  </span>
+                                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {unitCost > 0 ? `${formatRp(unitCost)} / ${item.unit || "gram"}` : "—"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="text-right text-xs font-semibold text-violet-600">
+                            Total Belanja: {formatRp(itemsTotal)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
           {/* Nominal (hanya jika bukan stock-related atau tidak ada items) */}
-          {!selectedCat?.isStockRelated && (
+          {!isStockRelated && (
             <div>
               <label className="text-xs font-semibold text-[hsl(var(--muted-fg))] block mb-1">Nominal (Rp) *</label>
               <input type="number" min={0} value={form.amount}

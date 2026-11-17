@@ -10,11 +10,10 @@ import {
   Building2, Users, Bot, TrendingUp
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
-import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuthenticatedUser = useStore((s) => s.setAuthenticatedUser);
+  const login = useStore((s) => s.login);
   const isAuthenticated = useStore((s) => s.isAuthenticated);
 
   const [email, setEmail] = useState("");
@@ -34,90 +33,20 @@ export default function LoginPage() {
     }
   }, [hasHydrated, isAuthenticated, router]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const inputIdentifier = email.trim();
-    let loginEmail = inputIdentifier;
-
-    try {
-      const supabase = createClient();
-
-      // Jika pengguna login menggunakan username (tanpa @), cari email yang sesuai
-      if (!inputIdentifier.includes("@")) {
-        const { data: userProfile } = await supabase
-          .from("users")
-          .select("contact_email")
-          .ilike("username", inputIdentifier)
-          .maybeSingle();
-
-        if (userProfile?.contact_email) {
-          loginEmail = userProfile.contact_email;
-        }
-      }
-
-      // Autentikasi langsung dan murni ke Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      });
-
-      if (authError || !authData?.user) {
-        let message = "Alamat email atau kata sandi salah. Silakan periksa kembali.";
-        if (authError?.message?.includes("Email not confirmed")) {
-          message = "Alamat email belum dikonfirmasi. Periksa kotak masuk email Anda.";
-        } else if (authError?.message?.includes("Invalid login credentials")) {
-          message = "Alamat email atau kata sandi salah. Pastikan akun sudah terdaftar.";
-        } else if (authError?.message) {
-          message = authError.message;
-        }
-        setError(message);
-        setLoading(false);
-        return;
-      }
-
-      // Ambil detail profil pengguna dari Supabase
-      const userMeta = authData.user.user_metadata || {};
-      let dbProfile: any = null;
-      try {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", authData.user.id)
-          .maybeSingle();
-        dbProfile = profile;
-      } catch (dbErr) {
-        console.warn("Gagal membaca profil dari tabel database:", dbErr);
-      }
-
-      const resolvedName =
-        dbProfile?.name || userMeta.name || authData.user.email?.split("@")[0] || "User";
-      const resolvedUsername =
-        dbProfile?.username || userMeta.username || authData.user.email?.split("@")[0] || "user";
-      const resolvedIsOwner = dbProfile?.is_owner ?? (userMeta.is_owner ?? true);
-      const resolvedTenantId = dbProfile?.tenant_id || userMeta.tenant_id;
-      const resolvedTemplate =
-        dbProfile?.template || userMeta.template || (resolvedIsOwner ? "Owner" : "Karyawan");
-      const resolvedPermissions = dbProfile?.permissions || userMeta.permissions;
-
-      setAuthenticatedUser({
-        id: authData.user.id,
-        email: authData.user.email || loginEmail,
-        name: resolvedName,
-        username: resolvedUsername,
-        isOwner: resolvedIsOwner,
-        tenantId: resolvedTenantId,
-        template: resolvedTemplate,
-        permissions: resolvedPermissions,
-      });
-
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err?.message || "Terjadi kesalahan koneksi saat masuk ke sistem.");
+    const result = login(email, password);
+    if (!result.success) {
+      setError(result.message || "Nama pengguna atau kata sandi salah.");
       setLoading(false);
+      return;
     }
+
+    setLoading(false);
+    router.push("/dashboard");
   }
 
   return (
@@ -150,7 +79,7 @@ export default function LoginPage() {
               Selamat datang kembali
             </h1>
             <p className="text-sm text-[hsl(var(--muted-fg))] mt-1.5">
-              Masuk untuk mengelola seluruh kanal penjualan, stok barang, dan keuangan internal usaha Anda.
+              Masuk untuk mengelola operasional penjualan, persediaan barang, dan keuangan usaha Anda.
             </p>
           </div>
 
@@ -284,10 +213,10 @@ export default function LoginPage() {
         <div className="relative z-10 my-auto max-w-lg space-y-8">
           <div>
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
-              Semua kanal jualan tersinkronisasi rapi dalam satu sistem internal.
+              Operasional penjualan, stok, dan kas tersinkronisasi rapi dalam satu sistem internal.
             </h2>
             <p className="text-white/70 text-sm mt-3 leading-relaxed">
-              Pesanan dari Shopee, Tokopedia, WhatsApp, dan toko offline terhubung langsung dengan stok barang, keuangan, dan asisten AI Copilot.
+              Transaksi penjualan terhubung langsung dengan stok gudang, laporan laba rugi, dan asisten AI Copilot.
             </p>
           </div>
 
@@ -298,8 +227,8 @@ export default function LoginPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">4 Kanal Penjualan Terpusat</h4>
-                <p className="text-xs text-white/60">Shopee, Tokopedia, WhatsApp, & Toko Offline.</p>
+                <h4 className="text-sm font-semibold">Pencatatan Penjualan Terpadu</h4>
+                <p className="text-xs text-white/60">Input manual cepat, import CSV, dan cetak invoice.</p>
               </div>
             </div>
 
@@ -309,7 +238,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold">AI Business Copilot</h4>
-                <p className="text-xs text-white/60">Rekomendasi stok menipis & analisis margin kanal.</p>
+                <p className="text-xs text-white/60">Rekomendasi stok menipis & panduan laba bersih.</p>
               </div>
             </div>
 
@@ -319,7 +248,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold">Laporan Keuangan & HPP Terpusat</h4>
-                <p className="text-xs text-white/60">Margin keuntungan bersih per produk & kanal jualan.</p>
+                <p className="text-xs text-white/60">Laba rugi otomatis, neraca seimbang, & arus kas riil.</p>
               </div>
             </div>
           </div>

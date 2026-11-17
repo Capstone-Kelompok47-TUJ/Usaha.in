@@ -51,11 +51,7 @@ export function Header({
 
   // Helper function to format business type label
   const businessTypeLabel =
-    activeTenant?.businessType === "produksi"
-      ? "Produksi"
-      : activeTenant?.businessType === "jasa"
-      ? "Jasa"
-      : "Dagang";
+    activeTenant?.businessType === "produksi" ? "Produksi" : "Dagang";
 
   return (
     <header className="h-16 shrink-0 flex items-center justify-between px-4 lg:px-6 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] gap-3 z-20">
@@ -98,7 +94,7 @@ export function Header({
         >
           <div className="flex items-center gap-2 truncate">
             <Search className="w-3.5 h-3.5 text-[hsl(var(--muted-fg))] group-hover:text-blue-500 transition-colors" />
-            <span className="truncate">Cari pesanan, produk, pelanggan, atau menu...</span>
+            <span className="truncate">Cari pesanan, produk, atau menu...</span>
           </div>
           <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-2xs text-[hsl(var(--muted-fg))] group-hover:text-[hsl(var(--foreground))]">
             Ctrl K

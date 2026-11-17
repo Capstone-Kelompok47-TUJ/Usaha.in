@@ -7,6 +7,7 @@ import {
   Tenant,
   User,
   Product,
+  RawMaterial,
   StockMovement,
   Order,
   Purchase,
@@ -18,12 +19,13 @@ import {
 } from "@/types";
 
 // ============================================================
-// KATEGORI PENGELUARAN STANDAR (Tipe: Dagang / Jasa / Produksi)
+// KATEGORI PENGELUARAN STANDAR (Tipe: Dagang / Produksi)
 // ============================================================
 
 export const INITIAL_EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  { id: "cat-bahan-baku",   name: "Belanja stok (masuk persediaan, bukan beban)", group: "cogs", active: true, isStockRelated: true },
-  { id: "cat-kemasan",      name: "Kemasan",                    group: "cogs",      active: true },
+  { id: "cat-belanja-dagang", name: "Belanja Produk Jadi (Reseller)", group: "cogs", active: true, isStockRelated: true, stockKind: "dagang" },
+  { id: "cat-belanja-bahan", name: "Belanja Bahan Baku (Produksi Sendiri)", group: "cogs", active: true, isStockRelated: true, stockKind: "produksi" },
+  { id: "cat-kemasan",      name: "Kemasan",                    group: "cogs",      active: true, isStockRelated: true, stockKind: "kemasan" },
   { id: "cat-iklan",        name: "Iklan & Promosi",            group: "selling",   active: true },
   { id: "cat-ongkir",       name: "Ongkir Ditanggung Penjual",  group: "selling",   active: true },
   { id: "cat-sewa",         name: "Sewa",                       group: "operating", active: true },
@@ -42,6 +44,7 @@ export const INITIAL_TENANTS: Tenant[] = [];
 export const INITIAL_USERS: User[] = [];
 export const INITIAL_SUPPLIERS: Supplier[] = [];
 export const INITIAL_PRODUCTS: Product[] = [];
+export const INITIAL_RAW_MATERIALS: RawMaterial[] = [];
 export const INITIAL_CUSTOMERS: Customer[] = [];
 export const INITIAL_ORDERS: Order[] = [];
 export const INITIAL_PURCHASES: Purchase[] = [];

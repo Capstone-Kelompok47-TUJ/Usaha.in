@@ -1,31 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend,
+  ResponsiveContainer, BarChart, Bar,
 } from "recharts";
 import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
-import type { Channel } from "@/types";
-
-const CHANNEL_COLORS: Record<string, string> = {
-  shopee:        "#ee4d2d",
-  marketplace_a: "#ee4d2d",
-  tokopedia:     "#03ac0e",
-  marketplace_b: "#03ac0e",
-  chat:          "#10b981",
-  offline:       "#94a3b8",
-};
-
-const CHANNEL_LABELS: Record<string, string> = {
-  shopee:        "Shopee",
-  marketplace_a: "Shopee",
-  tokopedia:     "Tokopedia",
-  marketplace_b: "Tokopedia",
-  chat:          "WhatsApp",
-  offline:       "Toko Offline",
-};
 
 // ====== Sales Line Chart ======
 export function SalesLineChart() {
@@ -55,7 +38,16 @@ export function SalesLineChart() {
 
   return (
     <div className="card">
-      <h3 className="font-semibold text-sm mb-4">Penjualan 30 Hari Terakhir</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-sm">Penjualan 30 Hari Terakhir</h3>
+        <Link
+          href="/laporan"
+          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+          title="Buka ringkasan laporan periodik"
+        >
+          Laporan Lengkap <ChevronRight className="w-3 h-3" />
+        </Link>
+      </div>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
@@ -93,73 +85,6 @@ export function SalesLineChart() {
   );
 }
 
-// ====== Channel Bar/Pie Chart ======
-export function ChannelChart() {
-  const rawOrders = useStore((s) => s.orders);
-  const activeTenantId = useStore((s) => s.activeTenantId);
-  const orders = useMemo(
-    () => rawOrders.filter((o) => o.tenantId === activeTenantId),
-    [rawOrders, activeTenantId]
-  );
-
-  const channels: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
-  const data = channels.map((ch) => {
-    const chOrders = orders.filter(
-      (o) => o.channel === ch && o.paymentStatus === "lunas"
-    );
-    return {
-      name: CHANNEL_LABELS[ch],
-      value: chOrders.reduce((s, o) => s + o.subtotal, 0),
-      color: CHANNEL_COLORS[ch],
-    };
-  });
-
-  const total = data.reduce((s, d) => s + d.value, 0);
-
-  return (
-    <div className="card">
-      <h3 className="font-semibold text-sm mb-4">Omzet per Kanal</h3>
-      <div className="flex items-center gap-4">
-        <ResponsiveContainer width="100%" height={160}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={45}
-              outerRadius={70}
-              paddingAngle={3}
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={index} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(v: any) => [formatRp(Number(v) || 0), "Omzet"]}
-              contentStyle={{ fontSize: 12, borderRadius: "8px" }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="space-y-2 shrink-0">
-          {data.map((d) => (
-            <div key={d.name} className="flex items-center gap-2 text-xs">
-              <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ background: d.color }}
-              />
-              <span className="text-[hsl(var(--muted-fg))]">{d.name}</span>
-              <span className="font-semibold ml-1">
-                {total > 0 ? Math.round((d.value / total) * 100) : 0}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ====== Top Products Chart ======
 export function TopProductsChart() {
   const rawOrders = useStore((s) => s.orders);
@@ -190,7 +115,16 @@ export function TopProductsChart() {
 
   return (
     <div className="card">
-      <h3 className="font-semibold text-sm mb-4">Produk Terlaris (Top 5)</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-sm">Produk Terlaris (Top 5)</h3>
+        <Link
+          href="/produk"
+          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+          title="Kelola data dan stok produk"
+        >
+          Katalog Produk <ChevronRight className="w-3 h-3" />
+        </Link>
+      </div>
       <ResponsiveContainer width="100%" height={160}>
         <BarChart data={data} layout="vertical" margin={{ left: 0, right: 20 }}>
           <XAxis type="number" hide />

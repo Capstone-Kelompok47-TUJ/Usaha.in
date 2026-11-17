@@ -9,7 +9,7 @@ import { formatRp } from "@/lib/finance";
 import { redirect } from "next/navigation";
 import type { BusinessType, ExpenseCategoryGroup } from "@/types";
 import {
-  Building2, Percent, Tag, ShieldCheck, DollarSign,
+  Building2, Tag, ShieldCheck, DollarSign,
   Plus, Save, Check, RefreshCw, AlertTriangle, Layers,
   Trash2, Sliders, ToggleLeft, ToggleRight, X, Info
 } from "lucide-react";
@@ -46,6 +46,9 @@ export default function PengaturanPage() {
   );
   const [useStock, setUseStock] = useState(activeTenant?.businessSettings?.useStock ?? true);
   const [useShipping, setUseShipping] = useState(activeTenant?.businessSettings?.useShipping ?? true);
+  const [useProduction, setUseProduction] = useState(
+    activeTenant?.businessSettings?.useProduction ?? (activeTenant?.businessSettings?.businessType === "produksi")
+  );
 
   // --- Saldo Awal State ---
   const [initialCash, setInitialCash] = useState(activeTenant?.businessSettings?.initialCash ?? 0);
@@ -67,24 +70,16 @@ export default function PengaturanPage() {
     return products.reduce((s, p) => s + Math.max(0, p.stock) * (p.avgCost ?? p.buyPrice), 0);
   }, [products]);
 
-  // --- 2. Fee Defaults State ---
-  const [shopeeFeePct, setShopeeFeePct] = useState(
-    activeTenant?.businessSettings?.defaultShopeeFeePct ?? 7.5
-  );
-  const [tokopediaFeePct, setTokopediaFeePct] = useState(
-    activeTenant?.businessSettings?.defaultTokopediaFeePct ?? 3.5
-  );
-
-  // --- 3. Category Modal State ---
+  // --- 2. Category Modal State ---
   const [isAddCatModalOpen, setIsAddCatModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatGroup, setNewCatGroup] = useState<ExpenseCategoryGroup>("operating");
   const [newCatStockRelated, setNewCatStockRelated] = useState(false);
 
-  // --- 4. Spending Limits State ---
+  // --- 3. Spending Limits State ---
   const [budgetInputs, setBudgetInputs] = useState<Record<string, number>>(budgets);
 
-  // --- 5. Fixed Recurring Costs State ---
+  // --- 4. Fixed Recurring Costs State ---
   const [fixedCosts, setFixedCosts] = useState<Array<{ id: string; name: string; amount: number }>>([
     { id: "fc-1", name: "Gaji Karyawan Operasional", amount: 1_800_000 },
     { id: "fc-2", name: "Sewa Tempat / Ruko Bulanan", amount: 500_000 },
@@ -105,8 +100,7 @@ export default function PengaturanPage() {
     updateTenantSettings(businessName, businessType, {
       useStock,
       useShipping,
-      defaultShopeeFeePct: shopeeFeePct,
-      defaultTokopediaFeePct: tokopediaFeePct,
+      useProduction,
       initialCash: Number(initialCash) || 0,
       initialReceivable: Number(initialReceivable) || 0,
       initialPayable: Number(initialPayable) || 0,
@@ -158,17 +152,16 @@ export default function PengaturanPage() {
   return (
     <DashboardLayout
       title="Pengaturan Usaha"
-      subtitle="Kelola profil toko, saldo awal, batas anggaran, dan parameter biaya"
+      subtitle="Kelola profil toko, saldo awal, dan batas anggaran pengeluaran"
     >
       <div className="space-y-6 max-w-5xl pb-16 animate-fade-in">
         <PageIntro
           title="Pengaturan Usaha"
-          description="Kelola profil toko, saldo modal awal, batas anggaran bulanan, dan parameter potongan biaya admin kanal penjualan."
+          description="Kelola profil toko, saldo modal awal, dan batas anggaran pengeluaran bulanan."
           guideTitle="Panduan Pengaturan Usaha"
           guideSteps={[
-            "Atur Nama dan Tipe Usaha (Dagang, Produksi, atau Jasa) untuk menyesuaikan modul yang aktif.",
+            "Atur Nama dan Tipe Usaha (Produk Jadi/Reseller atau Produksi Sendiri) untuk menyesuaikan modul yang aktif.",
             "Tentukan Saldo Awal (kas/bank) sebelum mulai mencatat transaksi. Saldo akan otomatis terkunci setelah transaksi pertama.",
-            "Sesuaikan persentase potongan admin Shopee dan Tokopedia agar kalkulasi laba bersih akurat.",
             "Tentukan batas anggaran bulanan pada tiap kategori pengeluaran untuk memantau potensi pemborosan.",
             "Daftarkan biaya tetap bulanan (seperti gaji atau sewa ruko) untuk menghitung kalkulasi Uang Aman Ditarik.",
           ]}
@@ -217,7 +210,7 @@ export default function PengaturanPage() {
                 type="text"
                 value={businessCategory}
                 onChange={(e) => setBusinessCategory(e.target.value)}
-                placeholder="Contoh: F&B / Kuliner, Fashion, Kopi, Jasa Desain"
+                placeholder="Contoh: F&B / Kuliner, Fashion, Kopi, Manufaktur Sepatu"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
@@ -227,22 +220,17 @@ export default function PengaturanPage() {
             <label className="text-xs font-semibold text-[hsl(var(--foreground))]">
               Tipe Usaha <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
                 {
                   key: "dagang" as const,
-                  label: "Dagang (Retail / Reseller)",
+                  label: "Produk Jadi (Retail / Reseller)",
                   desc: "Membeli barang jadi dan langsung menjualnya kembali tanpa mengolah.",
                 },
                 {
                   key: "produksi" as const,
-                  label: "Produksi (Manufaktur / Olahan)",
+                  label: "Produksi Sendiri (Olahan)",
                   desc: "Mengolah bahan baku menjadi produk jadi melalui resep/proses produksi.",
-                },
-                {
-                  key: "jasa" as const,
-                  label: "Jasa (Layanan)",
-                  desc: "Menyediakan layanan atau keahlian tanpa mengelola stok fisik barang.",
                 },
               ].map((t) => (
                 <button
@@ -250,19 +238,14 @@ export default function PengaturanPage() {
                   type="button"
                   onClick={() => {
                     setBusinessType(t.key);
-                    if (t.key === "jasa") {
-                      setUseStock(false);
-                      setUseShipping(false);
-                    } else {
-                      setUseStock(true);
-                      setUseShipping(true);
-                    }
+                    setUseProduction(t.key === "produksi");
+                    setUseStock(true);
+                    setUseShipping(true);
                   }}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
-                    businessType === t.key
+                  className={`p-3.5 rounded-xl border text-left transition-all ${businessType === t.key
                       ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 text-blue-700 dark:text-blue-300 font-semibold shadow-xs ring-1 ring-blue-500"
                       : "bg-[hsl(var(--card))] border-[hsl(var(--border))] text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))] hover:border-blue-300"
-                  }`}
+                    }`}
                 >
                   <div className="text-sm font-bold text-[hsl(var(--foreground))] flex items-center justify-between">
                     {t.label}
@@ -385,7 +368,7 @@ export default function PengaturanPage() {
                   className="w-full px-3 py-1.5 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-xs font-bold text-[hsl(var(--foreground))] focus:outline-none disabled:opacity-60"
                 />
               </div>
-              <p className="text-[10px] text-[hsl(var(--muted-fg))]">Tagihan ke pelanggan lama</p>
+              <p className="text-[10px] text-[hsl(var(--muted-fg))]">Tagihan piutang penjualan lama</p>
             </div>
 
             <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-1.5">
@@ -407,66 +390,7 @@ export default function PengaturanPage() {
           </div>
         </div>
 
-        {/* SECTION 2: FEE DEFAULT MARKETPLACE */}
-        <div className="p-6 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm space-y-6">
-          <div className="flex items-center gap-2.5 border-b border-[hsl(var(--border))] pb-4">
-            <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400">
-              <Percent className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-[hsl(var(--foreground))]">Fee Default Kanal Penjualan Marketplace</h3>
-              <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
-                Persentase potongan admin platform untuk simulasi dan perhitungan laba bersih otomatis
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
-                  🟠 Potongan Admin Shopee
-                </span>
-                <span className="text-[11px] text-[hsl(var(--muted-fg))]">Standar: 7.5%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="50"
-                  value={shopeeFeePct}
-                  onChange={(e) => setShopeeFeePct(parseFloat(e.target.value) || 0)}
-                  className="w-28 px-3 py-2 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                />
-                <span className="text-xs font-semibold text-[hsl(var(--muted-fg))]">% per transaksi pesanan</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  🟢 Potongan Admin Tokopedia
-                </span>
-                <span className="text-[11px] text-[hsl(var(--muted-fg))]">Standar: 3.5%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="50"
-                  value={tokopediaFeePct}
-                  onChange={(e) => setTokopediaFeePct(parseFloat(e.target.value) || 0)}
-                  className="w-28 px-3 py-2 rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                />
-                <span className="text-xs font-semibold text-[hsl(var(--muted-fg))]">% per transaksi pesanan</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION 3 & 4: KATEGORI BIAYA & BATAS PENGELUARAN */}
+        {/* SECTION 2 & 3: KATEGORI BIAYA & BATAS PENGELUARAN */}
         <div className="p-6 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[hsl(var(--border))] pb-4">
             <div className="flex items-center gap-2.5">
@@ -522,22 +446,21 @@ export default function PengaturanPage() {
                         {cat.group === "cogs"
                           ? "HPP / Modal"
                           : cat.group === "selling"
-                          ? "Beban Penjualan"
-                          : cat.group === "operating"
-                          ? "Operasional"
-                          : cat.group === "non_expense"
-                          ? "Prive (Non-L/R)"
-                          : "Lainnya"}
+                            ? "Beban Penjualan"
+                            : cat.group === "operating"
+                              ? "Operasional"
+                              : cat.group === "non_expense"
+                                ? "Prive (Non-L/R)"
+                                : "Lainnya"}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
                           type="button"
                           onClick={() => toggleExpenseCategoryActive(cat.id)}
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
-                            cat.active
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${cat.active
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                               : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-fg))]"
-                          }`}
+                            }`}
                         >
                           {cat.active ? "Aktif" : "Nonaktif"}
                         </button>
@@ -709,11 +632,10 @@ export default function PengaturanPage() {
                   <button
                     type="button"
                     onClick={() => setNewCatStockRelated(!newCatStockRelated)}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                      newCatStockRelated
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${newCatStockRelated
                         ? "bg-blue-600 text-white"
                         : "bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[hsl(var(--muted-fg))]"
-                    }`}
+                      }`}
                   >
                     {newCatStockRelated ? "Ya" : "Tidak"}
                   </button>

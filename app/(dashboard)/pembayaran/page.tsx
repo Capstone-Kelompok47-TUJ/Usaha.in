@@ -79,13 +79,6 @@ function amountPaid(order: Order): number {
 
 function RecordPaymentModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const recordPayment = useStore((s) => s.recordPayment);
-  const rawCustomers = useStore((s) => s.customers);
-  const activeTenantId = useStore((s) => s.activeTenantId);
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
-  );
-  const customer = customers.find((c) => c.id === order.customerId);
 
   const due = amountDue(order);
   const paid = amountPaid(order);
@@ -121,10 +114,6 @@ function RecordPaymentModal({ order, onClose }: { order: Order; onClose: () => v
           <div className="flex justify-between">
             <span className="text-[hsl(var(--muted-fg))]">Pesanan</span>
             <span className="font-mono text-xs text-blue-600 dark:text-blue-400">{order.id}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[hsl(var(--muted-fg))]">Pelanggan</span>
-            <span className="font-medium">{customer?.name ?? "—"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-[hsl(var(--muted-fg))]">Total Tagihan</span>
@@ -209,15 +198,10 @@ export default function PembayaranPage() {
   const { canView, canManage } = usePermission("pembayaran");
   const user = useCurrentUser();
   const rawOrders = useStore((s) => s.orders);
-  const rawCustomers = useStore((s) => s.customers);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const orders = useMemo(
     () => rawOrders.filter((o) => o.tenantId === activeTenantId),
     [rawOrders, activeTenantId]
-  );
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
   );
   const addToast = useStore((s) => s.addToast);
 
@@ -266,10 +250,9 @@ export default function PembayaranPage() {
 
   // D3: Copy collection message
   function handleCopyMessage(order: Order) {
-    const customer = customers.find((c) => c.id === order.customerId);
     const rem = amountDue(order) - amountPaid(order);
     const dueStr = order.dueDate ? formatDate(order.dueDate) : "—";
-    const msg = `Halo ${customer?.name ?? "Pelanggan"}, kami mengingatkan pembayaran pesanan ${order.id} sebesar ${formatRp(rem)} yang jatuh tempo ${dueStr}. Terima kasih atas kerjasamanya. 🙏`;
+    const msg = `Halo, kami mengingatkan pembayaran pesanan ${order.id} sebesar ${formatRp(rem)} yang jatuh tempo ${dueStr}. Terima kasih atas kerjasamanya. 🙏`;
     navigator.clipboard.writeText(msg).then(() => {
       setCopiedId(order.id);
       addToast("Pesan tagihan berhasil disalin ke clipboard", "success");
@@ -293,7 +276,7 @@ export default function PembayaranPage() {
     >
       {/* Page Intro with Help Tips */}
       <PageIntro
-        title="Tagihan & Piutang Pelanggan"
+        title="Tagihan & Piutang Penjualan"
         description="Pantau seluruh tagihan pesanan yang belum lunas dari pembeli, umur jatuh tempo piutang, dan catat pelunasan pembayaran secara bertahap."
         badge={`${unpaid.length} Tagihan Aktif`}
         helpTips={[
@@ -374,14 +357,13 @@ export default function PembayaranPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50">
-                  {["ID Pesanan", "Pelanggan", "Total Tagihan", "Sudah Dibayar", "Sisa Tagihan", "Umur Piutang", "Status", "Aksi"].map((h) => (
+                  {["ID Pesanan", "Total Tagihan", "Sudah Dibayar", "Sisa Tagihan", "Umur Piutang", "Status", "Aksi"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide text-[hsl(var(--muted-fg))]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((order) => {
-                  const customer = customers.find((c) => c.id === order.customerId);
                   const bucket = getAgeBucket(order.dueDate);
                   const due = amountDue(order);
                   const paid = amountPaid(order);
@@ -393,9 +375,6 @@ export default function PembayaranPage() {
                     >
                       <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap font-semibold">
                         {order.id}
-                      </td>
-                      <td className="px-4 py-3 font-medium max-w-[140px] truncate text-[hsl(var(--foreground))]">
-                        {customer?.name ?? "—"}
                       </td>
                       <td className="px-4 py-3 font-semibold whitespace-nowrap text-[hsl(var(--foreground))]">
                         {formatRp(due)}

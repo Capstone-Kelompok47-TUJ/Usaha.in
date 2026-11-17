@@ -136,7 +136,7 @@ export default function LandingPage() {
               <span>PENCATATAN INTERNAL</span>
             </div>
             <p className="text-xs text-[hsl(var(--foreground))] leading-relaxed font-normal">
-              Usaha.in menggunakan sistem <strong>pencatatan manual, import CSV, dan simulasi internal</strong> untuk kanal Shopee, Tokopedia, WhatsApp, dan Toko Fisik — <strong>tanpa memerlukan integrasi API langsung</strong>.
+              Usaha.in menggunakan sistem <strong>pencatatan penjualan, kasir manual, dan import CSV internal</strong> yang praktis — <strong>tanpa memerlukan integrasi API rumit</strong>.
             </p>
           </div>
 
@@ -148,7 +148,7 @@ export default function LandingPage() {
 
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight max-w-4xl mx-auto leading-tight sm:leading-tight">
-            Pencatatan Multi-Kanal & Analisis Laba{" "}
+            Pencatatan Penjualan & Analisis Laba{" "}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Tanpa Ribet Integrasi API
             </span>
@@ -180,7 +180,7 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-[hsl(var(--muted-fg))]">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Mendukung Toko Dagang, Produksi, & Jasa
+              Mendukung Retail (Reseller) & Produksi Sendiri
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -215,7 +215,7 @@ export default function LandingPage() {
                       : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
                   }`}
                 >
-                  Pencatatan Kanal
+                  Pencatatan Penjualan
                 </button>
                 <button
                   onClick={() => setActiveTab("analitik")}
@@ -252,12 +252,12 @@ export default function LandingPage() {
 
             {/* Tab Body */}
             <div className="p-6 sm:p-8">
-              {/* TAB 1: PENCATATAN KANAL */}
+              {/* TAB 1: PENCATATAN PENJUALAN */}
               {activeTab === "pencatatan" && (
                 <div className="space-y-6 animate-fade-in">
                   <div>
                     <h3 className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">
-                      Pencatatan Penjualan Multi-Kanal Terpusat
+                      Pencatatan Penjualan Terpusat
                     </h3>
                     <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
                       Catat transaksi dari berbagai platform tanpa memerlukan koneksi API yang rumit dan rentan error.
@@ -378,7 +378,7 @@ export default function LandingPage() {
                     <div className="p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xs">
                       <div className="text-xs font-bold text-blue-600 dark:text-blue-400">1. Laba Rugi 3 Tingkat</div>
                       <p className="text-[11px] text-[hsl(var(--muted-fg))] mt-1">
-                        Kaskade lengkap: Pendapatan Bruto → Laba Kotor (setelah HPP) → Laba Operasional → Laba Bersih Final per kanal.
+                        Kaskade lengkap: Pendapatan Bruto → Laba Kotor (setelah HPP) → Laba Operasional → Laba Bersih Final usaha.
                       </p>
                     </div>
                     <div className="p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] shadow-xs">
@@ -424,7 +424,7 @@ export default function LandingPage() {
               </div>
               <h4 className="text-base font-bold">Penjualan & Import CSV</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Input penjualan manual multi-item, import file CSV pesanan, filter per kanal, dan pembatalan (void) pesanan dengan pengembalian stok otomatis.
+                Input penjualan manual multi-item, import file CSV pesanan, pelunasan bertahap, dan pembatalan (void) pesanan dengan pengembalian stok otomatis.
               </p>
             </div>
 
@@ -453,11 +453,11 @@ export default function LandingPage() {
             {/* Feature 4 */}
             <div className="p-6 rounded-2xl border border-[hsl(var(--card-border))] bg-[hsl(var(--card))] shadow-sm space-y-3">
               <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-                <Users className="w-5 h-5" />
+                <Truck className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold">Pelanggan, RFM & Repeat Order</h4>
+              <h4 className="text-base font-bold">Pengiriman & Logistik</h4>
               <p className="text-xs text-[hsl(var(--muted-fg))] leading-relaxed">
-                Segmentasi loyalitas otomatis (Juara, Setia, Berisiko, dll.), riwayat transaksi per pelanggan, serta deteksi keterlambatan repeat order dengan template WA.
+                Pelacakan alur pengiriman pesanan, mulai dari status baru, dikemas, dikirim melalui ekspedisi kurir, hingga selesai diterima pembeli.
               </p>
             </div>
 
@@ -509,11 +509,11 @@ export default function LandingPage() {
             },
             {
               q: "Tipe usaha apa saja yang didukung oleh Usaha.in?",
-              a: "Usaha.in mendukung 3 model bisnis utama: Toko Dagang (ritel/grosir beli-jual), Manufaktur/Produksi (dengan HPP bahan baku dan perakitan), serta Usaha Jasa (layanan tanpa kewajiban stok fisik)."
+              a: "Usaha.in mendukung 2 model bisnis utama: Retail & Reseller (produk jadi beli-jual siap edar) serta Produksi Sendiri / Olahan (dengan BOM bahan baku, racikan resep, dan HPP otomatis)."
             },
             {
               q: "Bagaimana cara kerja AI Business Copilot?",
-              a: "AI Copilot menganalisis data riil penjualan, pengeluaran, perputaran stok, dan piutang Anda untuk menjawab pertanyaan strategis seperti penyebab penurunan laba, analisis kanal terlaris, dan barang kritis yang harus segera di-restock."
+              a: "AI Copilot menganalisis data riil penjualan, pengeluaran, perputaran stok, dan piutang Anda untuk menjawab pertanyaan strategis seperti penyebab penurunan laba, produk margin tertinggi, dan barang kritis yang harus segera di-restock."
             }
           ].map((item, idx) => {
             const isOpen = faqOpen === idx;
@@ -579,7 +579,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2.5">
             <LogoIcon className="w-7 h-7" />
             <span className="font-bold text-sm text-[hsl(var(--foreground))]">Usaha.in</span>
-            <span>— Sistem Operasional & Analitik UMKM Multi-Kanal</span>
+            <span>— Sistem Operasional & Analitik Finansial UMKM</span>
           </div>
           <div>
             Capstone Project Kelompok 47 &copy; 2026 Usaha.in. Semua hak dilindungi undang-undang.

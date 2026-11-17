@@ -6,7 +6,7 @@
 
 export type BusinessChannel = "marketplace" | "chat" | "offline";
 
-export type BusinessType = "dagang" | "produksi" | "jasa";
+export type BusinessType = "dagang" | "produksi";
 
 export interface BusinessSettings {
   businessType: BusinessType;
@@ -32,7 +32,7 @@ export interface Tenant {
   province: string;
   address?: string;
   phone: string;
-  channels: BusinessChannel[];
+  channels?: BusinessChannel[];
   nib?: string;
   createdAt: string;
 }
@@ -49,7 +49,6 @@ export type ModuleKey =
   | "pengeluaran"
   | "pembayaran"
   | "pengiriman"
-  | "pelanggan"
   | "laporan_keuangan"
   | "laporan_periodik"
   | "analitik"
@@ -98,7 +97,28 @@ export type ShipmentStatus =
 
 // --- PRODUK & STOK ---
 
-export type ProductType = "dagang" | "produksi" | "jasa";
+export type ProductType = "dagang" | "produksi";
+
+export interface RecipeItem {
+  materialId: string;
+  materialName: string;
+  qty: number;
+  unit: string;
+  costPerUnit: number;
+  subtotal: number;
+}
+
+export interface RawMaterial {
+  id: string;
+  tenantId?: string;
+  name: string;
+  category?: "dagang" | "produksi" | "kemasan"; // "dagang" = Produk Jadi, "produksi" = Bahan Olahan, "kemasan" = Kemasan & Packing
+  unit: string; // e.g. "gram", "ml", "pcs"
+  stock: number;
+  minStock: number;
+  avgCost: number; // cost per base unit
+  lastPurchasePrice?: number;
+}
 
 export interface Product {
   id: string;
@@ -112,7 +132,8 @@ export interface Product {
   avgCost?: number;           // E2: Moving average HPP
   stock: number;
   minStock: number;
-  channels: Channel[];
+  channels?: Channel[];
+  recipe?: RecipeItem[];
 }
 
 export type StockMovementType = "sale" | "purchase" | "adjustment";
@@ -148,8 +169,8 @@ export interface Order {
   id: string;
   tenantId?: string;
   date: string;
-  channel: Channel;
-  customerId: string;
+  channel?: Channel;
+  customerId?: string;
   items: OrderItem[];
   subtotal: number;
   discount?: number;
@@ -193,12 +214,20 @@ export interface ExpenseCategory {
   group: ExpenseCategoryGroup;
   active: boolean;
   isStockRelated?: boolean; // true = tampilkan item stok saat input
+  stockKind?: "dagang" | "produksi" | "kemasan";
 }
 
 export interface ExpenseItem {
-  productId: string;
+  productId?: string;
+  productName?: string;
+  kind?: "dagang" | "produksi" | "kemasan";
+  target?: "dagang" | "produksi" | "kemasan";
   qty: number;
   unitCost: number;
+  totalCost?: number;
+  unit?: string;
+  packageQty?: number;
+  packageUnitSize?: number;
 }
 
 export interface Expense {
@@ -233,7 +262,7 @@ export interface Customer {
   id: string;
   tenantId?: string;
   name: string;
-  channel: Channel;
+  channel?: Channel;
   phone?: string;
   email?: string;
 }
@@ -293,6 +322,7 @@ export interface AppState {
 
   // Data bisnis
   products: Product[];
+  rawMaterials?: RawMaterial[];
   stockMovements: StockMovement[];
   orders: Order[];
   purchases: Purchase[];

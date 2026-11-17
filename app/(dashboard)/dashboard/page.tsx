@@ -3,11 +3,11 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { AlertPanel } from "@/components/dashboard/AlertPanel";
-import { SalesLineChart, ChannelChart, TopProductsChart } from "@/components/dashboard/Charts";
+import { SalesLineChart, TopProductsChart } from "@/components/dashboard/Charts";
 import { EmployeeWidgets } from "@/components/dashboard/EmployeeWidgets";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
-import { calcKpi, formatRp } from "@/lib/finance";
+import { calcKpi, formatRp, calcHealthScore, calcCashPosition } from "@/lib/finance";
 import {
   DollarSign, TrendingUp, ShoppingCart, CreditCard,
   Banknote, ShieldCheck, ChevronDown, ChevronUp,
@@ -22,125 +22,6 @@ type Period = "daily" | "weekly" | "monthly";
 // ============================================================
 // H2: Business Health Score
 // ============================================================
-
-function clamp(v: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, v));
-}
-
-function calcHealthScore(
-  orders: Order[],
-  expenses: Expense[],
-  products: Product[],
-  expenseCategories: ExpenseCategory[],
-  now: number
-) {
-  const ms30 = 30 * 86400000;
-
-  // Periode 30 hari
-  const orders30 = orders.filter((o) =>
-    !o.voided && new Date(o.date).getTime() >= now - ms30
-  );
-  const paid30 = orders30.filter((o) => o.paymentStatus === "lunas");
-  const revenue30 = paid30.reduce((s, o) => s + o.subtotal, 0);
-  const discount30 = paid30.reduce((s, o) => s + (o.discount ?? 0), 0);
-  const netRevenue30 = revenue30 - discount30;
-
-  const cogs30 = paid30.reduce((s, o) =>
-    s + o.items.reduce((ss, item) => {
-      const c = item.cogsUnit ?? products.find((p) => p.id === item.productId)?.avgCost ?? 0;
-      return ss + c * item.qty;
-    }, 0), 0);
-
-  const getGroup = (catId: string) =>
-    expenseCategories.find((c) => c.id === catId)?.group ?? "other";
-  const expenses30 = expenses.filter((e) =>
-    !e.isPrive && new Date(e.date).getTime() >= now - ms30
-  );
-  const opEx30 = expenses30.filter((e) => getGroup(e.categoryId) === "operating").reduce((s, e) => s + e.amount, 0);
-  const selling30 = expenses30.filter((e) => getGroup(e.categoryId) === "selling").reduce((s, e) => s + e.amount, 0)
-    + paid30.reduce((s, o) => s + o.adminFee + o.shippingCost, 0);
-  const netProfit30 = netRevenue30 - cogs30 - selling30 - opEx30;
-
-  // 1. Margin bersih (30%)
-  const marginPct = netRevenue30 > 0 ? netProfit30 / netRevenue30 : 0;
-  const marginScore = clamp(marginPct / 0.20, 0, 1) * 100;
-
-  // 2. Perputaran stok (20%): DIO
-  const inventoryValue = products.reduce((s, p) =>
-    s + Math.max(0, p.stock) * (p.avgCost ?? p.buyPrice), 0);
-  const dailyCogs = cogs30 / 30;
-  const DIO = dailyCogs > 0 ? inventoryValue / dailyCogs : 0;
-  const stockScore = DIO <= 30 ? 100 : DIO >= 120 ? 0 : clamp((120 - DIO) / 90, 0, 1) * 100;
-
-  // 3. Umur piutang (20%)
-  const overdueAmt = orders.filter((o) =>
-    !o.voided && (o.paymentStatus === "belum" || o.paymentStatus === "sebagian") &&
-    o.dueDate && new Date(o.dueDate).getTime() < now
-  ).reduce((s, o) => {
-    const due = o.subtotal - (o.discount ?? 0) - o.adminFee - o.shippingCost;
-    const paid = (o.payments ?? []).reduce((p, pay) => p + pay.amount, 0);
-    return s + (due - paid);
-  }, 0);
-  const receivableScore = netRevenue30 > 0
-    ? clamp(1 - (overdueAmt / netRevenue30) / 0.20, 0, 1) * 100
-    : 100;
-
-  // 4. Kas runway (30%)
-  const allPaidRev = orders.filter((o) => !o.voided && o.paymentStatus === "lunas").reduce((s, o) => s + o.subtotal, 0);
-  const allPaidExp = expenses.filter((e) => !e.isPrive && e.paid).reduce((s, e) => s + e.amount, 0);
-  const kasEst = allPaidRev - allPaidExp;
-  const avgDailyExp = opEx30 > 0 ? (opEx30 + selling30) / 30 : 0;
-  const runwayDays = avgDailyExp > 0 ? kasEst / avgDailyExp : 60;
-  const runwayScore = clamp(runwayDays / 60, 0, 1) * 100;
-
-  const hasData = paid30.length > 0 || expenses30.length > 0 || inventoryValue > 0 || orders.length > 0;
-  if (!hasData) {
-    return {
-      hasData: false,
-      total: 0,
-      label: "Belum Ada Data",
-      color: "slate",
-      components: [
-        { name: "Margin Bersih", score: 0, weight: 30, detail: "Belum ada transaksi penjualan" },
-        { name: "Perputaran Stok", score: 0, weight: 20, detail: "Belum ada data stok produk" },
-        { name: "Umur Piutang", score: 0, weight: 20, detail: "Belum ada tagihan piutang" },
-        { name: "Kas Runway", score: 0, weight: 30, detail: "Belum ada mutasi kas operasional" },
-      ],
-      kasEst: 0,
-      runwayDays: 0,
-      netProfit30: 0,
-      netRevenue30: 0,
-      opEx30: 0,
-      selling30: 0,
-    };
-  }
-
-  const total = Math.round(
-    marginScore * 0.30 +
-    stockScore * 0.20 +
-    receivableScore * 0.20 +
-    runwayScore * 0.30
-  );
-
-  return {
-    hasData: true,
-    total,
-    label: total >= 80 ? "Sehat" : total >= 60 ? "Waspada" : "Perlu Perhatian",
-    color: total >= 80 ? "emerald" : total >= 60 ? "amber" : "red",
-    components: [
-      { name: "Margin Bersih", score: Math.round(marginScore), weight: 30, detail: `${Math.round(marginPct * 100)}% margin bersih (target ≥20%)` },
-      { name: "Perputaran Stok", score: Math.round(stockScore), weight: 20, detail: `DIO ${Math.round(DIO)} hari (target ≤30 hari)` },
-      { name: "Umur Piutang", score: Math.round(receivableScore), weight: 20, detail: `Piutang lewat tempo: ${formatRp(overdueAmt)}` },
-      { name: "Kas Runway", score: Math.round(runwayScore), weight: 30, detail: `Estimasi cukup ${Math.round(Math.max(0, runwayDays))} hari (target ≥60 hari)` },
-    ],
-    kasEst,
-    runwayDays: Math.round(Math.max(0, runwayDays)),
-    netProfit30,
-    netRevenue30,
-    opEx30,
-    selling30,
-  };
-}
 
 function HealthScoreCard({ now }: { now: number }) {
   const rawOrders = useStore((s) => s.orders);
@@ -221,26 +102,57 @@ function HealthScoreCard({ now }: { now: number }) {
 
       {open && (
         <div className="mt-4 pt-4 border-t border-[hsl(var(--border))] space-y-3">
-          {score.components.map((c) => (
-            <div key={c.name}>
-              <div className="flex items-center justify-between mb-1">
-                <div>
-                  <span className="text-xs font-semibold">{c.name}</span>
-                  <span className="text-[10px] text-[hsl(var(--muted-fg))] ml-1">({c.weight}%)</span>
+          {score.components.map((c) => {
+            const linkMap: Record<string, { href: string; label: string }> = {
+              "Margin Bersih": { href: "/keuangan", label: "Buka Laba/Rugi" },
+              "Perputaran Stok": { href: "/stok", label: "Kelola Stok" },
+              "Perputaran Persediaan (DIO)": { href: "/stok", label: "Kelola Stok" },
+              "Umur Piutang": { href: "/pembayaran", label: "Tagih Piutang" },
+              "Kelancaran Piutang": { href: "/pembayaran", label: "Tagih Piutang" },
+              "Kas Runway": { href: "/keuangan", label: "Arus Kas" },
+              "Ketahanan Kas (Runway)": { href: "/keuangan", label: "Arus Kas" },
+            };
+            const target = linkMap[c.name];
+
+            return (
+              <div key={c.name}>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <span className="text-xs font-semibold">{c.name}</span>
+                    <span className="text-[10px] text-[hsl(var(--muted-fg))] ml-1">
+                      ({typeof c.weight === "number" ? `${c.weight}%` : c.weight})
+                    </span>
+                  </div>
+                  <span
+                    className={`text-xs font-bold ${
+                      c.score >= 80 ? "text-emerald-600" : c.score >= 60 ? "text-amber-600" : "text-red-600"
+                    }`}
+                  >
+                    {c.score}/100
+                  </span>
                 </div>
-                <span className={`text-xs font-bold ${c.score >= 80 ? "text-emerald-600" : c.score >= 60 ? "text-amber-600" : "text-red-600"}`}>
-                  {c.score}/100
-                </span>
+                <div className="h-2 rounded-full bg-[hsl(var(--muted))] overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      c.score >= 80 ? "bg-emerald-500" : c.score >= 60 ? "bg-amber-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${c.score}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-[10px] text-[hsl(var(--muted-fg))] truncate">{c.detail}</p>
+                  {target && (
+                    <Link
+                      href={target.href}
+                      className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline shrink-0 ml-2"
+                    >
+                      {target.label} →
+                    </Link>
+                  )}
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-[hsl(var(--muted))] overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${c.score >= 80 ? "bg-emerald-500" : c.score >= 60 ? "bg-amber-500" : "bg-red-500"}`}
-                  style={{ width: `${c.score}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-[hsl(var(--muted-fg))] mt-0.5">{c.detail}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -368,29 +280,7 @@ function SafeWithdrawCard({ now }: { now: number }) {
   const [showPriveModal, setShowPriveModal] = useState(false);
 
   const data = useMemo(() => {
-    const ms30 = 30 * 86400000;
-
-    const allPaidRev = orders.filter((o) => !o.voided && o.paymentStatus === "lunas").reduce((s, o) => s + o.subtotal, 0);
-    const allPaidExp = expenses.filter((e) => !e.isPrive && e.paid).reduce((s, e) => s + e.amount, 0);
-    const kasEst = allPaidRev - allPaidExp;
-
-    // Biaya wajib 30 hari: expenses yg belum lunas + jatuh tempo 30 hari ke depan
-    const upcomingDebt = expenses.filter((e) => {
-      if (e.isPrive || e.paid) return false;
-      if (!e.dueDate) return true;
-      return new Date(e.dueDate).getTime() <= now + ms30;
-    }).reduce((s, e) => s + e.amount, 0);
-
-    // Cadangan: 10% dari pendapatan bersih 30 hari
-    const paid30 = orders.filter((o) =>
-      !o.voided && o.paymentStatus === "lunas" && new Date(o.date).getTime() >= now - ms30
-    );
-    const rev30 = paid30.reduce((s, o) => s + o.subtotal - (o.discount ?? 0) - o.adminFee - o.shippingCost, 0);
-    const cadangan = Math.round(rev30 * 0.10);
-
-    const uangAman = Math.max(0, kasEst - upcomingDebt - cadangan);
-
-    return { kasEst, upcomingDebt, cadangan, uangAman };
+    return calcCashPosition(orders, expenses, now);
   }, [orders, expenses, now]);
 
   return (
@@ -458,6 +348,7 @@ export default function DashboardPage() {
   const rawOrders = useStore((s) => s.orders);
   const rawPurchases = useStore((s) => s.purchases);
   const rawExpenses = useStore((s) => s.expenses);
+  const rawProducts = useStore((s) => s.products);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const orders = useMemo(
     () => rawOrders.filter((o) => o.tenantId === activeTenantId),
@@ -471,6 +362,10 @@ export default function DashboardPage() {
     () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
     [rawExpenses, activeTenantId]
   );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const [period, setPeriod] = useState<Period>("monthly");
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -478,7 +373,7 @@ export default function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const kpi = calcKpi(orders, purchases, period, expenses);
+  const kpi = calcKpi(orders, purchases, period, expenses, products);
   const isOwner = user?.isOwner ?? false;
   const [chartsOpen, setChartsOpen] = useState(true);
 
@@ -600,18 +495,17 @@ export default function DashboardPage() {
                   Grafik usaha
                 </span>
                 <span className="block text-xs text-[hsl(var(--muted-fg))] mt-1">
-                  Tren 30 hari, omzet per kanal, dan produk terlaris
+                  Tren penjualan 30 hari dan produk terlaris
                 </span>
               </span>
               {chartsOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
             </button>
             {chartsOpen && (
-              <div id="dashboard-charts-content" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
+              <div id="dashboard-charts-content" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
                   <SalesLineChart />
                 </div>
-                <ChannelChart />
-                <div className="lg:col-span-3">
+                <div>
                   <TopProductsChart />
                 </div>
               </div>

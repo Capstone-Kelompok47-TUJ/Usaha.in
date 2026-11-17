@@ -5,7 +5,6 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
-import { createClient } from "@/lib/supabase/client";
 import {
   User as UserIcon,
   KeyRound,
@@ -27,6 +26,7 @@ export default function ProfilPage() {
   const activeTenant = getActiveTenant();
   const addToast = useStore((s) => s.addToast);
   const updateUserProfile = useStore((s) => s.updateUserProfile);
+  const updateUserPassword = useStore((s) => s.updateUserPassword);
 
   // Form State: Info Profil
   const [name, setName] = useState(currentUser?.name ?? "");
@@ -94,53 +94,15 @@ export default function ProfilPage() {
     setIsSavingProfile(true);
 
     try {
-      // 1. Update ke Supabase Auth & public.users via API endpoint
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": currentUser?.id || "",
-          "x-user-email": currentUser?.loginEmail || "",
-        },
-        body: JSON.stringify({
-          name: trimmedName,
-          username: cleanUsername,
-          userId: currentUser?.id,
-          currentEmail: currentUser?.loginEmail,
-        }),
+      if (!currentUser?.id) {
+        throw new Error("Sesi pengguna tidak ditemukan.");
+      }
+
+      updateUserProfile(currentUser.id, {
+        name: trimmedName,
+        username: cleanUsername,
+        loginEmail: newEmail,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Gagal memperbarui profil.");
-      }
-
-      const finalEmail = data.user?.loginEmail || data.user?.email || newEmail;
-
-      // 2. Update via Supabase Client langsung jika ada sesi aktif
-      try {
-        const supabase = createClient();
-        await supabase.auth.updateUser({
-          email: finalEmail,
-          data: {
-            name: trimmedName,
-            username: cleanUsername,
-            email: finalEmail,
-          },
-        });
-      } catch (clientErr) {
-        console.warn("Client auth update note:", clientErr);
-      }
-
-      // 3. Update Zustand Store lokal
-      if (currentUser?.id) {
-        updateUserProfile(currentUser.id, {
-          name: trimmedName,
-          username: cleanUsername,
-          loginEmail: finalEmail,
-        });
-      }
 
       setProfileMessage({ type: "success", text: "Profil berhasil diperbarui! Email login otomatis disesuaikan." });
       addToast("Profil dan email login Anda berhasil diperbarui.", "success");
@@ -170,23 +132,8 @@ export default function ProfilPage() {
     setIsSavingPassword(true);
 
     try {
-      // 1. Update ke Supabase Auth melalui server API endpoint
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Gagal mengubah kata sandi.");
-      }
-
-      // 2. Sinkronkan juga pada client session aktif
-      try {
-        const supabase = createClient();
-        await supabase.auth.updateUser({ password: newPassword });
-      } catch (cErr) {
-        console.warn("Client auth password sync notice:", cErr);
+      if (!currentUser?.id || !updateUserPassword(currentUser.id, newPassword)) {
+        throw new Error("Akun pengguna tidak ditemukan di penyimpanan lokal.");
       }
 
       setNewPassword("");

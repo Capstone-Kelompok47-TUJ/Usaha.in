@@ -11,6 +11,7 @@ import type {
   BusinessType, BusinessSettings,
   Expense, ExpenseCategory,
   SalePayment, ProductType,
+  RawMaterial, RecipeItem,
 } from "@/types";
 import {
   INITIAL_TENANTS, INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_STOCK_MOVEMENTS,
@@ -35,6 +36,7 @@ interface AppStore {
   users: User[];
   currentUserId: string;
   products: Product[];
+  rawMaterials: RawMaterial[];
   stockMovements: StockMovement[];
   orders: Order[];
   purchases: Purchase[];
@@ -47,6 +49,10 @@ interface AppStore {
   expenses: Expense[];
   expenseCategories: ExpenseCategory[];
   budgets: Record<string, number>; // categoryId -> batas nominal
+
+  // Rekomendasi Tindakan Analitik
+  analitikActions: Record<string, "done" | "dismissed">;
+  setAnalitikAction: (id: string, status: "done" | "dismissed" | null) => void;
 
   // Auth & Registration
   isAuthenticated: boolean;
@@ -90,9 +96,10 @@ interface AppStore {
   toggleUserActive: (userId: string) => void;
   deleteUser: (userId: string) => void;
   updateUserProfile: (userId: string, updates: { name?: string; username?: string; loginEmail?: string }) => void;
+  updateUserPassword: (userId: string, password: string) => boolean;
 
-  // --- SIMULATE ORDER ---
-  simulateOrder: (triggeredByUserId: string) => void;
+
+
 
   // --- PURCHASE ---
   addPurchase: (purchase: Omit<Purchase, "id">) => void;
@@ -118,6 +125,9 @@ interface AppStore {
   addProduct: (product: Omit<Product, "id">) => void;
   updateProduct: (productId: string, updates: Partial<Product>) => void;
   adjustStock: (productId: string, delta: number, note: string) => void;
+  addRawMaterial: (material: Omit<RawMaterial, "id">) => void;
+  updateRawMaterial: (materialId: string, updates: Partial<RawMaterial>) => void;
+  deleteRawMaterial: (materialId: string) => void;
 
   // --- SHIPMENT ---
   moveShipmentStatus: (
@@ -146,10 +156,7 @@ function genId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-const CHANNELS: Channel[] = ["marketplace_a", "marketplace_b", "chat", "offline"];
-const SHIPMENT_STATUSES: ShipmentStatus[] = [
-  "baru", "diproses", "dikemas", "dikirim", "selesai",
-];
+
 
 // ============================================================
 // INITIAL STATE
@@ -162,6 +169,7 @@ const INITIAL_STATE = {
   currentUserId: "",
   isAuthenticated: false,
   products: INITIAL_PRODUCTS,
+  rawMaterials: [] as RawMaterial[],
   stockMovements: INITIAL_STOCK_MOVEMENTS,
   orders: INITIAL_ORDERS,
   purchases: INITIAL_PURCHASES,
@@ -172,6 +180,7 @@ const INITIAL_STATE = {
   expenses: INITIAL_EXPENSES,
   expenseCategories: INITIAL_EXPENSE_CATEGORIES,
   budgets: {} as Record<string, number>,
+  analitikActions: {} as Record<string, "done" | "dismissed">,
 };
 
 // ============================================================
@@ -243,9 +252,9 @@ export const useStore = create<AppStore>()(
         const bType: BusinessType = tenantData.businessSettings?.businessType ?? "dagang";
         const autoSettings: BusinessSettings = {
           businessType: bType,
-          useStock: bType !== "jasa",
+          useStock: true,
           useProduction: bType === "produksi",
-          useShipping: bType !== "jasa",
+          useShipping: true,
           useCredit: true,
           defaultShopeeFeePct: 7.5,
           defaultTokopediaFeePct: 3.5,
@@ -657,126 +666,17 @@ export const useStore = create<AppStore>()(
         }));
       },
 
-      // ----- SIMULATE ORDER -----
-      simulateOrder: (triggeredByUserId) => {
-        const { products, customers, activityLogs, users } = get();
-        const actor = users.find((u) => u.id === triggeredByUserId);
-
-        // Pilih kanal acak (distribusi sesuai spec)
-        const channelRand = Math.random();
-        const channel: Channel =
-          channelRand < 0.4
-            ? "marketplace_a"
-            : channelRand < 0.7
-              ? "marketplace_b"
-              : channelRand < 0.87
-                ? "chat"
-                : "offline";
-
-        const channelLabelMap: Record<string, string> = {
-          shopee: "Shopee",
-          marketplace_a: "Shopee",
-          tokopedia: "Tokopedia",
-          marketplace_b: "Tokopedia",
-          chat: "WhatsApp",
-          offline: "Toko Offline",
-        };
-
-        // Pilih produk yang tersedia (stok > 0)
-        const availableProducts = products.filter((p) => p.stock > 0);
-        if (availableProducts.length === 0) return;
-        const product =
-          availableProducts[Math.floor(Math.random() * availableProducts.length)];
-
-        // Qty acak 1–3
-        const qty = Math.floor(Math.random() * 3) + 1;
-        const finalQty = Math.min(qty, product.stock);
-
-        // Pilih pelanggan sesuai kanal
-        const channelCustomers = customers.filter((c) => c.channel === channel);
-        const customer =
-          channelCustomers[Math.floor(Math.random() * channelCustomers.length)] ??
-          customers[0];
-
-        // Admin fee sesuai kanal
-        const adminFeePct =
-          channel === "marketplace_a" ? 7.5 : channel === "marketplace_b" ? 3.5 : 0;
-        const shippingCost =
-          channel === "marketplace_a"
-            ? 9000
-            : channel === "marketplace_b"
-              ? 7000
-              : channel === "chat"
-                ? 15000
-                : 0;
-
-        const subtotal = finalQty * product.sellPrice;
-        const adminFee = Math.round((subtotal * adminFeePct) / 100);
-
-        const newOrderId = `ORD-EX-${Date.now()}`;
-
-        const newOrder: Order = {
-          id: newOrderId,
-          date: new Date().toISOString().split("T")[0],
-          channel,
-          customerId: customer.id,
-          items: [
-            {
-              productId: product.id,
-              qty: finalQty,
-              unitPrice: product.sellPrice,
-            },
-          ],
-          subtotal,
-          adminFee,
-          shippingCost,
-          paymentStatus: "lunas",
-          shipmentStatus: "baru",
-        };
-
-        const newStockMovement: StockMovement = {
-          id: genId("SM-SALE"),
-          productId: product.id,
-          type: "sale",
-          qty: -finalQty,
-          date: new Date().toISOString().split("T")[0],
-          refId: newOrderId,
-        };
-
-        const newStock = product.stock - finalQty;
-        const isLowStock = newStock < product.minStock;
-
-        const log: ActivityLog = {
-          id: genId("LOG"),
-          tenantId: get().activeTenantId,
-          userId: triggeredByUserId,
-          userName: actor?.name ?? "Sistem",
-          action: `menambah pesanan ${newOrderId} dari ${channelLabelMap[channel]} — ${product.name} ×${finalQty}`,
-          module: "penjualan",
-          timestamp: new Date().toISOString(),
-        };
+      updateUserPassword: (userId, password) => {
+        if (!get().users.some((user) => user.id === userId)) {
+          return false;
+        }
 
         set((s) => ({
-          orders: [newOrder, ...s.orders],
-          stockMovements: [newStockMovement, ...s.stockMovements],
-          products: s.products.map((p) =>
-            p.id === product.id ? { ...p, stock: newStock } : p
+          users: s.users.map((user) =>
+            user.id === userId ? { ...user, password } : user
           ),
-          activityLogs: [log, ...s.activityLogs],
         }));
-
-        // Toast notifikasi
-        get().addToast(
-          `Pesanan baru dari ${channelLabelMap[channel]} — ${product.name} ×${finalQty}`,
-          "success"
-        );
-
-        if (isLowStock) {
-          get().addToast(
-            `⚠️ Stok menipis: ${product.name} tersisa ${newStock} unit (min: ${product.minStock})`,
-            "warning"
-          );
-        }
+        return true;
       },
 
       // ----- PURCHASE -----
@@ -827,31 +727,137 @@ export const useStore = create<AppStore>()(
           tenantId: get().activeTenantId,
         };
 
-        // Jika ada items stok, update stok produk (moving average sederhana)
+        // Jika ada items stok, update stok produk atau bahan baku
         const stockUpdates: Record<string, { stock: number; buyPrice: number }> = {};
         const newMovements: StockMovement[] = [];
+        let updatedRawMaterials = [...(get().rawMaterials ?? [])];
+        const cat = expenseCategories.find((c) => c.id === expenseData.categoryId);
+        const isProduksiCategory = cat?.stockKind === "produksi";
+        const isKemasanCategory = cat?.stockKind === "kemasan" || cat?.id === "cat-kemasan" || cat?.name.toLowerCase().includes("kemasan");
+
         if (expenseData.items && expenseData.items.length > 0) {
           for (const item of expenseData.items) {
-            const product = products.find((p) => p.id === item.productId);
-            if (product) {
-              const currentStock = stockUpdates[item.productId]?.stock ?? product.stock;
-              stockUpdates[item.productId] = {
-                stock: currentStock + item.qty,
-                buyPrice: item.unitCost,
-              };
-              newMovements.push({
-                id: genId("SM-EXP"),
-                productId: item.productId,
-                type: "purchase",
-                qty: item.qty,
-                date: expenseData.date,
-                refId: newExpense.id,
-              });
+            const addedQty = item.packageQty ? item.packageQty * (item.packageUnitSize || 1) : item.qty;
+            const itemTotal = item.totalCost ?? (addedQty * item.unitCost);
+            const unitPrice = addedQty > 0 ? Math.round(itemTotal / addedQty) : item.unitCost;
+
+            if (item.kind === "kemasan" || isKemasanCategory) {
+              const matName = item.productName?.trim() || "Kemasan";
+              const existingIdx = updatedRawMaterials.findIndex(
+                (m) => m.name.toLowerCase() === matName.toLowerCase() && m.category === "kemasan"
+              );
+              if (existingIdx >= 0) {
+                const current = updatedRawMaterials[existingIdx];
+                const newStock = current.stock + addedQty;
+                const currentTotalCost = current.stock * current.avgCost;
+                const newAvgCost = newStock > 0 ? Math.round((currentTotalCost + itemTotal) / newStock) : unitPrice;
+                updatedRawMaterials[existingIdx] = {
+                  ...current,
+                  stock: newStock,
+                  avgCost: newAvgCost,
+                  category: "kemasan",
+                  lastPurchasePrice: unitPrice,
+                };
+              } else {
+                updatedRawMaterials.push({
+                  id: genId("MAT"),
+                  tenantId: get().activeTenantId,
+                  name: matName,
+                  category: "kemasan",
+                  unit: item.unit || "pcs",
+                  stock: addedQty,
+                  minStock: 10,
+                  avgCost: unitPrice,
+                  lastPurchasePrice: unitPrice,
+                });
+              }
+            } else if (item.kind === "produksi" || isProduksiCategory) {
+              const matName = item.productName?.trim() || "Bahan Baku";
+              const existingIdx = updatedRawMaterials.findIndex(
+                (m) => m.name.toLowerCase() === matName.toLowerCase() && m.category === "produksi"
+              );
+              if (existingIdx >= 0) {
+                const current = updatedRawMaterials[existingIdx];
+                const newStock = current.stock + addedQty;
+                const currentTotalCost = current.stock * current.avgCost;
+                const newAvgCost = newStock > 0 ? Math.round((currentTotalCost + itemTotal) / newStock) : unitPrice;
+                updatedRawMaterials[existingIdx] = {
+                  ...current,
+                  stock: newStock,
+                  avgCost: newAvgCost,
+                  category: "produksi",
+                  lastPurchasePrice: unitPrice,
+                };
+              } else {
+                updatedRawMaterials.push({
+                  id: genId("MAT"),
+                  tenantId: get().activeTenantId,
+                  name: matName,
+                  category: "produksi",
+                  unit: item.unit || "gram",
+                  stock: addedQty,
+                  minStock: 10,
+                  avgCost: unitPrice,
+                  lastPurchasePrice: unitPrice,
+                });
+              }
+            } else {
+              // Produk Jadi (dagang)
+              const pName = item.productName?.trim() || "Produk Jadi";
+
+              // 1. Simpan ke rawMaterials sebagai persediaan produk jadi
+              const existingIdx = updatedRawMaterials.findIndex(
+                (m) => m.name.toLowerCase() === pName.toLowerCase() && m.category === "dagang"
+              );
+              if (existingIdx >= 0) {
+                const current = updatedRawMaterials[existingIdx];
+                const newStock = current.stock + addedQty;
+                const currentTotalCost = current.stock * current.avgCost;
+                const newAvgCost = newStock > 0 ? Math.round((currentTotalCost + itemTotal) / newStock) : unitPrice;
+                updatedRawMaterials[existingIdx] = {
+                  ...current,
+                  stock: newStock,
+                  avgCost: newAvgCost,
+                  category: "dagang",
+                  lastPurchasePrice: unitPrice,
+                };
+              } else {
+                updatedRawMaterials.push({
+                  id: genId("MAT"),
+                  tenantId: get().activeTenantId,
+                  name: pName,
+                  category: "dagang",
+                  unit: item.unit || "pcs",
+                  stock: addedQty,
+                  minStock: 5,
+                  avgCost: unitPrice,
+                  lastPurchasePrice: unitPrice,
+                });
+              }
+
+              // 2. Update stock & buyPrice katalog produk jika produk sudah terdaftar
+              const product = products.find(
+                (p) => p.id === item.productId || (p.name.toLowerCase() === pName.toLowerCase())
+              );
+              if (product) {
+                const currentStock = stockUpdates[product.id]?.stock ?? product.stock;
+                stockUpdates[product.id] = {
+                  stock: currentStock + item.qty,
+                  buyPrice: unitPrice,
+                };
+                newMovements.push({
+                  id: genId("SM-EXP"),
+                  productId: product.id,
+                  type: "purchase",
+                  qty: item.qty,
+                  date: expenseData.date,
+                  refId: newExpense.id,
+                });
+              }
             }
           }
         }
 
-        const cat = expenseCategories.find((c) => c.id === expenseData.categoryId);
         const log: ActivityLog = {
           id: genId("LOG"),
           tenantId: get().activeTenantId,
@@ -865,6 +871,7 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           expenses: [newExpense, ...s.expenses],
           activityLogs: [log, ...s.activityLogs],
+          rawMaterials: updatedRawMaterials,
           products: Object.keys(stockUpdates).length > 0
             ? s.products.map((p) =>
                 stockUpdates[p.id]
@@ -907,6 +914,18 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           budgets: { ...s.budgets, [categoryId]: amount },
         }));
+      },
+
+      setAnalitikAction: (id, status) => {
+        set((s) => {
+          const updated = { ...s.analitikActions };
+          if (!status) {
+            delete updated[id];
+          } else {
+            updated[id] = status;
+          }
+          return { analitikActions: updated };
+        });
       },
 
       getExpenseSumByCategory: (categoryId, monthYear) => {
@@ -1142,6 +1161,36 @@ export const useStore = create<AppStore>()(
         get().addToast(`Stok ${product.name} disesuaikan ${delta > 0 ? "+" : ""}${delta}`, "success");
       },
 
+      // ----- RAW MATERIALS -----
+      addRawMaterial: (matData) => {
+        const id = genId("MAT");
+        const newMat: RawMaterial = {
+          ...matData,
+          id,
+          tenantId: get().activeTenantId,
+        };
+        set((s) => ({
+          rawMaterials: [newMat, ...(s.rawMaterials ?? [])],
+        }));
+        get().addToast(`Bahan baku ${newMat.name} berhasil ditambahkan`, "success");
+      },
+
+      updateRawMaterial: (materialId, updates) => {
+        set((s) => ({
+          rawMaterials: (s.rawMaterials ?? []).map((m) =>
+            m.id === materialId ? { ...m, ...updates } : m
+          ),
+        }));
+        get().addToast("Data bahan baku diperbarui", "info");
+      },
+
+      deleteRawMaterial: (materialId) => {
+        set((s) => ({
+          rawMaterials: (s.rawMaterials ?? []).filter((m) => m.id !== materialId),
+        }));
+        get().addToast("Bahan baku telah dihapus", "info");
+      },
+
       // ----- SHIPMENT -----
       moveShipmentStatus: (orderId, newStatus, userId) => {
         const { activityLogs, users } = get();
@@ -1327,6 +1376,7 @@ export const useStore = create<AppStore>()(
         currentUserId: s.currentUserId,
         isAuthenticated: s.isAuthenticated,
         products: s.products,
+        rawMaterials: s.rawMaterials,
         stockMovements: s.stockMovements,
         orders: s.orders,
         purchases: s.purchases,
@@ -1336,6 +1386,7 @@ export const useStore = create<AppStore>()(
         expenses: s.expenses,
         expenseCategories: s.expenseCategories,
         budgets: s.budgets,
+        analitikActions: s.analitikActions,
       }),
     }
   )

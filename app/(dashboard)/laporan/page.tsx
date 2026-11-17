@@ -8,8 +8,7 @@ import { useStore } from "@/lib/store";
 import { calcFinanceSummary, formatRp } from "@/lib/finance";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
-import { SalesLineChart, ChannelChart, TopProductsChart } from "@/components/dashboard/Charts";
-import type { Channel } from "@/types";
+import { SalesLineChart, TopProductsChart } from "@/components/dashboard/Charts";
 
 type Period = "daily" | "weekly" | "monthly";
 
@@ -19,6 +18,7 @@ export default function LaporanPage() {
   const rawOrders = useStore((s) => s.orders);
   const rawPurchases = useStore((s) => s.purchases);
   const rawExpenses = useStore((s) => s.expenses);
+  const rawProducts = useStore((s) => s.products);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const orders = useMemo(
     () => rawOrders.filter((o) => o.tenantId === activeTenantId),
@@ -32,6 +32,10 @@ export default function LaporanPage() {
     () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
     [rawExpenses, activeTenantId]
   );
+  const products = useMemo(
+    () => rawProducts.filter((p) => p.tenantId === activeTenantId),
+    [rawProducts, activeTenantId]
+  );
   const [period, setPeriod] = useState<Period>("monthly");
 
   useEffect(() => {
@@ -40,7 +44,7 @@ export default function LaporanPage() {
     }
   }, [canView, router]);
 
-  const summary = calcFinanceSummary(orders, purchases, period, expenses);
+  const summary = calcFinanceSummary(orders, purchases, period, expenses, products);
   const PERIODS: { key: Period; label: string }[] = [
     { key: "daily", label: "Hari Ini" },
     { key: "weekly", label: "Minggu Ini" },
@@ -58,7 +62,7 @@ export default function LaporanPage() {
             "Pilih tab periode (Hari Ini, Minggu Ini, atau Bulan Ini) untuk mengubah rentang waktu laporan.",
             "Pendapatan mencatat total nilai kotor pesanan yang lunas pada periode terpilih.",
             "HPP (Harga Pokok Penjualan) adalah modal awal produk yang terjual.",
-            "Admin & Ongkir menghitung total potongan biaya kanal marketplace dan kurir pengiriman.",
+            "Admin & Ongkir menghitung total biaya administrasi transaksi dan kurir pengiriman.",
             "Laba Bersih adalah sisa keuntungan riil setelah dikurangi HPP, admin, dan biaya operasional.",
           ]}
         />
@@ -90,11 +94,10 @@ export default function LaporanPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2"><SalesLineChart /></div>
-          <ChannelChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div><SalesLineChart /></div>
+          <div><TopProductsChart /></div>
         </div>
-        <div><TopProductsChart /></div>
       </div>
     </DashboardLayout>
   );

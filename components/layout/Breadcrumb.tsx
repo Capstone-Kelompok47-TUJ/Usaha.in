@@ -16,7 +16,6 @@ const ROUTE_MAP: BreadcrumbRouteMap = {
   "/dashboard": { title: "Beranda" },
   "/penjualan": { group: "Kerja Harian", title: "Penjualan" },
   "/pengiriman": { group: "Kerja Harian", title: "Pengiriman" },
-  "/pelanggan": { group: "Kerja Harian", title: "Pelanggan" },
   "/produk": { group: "Kerja Harian", title: "Produk dan Stok" },
   "/stok": { group: "Kerja Harian", title: "Stok Barang", parentHref: "/produk" },
   "/pengeluaran": { group: "Uang", title: "Pengeluaran" },

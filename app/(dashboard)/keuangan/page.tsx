@@ -5,11 +5,10 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { Hint } from "@/components/ui/Hint";
 import { usePermission } from "@/hooks/usePermission";
 import { useStore } from "@/lib/store";
-import { formatRp } from "@/lib/finance";
+import { formatRp, calcCashPosition, calcTotalReceivables } from "@/lib/finance";
 import { redirect } from "next/navigation";
 import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Scale } from "lucide-react";
-import type { Channel } from "@/types";
 
 // ============================================================
 // Types & Constants
@@ -17,21 +16,6 @@ import type { Channel } from "@/types";
 
 type Period = "daily" | "weekly" | "monthly";
 type Tab = "labarugi" | "neraca" | "aruskas";
-
-const CHANNEL_LABEL: Record<string, string> = {
-  shopee: "Shopee", marketplace_a: "Shopee",
-  tokopedia: "Tokopedia", marketplace_b: "Tokopedia",
-  chat: "WhatsApp", offline: "Toko Offline",
-};
-
-const CHANNEL_BADGE: Record<string, string> = {
-  marketplace_a: "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
-  shopee: "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
-  marketplace_b: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
-  tokopedia: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
-  chat: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-  offline: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-};
 
 // ============================================================
 // Helpers
@@ -165,16 +149,8 @@ export default function KeuanganPage() {
     const margin = netRevenue > 0 ? Math.round((netProfit / netRevenue) * 100) : 0;
 
     // G3: Neraca (semua data, tidak filter periode)
-    const allPaidRevenue = orders.filter((o) => !o.voided && o.paymentStatus === "lunas").reduce((s, o) => s + o.subtotal, 0);
-    const allExpensesPaid = expenses.filter((e) => !e.isPrive && e.paid).reduce((s, e) => s + e.amount, 0);
-    const kasEstimate = allPaidRevenue - allExpensesPaid;
-    const piutang = orders
-      .filter((o) => !o.voided && (o.paymentStatus === "belum" || o.paymentStatus === "sebagian"))
-      .reduce((s, o) => {
-        const due = o.subtotal - (o.discount ?? 0) - o.adminFee - o.shippingCost;
-        const paid = (o.payments ?? []).reduce((p, pay) => p + pay.amount, 0);
-        return s + (due - paid);
-      }, 0);
+    const { kasEst: kasEstimate } = calcCashPosition(orders, expenses);
+    const piutang = calcTotalReceivables(orders);
     const persediaan = products.reduce((s, p) => {
       const cost = p.avgCost ?? p.buyPrice;
       return s + Math.max(0, p.stock) * cost;
@@ -190,29 +166,11 @@ export default function KeuanganPage() {
     const kasPrive = periodPrive.reduce((s, e) => s + e.amount, 0);
     const saldoBersih = kasmasuk - kaskeluar - kasPrive;
 
-    // Profitabilitas per kanal
-    const CHANNELS = ["marketplace_a", "marketplace_b", "chat", "offline"] as Channel[];
-    const channelData = CHANNELS.map((ch) => {
-      const chOrders = paidOrders.filter((o) => o.channel === ch);
-      const chRevenue = chOrders.reduce((s, o) => s + o.subtotal, 0);
-      const chFee = chOrders.reduce((s, o) => s + o.adminFee, 0);
-      const chDiscount = chOrders.reduce((s, o) => s + (o.discount ?? 0), 0);
-      const chCogs = chOrders.reduce((s, o) =>
-        s + o.items.reduce((ss, item) => {
-          const c = item.cogsUnit ?? products.find((p) => p.id === item.productId)?.avgCost ?? 0;
-          return ss + c * item.qty;
-        }, 0), 0);
-      const chNet = chRevenue - chFee - chDiscount - chCogs;
-      const chMargin = chRevenue > 0 ? Math.round((chNet / chRevenue) * 100) : 0;
-      return { channel: ch, revenue: chRevenue, adminFee: chFee, cogs: chCogs, netProfit: chNet, margin: chMargin };
-    }).filter((c) => c.revenue > 0);
-
     return {
       revenue, totalDiscount, netRevenue, cogs, grossProfit,
       totalSelling, operatingExpense, otherExpense, netProfit, margin,
       kasEstimate, piutang, persediaan, totalAset, utangUsaha, ekuitas, isBalanced,
       kasmasuk, kaskeluar, kasPrive, saldoBersih,
-      channelData,
     };
   }, [orders, expenses, expenseCategories, products, period]);
 
@@ -234,10 +192,6 @@ export default function KeuanganPage() {
           {
             title: "Uang Masuk & Keluar (Arus Kas)",
             description: "Menampilkan arus perpindahan uang tunai nyata yang masuk dari pesanan lunas dan uang kas yang keluar untuk belanja serta prive.",
-          },
-          {
-            title: "Profitabilitas per Kanal",
-            description: "Membandingkan kanal jualan mana (Shopee, Tokopedia, WA, Toko Offline) yang memberikan margin keuntungan bersih paling sehat.",
           },
         ]}
       />
@@ -373,39 +327,8 @@ export default function KeuanganPage() {
           )}
         </div>
 
-        {/* ---- Side: Profitabilitas per kanal ---- */}
+        {/* ---- Side: Quick KPI & Action ---- */}
         <div className="space-y-4">
-          <div className="card">
-            <h3 className="font-bold text-sm mb-4">Profitabilitas per Kanal</h3>
-            {data.channelData.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-fg))] text-center py-4">Belum ada penjualan di periode ini</p>
-            ) : (
-              <div className="space-y-3">
-                {data.channelData.sort((a, b) => b.margin - a.margin).map((c) => (
-                  <div key={c.channel} className="p-3 rounded-xl border border-[hsl(var(--border))] space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${CHANNEL_BADGE[c.channel] ?? ""}`}>
-                        {CHANNEL_LABEL[c.channel]}
-                      </span>
-                      <div className="text-right">
-                        <p className="text-[10px] text-[hsl(var(--muted-fg))]">Margin</p>
-                        <p className={`text-sm font-bold ${c.margin >= 20 ? "text-emerald-600" : c.margin >= 10 ? "text-amber-600" : "text-red-600"}`}>
-                          {c.margin}%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5 text-xs">
-                      <div><span className="text-[hsl(var(--muted-fg))]">Omzet</span><p className="font-semibold">{formatRp(c.revenue)}</p></div>
-                      <div><span className="text-[hsl(var(--muted-fg))]">Laba Bersih</span><p className={`font-semibold ${c.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{formatRp(c.netProfit)}</p></div>
-                      <div><span className="text-[hsl(var(--muted-fg))]">Admin Fee</span><p className="font-medium text-red-500">−{formatRp(c.adminFee)}</p></div>
-                      <div><span className="text-[hsl(var(--muted-fg))]">HPP</span><p className="font-medium text-red-500">−{formatRp(c.cogs)}</p></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Quick KPI */}
           <div className="card">
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">

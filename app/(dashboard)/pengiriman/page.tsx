@@ -8,8 +8,9 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
 import { formatRp } from "@/lib/finance";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { ShipmentStatus, Order, Channel } from "@/types";
+import type { ShipmentStatus, Order } from "@/types";
 
 const COLUMNS: { key: ShipmentStatus; label: string; color: string }[] = [
   { key: "baru",      label: "🆕 Baru Masuk",  color: "border-t-blue-500" },
@@ -27,29 +28,14 @@ const NEXT_STATUS: Record<ShipmentStatus, ShipmentStatus | null> = {
   selesai: null,
 };
 
-const CHANNEL_LABEL: Record<string, string> = {
-  shopee: "Shopee",
-  marketplace_a: "Shopee",
-  tokopedia: "Tokopedia",
-  marketplace_b: "Tokopedia",
-  chat: "WhatsApp",
-  offline: "Toko Offline",
-};
-
 function KanbanCard({ order, canManage, userId }: { order: Order; canManage: boolean; userId?: string }) {
-  const rawCustomers = useStore((s) => s.customers);
   const rawProducts = useStore((s) => s.products);
   const activeTenantId = useStore((s) => s.activeTenantId);
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
-  );
   const products = useMemo(
     () => rawProducts.filter((p) => p.tenantId === activeTenantId),
     [rawProducts, activeTenantId]
   );
   const moveShipmentStatus = useStore((s) => s.moveShipmentStatus);
-  const customer = customers.find((c) => c.id === order.customerId);
   const nextStatus = NEXT_STATUS[order.shipmentStatus];
 
   return (
@@ -57,18 +43,26 @@ function KanbanCard({ order, canManage, userId }: { order: Order; canManage: boo
       order.id.startsWith("ORD-SIM-") ? "border-l-blue-500" : "border-l-transparent"
     }`}>
       <div className="flex items-start justify-between gap-1">
-        <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400">{order.id}</span>
-        <span className={`badge-${order.channel} text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0`}>
-          {CHANNEL_LABEL[order.channel]}
-        </span>
+        <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{order.id}</span>
       </div>
-      <p className="text-xs font-medium truncate">{customer?.name ?? "—"}</p>
-      <p className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
-        {order.items.map((item) => {
+      <div className="text-[10px] text-[hsl(var(--muted-fg))] truncate">
+        {order.items.map((item, idx) => {
           const p = products.find((pr) => pr.id === item.productId);
-          return `${p?.name ?? "?"} ×${item.qty}`;
-        }).join(", ")}
-      </p>
+          return (
+            <span key={item.productId || idx}>
+              {idx > 0 && ", "}
+              <Link
+                href="/produk"
+                className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+                title="Kelola data produk ini"
+              >
+                {p?.name ?? "?"}
+              </Link>
+              {" "}&times;{item.qty}
+            </span>
+          );
+        })}
+      </div>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold">{formatRp(order.subtotal)}</span>
         {canManage && nextStatus && userId && (

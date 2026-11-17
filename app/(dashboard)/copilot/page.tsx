@@ -4,8 +4,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
-import { calcChannelFinance, calcFinanceSummary } from "@/lib/finance";
-import { findCopilotResponse, QUICK_QUESTIONS } from "@/lib/copilot-scenarios";
+import { calcFinanceSummary, calcCashPosition, calcHealthScore } from "@/lib/finance";
+import { QUICK_QUESTIONS } from "@/lib/copilot-scenarios";
 import type { CopilotContext } from "@/lib/copilot-scenarios";
 import type { CopilotMessage } from "@/types";
 import { redirect } from "next/navigation";
@@ -97,7 +97,6 @@ export default function CopilotPage() {
   const rawPurchases = useStore((s) => s.purchases);
   const rawProducts = useStore((s) => s.products);
   const rawExpenses = useStore((s) => s.expenses);
-  const rawCustomers = useStore((s) => s.customers);
   const activeTenantId = useStore((s) => s.activeTenantId);
 
   const orders = useMemo(
@@ -116,10 +115,6 @@ export default function CopilotPage() {
     () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
     [rawExpenses, activeTenantId]
   );
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
-  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
 
@@ -127,7 +122,7 @@ export default function CopilotPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: `Halo! Saya **AI Business Copilot** Usaha.in 👋\n\nSaya menganalisis data real-time penjualan, pengeluaran, stok, piutang, dan kas bisnis Anda untuk memberikan saran finansial strategis.\n\nPilih pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
+      content: `Halo! Saya **AI Business Copilot** Usaha.in 👋\n\nSaya membantu Anda memahami kondisi usaha dan mempertimbangkan pilihan strategi berdasarkan informasi yang tersedia. Jika data belum cukup, saya akan menyebutkan keterbatasannya.\n\nPilih pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -145,14 +140,18 @@ export default function CopilotPage() {
   }, [messages, isTyping]);
 
   function buildContext(): CopilotContext {
-    const monthly = calcChannelFinance(orders, purchases, "monthly");
-    const weekly = calcFinanceSummary(orders, purchases, "weekly", expenses);
-    const monthlySum = calcFinanceSummary(orders, purchases, "monthly", expenses);
+    const weekly = calcFinanceSummary(orders, purchases, "weekly", expenses, products);
+    const monthlySum = calcFinanceSummary(orders, purchases, "monthly", expenses, products);
 
-    const marketplaceA = monthly.find((c) => c.channel === "marketplace_a");
-    const marketplaceB = monthly.find((c) => c.channel === "marketplace_b");
-    const chat = monthly.find((c) => c.channel === "chat");
-    const offline = monthly.find((c) => c.channel === "offline");
+    const topMarginProducts = products
+      .map((p) => {
+        const cost = p.avgCost ?? p.buyPrice;
+        const profit = p.sellPrice - cost;
+        const marginPct = p.sellPrice > 0 ? Math.round((profit / p.sellPrice) * 100) : 0;
+        return { name: p.name, sellPrice: p.sellPrice, marginPct };
+      })
+      .sort((a, b) => b.marginPct - a.marginPct)
+      .slice(0, 3);
 
     const productSales: Record<string, number> = {};
     orders.forEach((o) => {
@@ -165,22 +164,12 @@ export default function CopilotPage() {
       (a, b) => (productSales[b.id] ?? 0) - (productSales[a.id] ?? 0)
     );
 
-    const totalRevAll = orders
-      .filter((o) => !o.voided && o.paymentStatus === "lunas")
-      .reduce((s, o) => s + o.subtotal, 0);
-    const totalExpAll = expenses.filter((e) => e.paid).reduce((s, e) => s + e.amount, 0);
-    const currentCash = Math.max(0, 15_000_000 + (totalRevAll - totalExpAll));
+    const cashPos = calcCashPosition(orders, expenses);
+    const health = calcHealthScore(orders, expenses, products, expenseCategories);
 
     const now = new Date();
     const d30 = new Date(now);
     d30.setDate(now.getDate() - 30);
-    const rev30 = orders
-      .filter((o) => !o.voided && new Date(o.date) >= d30 && o.paymentStatus === "lunas")
-      .reduce((s, o) => s + o.subtotal, 0);
-
-    const mandatoryExpenses30 = 2_500_000;
-    const cashReserve = Math.round(rev30 * 0.1);
-    const safeWithdrawAmount = Math.max(0, currentCash - mandatoryExpenses30 - cashReserve);
 
     const overdueReceivables: Array<{ customerName: string; amount: number; days: number }> = [];
     orders.forEach((o) => {
@@ -189,9 +178,8 @@ export default function CopilotPage() {
       const days = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
       if (days > 7) {
         const paid = o.payments?.reduce((s, p) => s + p.amount, 0) ?? 0;
-        const cust = customers.find((c) => c.id === o.customerId);
         overdueReceivables.push({
-          customerName: cust ? cust.name : `Pelanggan #${o.customerId.slice(0, 5)}`,
+          customerName: `Pesanan #${o.id.slice(0, 8)}`,
           amount: o.subtotal - paid,
           days,
         });
@@ -218,23 +206,18 @@ export default function CopilotPage() {
       weeklyProfit: weekly.netProfit,
       monthlyRevenue: monthlySum.revenue,
       monthlyProfit: monthlySum.netProfit,
-      marketplaceAMargin: marketplaceA?.margin ?? 0,
-      marketplaceBMargin: marketplaceB?.margin ?? 0,
-      chatMargin: chat?.margin ?? 0,
-      offlineMargin: offline?.margin ?? 0,
-      marketplaceARevenue: marketplaceA?.revenue ?? 0,
-      marketplaceBRevenue: marketplaceB?.revenue ?? 0,
+      topMarginProducts,
       lowStockProducts: products.filter((p) => p.stock <= p.minStock).map((p) => p.name),
       slowProducts: sortedProducts.slice(-3).map((p) => p.name),
       topProducts: sortedProducts.slice(0, 3).map((p) => p.name),
-      safeWithdrawAmount,
-      currentCash,
-      mandatoryExpenses30,
-      cashReserve,
+      safeWithdrawAmount: cashPos.uangAman,
+      currentCash: cashPos.kasEst,
+      mandatoryExpenses30: cashPos.upcomingDebt,
+      cashReserve: cashPos.cadangan,
       overdueReceivables,
       topExpenseCategories,
-      healthScore: orders.length > 0 ? 80 : 0,
-      healthStatus: orders.length > 0 ? "Sehat" : "Belum Ada Data",
+      healthScore: health.total,
+      healthStatus: health.label,
     };
   }
 
@@ -242,7 +225,7 @@ export default function CopilotPage() {
     if (!text.trim()) return;
 
     const userMsg: CopilotMessage = {
-      id: `msg-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: "user",
       content: text,
       timestamp: new Date().toISOString(),
@@ -251,19 +234,61 @@ export default function CopilotPage() {
     setInput("");
     setIsTyping(true);
 
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
-
-    const ctx = buildContext();
-    const response = findCopilotResponse(text, ctx);
-
-    const assistantMsg: CopilotMessage = {
-      id: `msg-${Date.now()}-ai`,
-      role: "assistant",
-      content: response,
-      timestamp: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, assistantMsg]);
-    setIsTyping(false);
+    try {
+      const ctx = buildContext();
+      const localContext = {
+        note: "Ringkasan data keuangan, kas, stok, dan piutang Usaha.in saat ini.",
+        weeklyRevenue: ctx.weeklyRevenue,
+        weeklyProfit: ctx.weeklyProfit,
+        monthlyRevenue: ctx.monthlyRevenue,
+        monthlyProfit: ctx.monthlyProfit,
+        healthScore: ctx.healthScore,
+        healthStatus: ctx.healthStatus,
+        safeWithdrawAmount: ctx.safeWithdrawAmount,
+        currentCash: ctx.currentCash,
+        mandatoryExpenses30: ctx.mandatoryExpenses30,
+        cashReserve: ctx.cashReserve,
+        overdueReceivablesCount: ctx.overdueReceivables.length,
+        overdueReceivablesTotal: ctx.overdueReceivables.reduce((s, r) => s + r.amount, 0),
+        lowStockProducts: ctx.lowStockProducts.slice(0, 5),
+        topProducts: ctx.topProducts.slice(0, 5),
+        slowProducts: ctx.slowProducts.slice(0, 5),
+        topMarginProducts: ctx.topMarginProducts.slice(0, 5),
+        topExpenseCategories: ctx.topExpenseCategories
+          .slice(0, 5)
+          .map(({ name, amount, limit, pctOfLimit }) => ({ name, amount, limit, pctOfLimit })),
+      };
+      const response = await fetch("/api/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, context: localContext }),
+      });
+      const result: unknown = await response.json();
+      const resultRecord = typeof result === "object" && result !== null
+        ? result as Record<string, unknown>
+        : {};
+      if (!response.ok) {
+        throw new Error(typeof resultRecord.error === "string" ? resultRecord.error : "Copilot belum dapat menjawab.");
+      }
+      const answer = typeof resultRecord.answer === "string" ? resultRecord.answer : "Maaf, saya belum dapat menjawab sekarang.";
+      const assistantMsg: CopilotMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: answer,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      const assistantMsg: CopilotMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `Maaf, saya belum dapat menjawab sekarang. Silakan coba lagi sebentar.`,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   }
 
   return (
@@ -286,7 +311,7 @@ export default function CopilotPage() {
           <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 text-blue-800 dark:text-blue-300 shrink-0">
             <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             <p className="text-xs">
-              Dihasilkan dari data internal penjualan, stok, pengeluaran, dan kas Usaha.in.
+              AI Business Copilot Usaha.in membantu Anda memahami kondisi usaha berdasarkan informasi yang tersedia.
             </p>
           </div>
 

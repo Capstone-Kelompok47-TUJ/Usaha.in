@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, LogOut, Shield, User as UserIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 export function AccountSwitcher() {
   const getActiveTenant = useStore((s) => s.getActiveTenant);
@@ -28,14 +27,8 @@ export function AccountSwitcher() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  async function handleLogout() {
+  function handleLogout() {
     setOpen(false);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.error("Gagal logout dari Supabase:", e);
-    }
     logout();
     router.push("/login");
   }

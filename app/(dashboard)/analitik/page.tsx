@@ -6,7 +6,7 @@ import { PageIntro } from "@/components/ui/PageIntro";
 import { Hint } from "@/components/ui/Hint";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useStore } from "@/lib/store";
-import { formatRp } from "@/lib/finance";
+import { formatRp, calcHealthScore } from "@/lib/finance";
 import { redirect } from "next/navigation";
 import {
   TrendingUp, TrendingDown, AlertTriangle, CheckCircle2,
@@ -16,14 +16,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type AnalitikTab = "pvm" | "health" | "anomali" | "repeat_order" | "tindakan";
+type AnalitikTab = "pvm" | "health" | "anomali" | "tindakan";
 
 export default function AnalitikPage() {
   const user = useCurrentUser();
   const rawOrders = useStore((s) => s.orders);
   const rawProducts = useStore((s) => s.products);
   const rawExpenses = useStore((s) => s.expenses);
-  const rawCustomers = useStore((s) => s.customers);
   const activeTenantId = useStore((s) => s.activeTenantId);
 
   const orders = useMemo(
@@ -38,18 +37,14 @@ export default function AnalitikPage() {
     () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
     [rawExpenses, activeTenantId]
   );
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
-  );
   const expenseCategories = useStore((s) => s.expenseCategories);
   const budgets = useStore((s) => s.budgets);
+  const analitikActions = useStore((s) => s.analitikActions);
+  const setAnalitikAction = useStore((s) => s.setAnalitikAction);
 
   const [activeTab, setActiveTab] = useState<AnalitikTab>("pvm");
   const [pvmPeriod, setPvmPeriod] = useState<"weekly" | "monthly">("weekly");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({});
-  const [dismissedActions, setDismissedActions] = useState<Record<string, boolean>>({});
 
   // Owner guard
   if (user && !user.isOwner) {
@@ -255,116 +250,15 @@ export default function AnalitikPage() {
   // I2: Health Score Breakdown
   // ==========================================
   const healthData = useMemo(() => {
-    const now = new Date();
-    const d30 = new Date(now);
-    d30.setDate(now.getDate() - 30);
-
-    const orders30 = orders.filter((o) => !o.voided && new Date(o.date) >= d30 && o.paymentStatus === "lunas");
-    const rev30 = orders30.reduce((s, o) => s + o.subtotal, 0);
-    const cogs30 = orders30.reduce((s, o) => {
-      return (
-        s +
-        o.items.reduce((sum, it) => {
-          const prod = products.find((p) => p.id === it.productId);
-          const cost = it.cogsUnit ?? prod?.avgCost ?? prod?.buyPrice ?? 0;
-          return sum + cost * it.qty;
-        }, 0)
-      );
-    }, 0);
-
-    const exp30 = expenses.filter((e) => new Date(e.date) >= d30 && e.paid).reduce((s, e) => s + e.amount, 0);
-    const net30 = rev30 - cogs30 - exp30;
-
-    // 1. Margin Bersih (30%)
-    const netMarginRatio = rev30 > 0 ? net30 / rev30 : 0;
-    const marginScore = Math.min(Math.max(netMarginRatio / 0.20, 0), 1) * 100;
-
-    // 2. Perputaran Stok DIO (20%)
-    const totalInventoryValue = products.reduce((s, p) => s + (p.stock * (p.avgCost ?? p.buyPrice ?? 0)), 0);
-    const dailyHpp = cogs30 > 0 ? cogs30 / 30 : 1;
-    const dioDays = dailyHpp > 0 ? totalInventoryValue / dailyHpp : 0;
-    let dioScore = 100;
-    if (dioDays > 120) dioScore = 0;
-    else if (dioDays > 30) dioScore = Math.max(0, 100 - ((dioDays - 30) / 90) * 100);
-
-    // 3. Umur Piutang (20%)
-    const overdueReceivables = orders
-      .filter((o) => !o.voided && (o.paymentStatus === "belum" || o.paymentStatus === "sebagian"))
-      .reduce((s, o) => {
-        const paid = o.payments?.reduce((sum, p) => sum + p.amount, 0) ?? 0;
-        return s + (o.subtotal - paid);
-      }, 0);
-    const overdueRatio = rev30 > 0 ? overdueReceivables / rev30 : 0;
-    const receivableScore = Math.min(Math.max(1 - (overdueRatio / 0.20), 0), 1) * 100;
-
-    // 4. Kas Runway (30%)
-    const totalRevenueAll = orders
-      .filter((o) => !o.voided && o.paymentStatus === "lunas")
-      .reduce((s, o) => s + o.subtotal, 0);
-    const totalExpensesAll = expenses.filter((e) => e.paid).reduce((s, e) => s + e.amount, 0);
-    const estimatedCash = Math.max(0, 15_000_000 + (totalRevenueAll - totalExpensesAll));
-    const dailyBurn = exp30 > 0 ? exp30 / 30 : 50_000;
-    const runwayDays = estimatedCash / dailyBurn;
-    const runwayScore = Math.min(Math.max(runwayDays / 60, 0), 1) * 100;
-
-    const totalScore = Math.round(
-      marginScore * 0.30 +
-      dioScore * 0.20 +
-      receivableScore * 0.20 +
-      runwayScore * 0.30
-    );
-
-    let statusLabel = "Sehat";
-    let statusBadge = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800";
-    if (totalScore < 60) {
-      statusLabel = "Perlu Perhatian";
-      statusBadge = "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border-red-300 dark:border-red-800";
-    } else if (totalScore < 80) {
-      statusLabel = "Cukup / Waspada";
-      statusBadge = "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-800";
-    }
-
-    const components = [
-      {
-        name: "Margin Bersih",
-        weight: "30%",
-        score: Math.round(marginScore),
-        actual: `${(netMarginRatio * 100).toFixed(1)}%`,
-        benchmark: "Target: ≥ 20.0%",
-        status: marginScore >= 80 ? "Baik" : marginScore >= 50 ? "Sedang" : "Kritis",
-        advice: marginScore < 80 ? "Evaluasi harga jual produk tidak sensitif harga atau tekan biaya beli dari supplier." : "Profitabilitas margin bersih sangat baik.",
-      },
-      {
-        name: "Perputaran Persediaan (DIO)",
-        weight: "20%",
-        score: Math.round(dioScore),
-        actual: `${Math.round(dioDays)} hari`,
-        benchmark: "Target: ≤ 30 hari",
-        status: dioScore >= 80 ? "Baik" : dioScore >= 50 ? "Sedang" : "Kritis",
-        advice: dioDays > 45 ? "Adakan bundling diskon untuk item lambat bergerak agar dana modal tidak tertahan di gudang." : "Kecepatan perputaran stok optimal.",
-      },
-      {
-        name: "Kelancaran Piutang",
-        weight: "20%",
-        score: Math.round(receivableScore),
-        actual: formatRp(overdueReceivables),
-        benchmark: "Target: < 5% omzet",
-        status: receivableScore >= 80 ? "Baik" : receivableScore >= 50 ? "Sedang" : "Kritis",
-        advice: overdueReceivables > 0 ? "Kirimkan penagihan teratur via WhatsApp dan tetapkan DP sebelum pesanan diproses." : "Piutang terkendali sangat baik.",
-      },
-      {
-        name: "Ketahanan Kas (Runway)",
-        weight: "30%",
-        score: Math.round(runwayScore),
-        actual: `${Math.round(runwayDays)} hari (${formatRp(estimatedCash)})`,
-        benchmark: "Target: ≥ 60 hari",
-        status: runwayScore >= 80 ? "Baik" : runwayScore >= 50 ? "Sedang" : "Kritis",
-        advice: runwayDays < 60 ? "Tahan penarikan dana pribadi (prive) dan simpan cadangan dana darurat minimal 30 hari." : "Cadangan kas sangat solid.",
-      },
-    ];
-
-    return { totalScore, statusLabel, statusBadge, components, estimatedCash, net30, rev30 };
-  }, [orders, products, expenses]);
+    const res = calcHealthScore(orders, expenses, products, expenseCategories);
+    return {
+      ...res,
+      totalScore: res.total,
+      estimatedCash: res.kasEst,
+      net30: res.netProfit30,
+      rev30: res.netRevenue30,
+    };
+  }, [orders, products, expenses, expenseCategories]);
 
   // ==========================================
   // I3: Anomaly Detection
@@ -468,64 +362,6 @@ export default function AnalitikPage() {
   }, [products, expenses, expenseCategories, budgets, orders]);
 
   // ==========================================
-  // I4: Repeat Order Delay
-  // ==========================================
-  const repeatOrderAlerts = useMemo(() => {
-    const now = new Date();
-    const result: Array<{
-      customerId: string;
-      customerName: string;
-      phone: string;
-      orderCount: number;
-      avgIntervalDays: number;
-      daysSinceLastOrder: number;
-      delayDays: number;
-      totalSpend: number;
-      messageTemplate: string;
-    }> = [];
-
-    customers.forEach((cust) => {
-      const custOrders = orders
-        .filter((o) => !o.voided && o.customerId === cust.id)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      if (custOrders.length >= 2) {
-        let totalInterval = 0;
-        for (let i = 1; i < custOrders.length; i++) {
-          const diff = Math.floor(
-            (new Date(custOrders[i].date).getTime() - new Date(custOrders[i - 1].date).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          totalInterval += diff;
-        }
-        const avgInterval = Math.round(totalInterval / (custOrders.length - 1));
-
-        const lastOrderDate = new Date(custOrders[custOrders.length - 1].date);
-        const daysSinceLast = Math.floor((now.getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (daysSinceLast > avgInterval * 1.25 && avgInterval > 0) {
-          const delay = Math.max(0, daysSinceLast - avgInterval);
-          const totalSpend = custOrders.reduce((s, o) => s + o.subtotal, 0);
-          const msg = `Halo Kak ${cust.name}! 😊 Kami dari Usaha.in mau menyapa nih. Kebetulan minggu ini kami ada produk segar dan penawaran khusus untuk pelanggan setia seperti Kakak. Mau kami bantu siapkan pesanan seperti biasanya?`;
-
-          result.push({
-            customerId: cust.id,
-            customerName: cust.name,
-            phone: cust.phone || "08123456789",
-            orderCount: custOrders.length,
-            avgIntervalDays: avgInterval,
-            daysSinceLastOrder: daysSinceLast,
-            delayDays: delay,
-            totalSpend,
-            messageTemplate: msg,
-          });
-        }
-      }
-    });
-
-    return result.sort((a, b) => b.delayDays - a.delayDays);
-  }, [customers, orders]);
-
-  // ==========================================
   // I5: Weekly Prioritized Action List
   // ==========================================
   const weeklyActions = useMemo(() => {
@@ -555,7 +391,7 @@ export default function AnalitikPage() {
         priority: 1,
         tag: "PIUTANG & KAS",
         title: `Tagih ${overdue30.length} Tagihan Piutang Menunggak >30 Hari`,
-        description: `Ada piutang sebesar ${formatRp(sum)} yang melewati jatuh tempo 1 bulan. Hubungi pelanggan terkait untuk konfirmasi pembayaran.`,
+        description: `Ada piutang sebesar ${formatRp(sum)} yang melewati jatuh tempo 1 bulan. Hubungi kontak terkait untuk konfirmasi pembayaran.`,
         impact: `Potensi kas masuk: +${formatRp(sum)}`,
         link: "/pembayaran",
       });
@@ -570,7 +406,7 @@ export default function AnalitikPage() {
         tag: "STOK KRITIS",
         title: `Restock ${criticalStock.length} SKU yang Mendekati Batas Minimum`,
         description: `Stok produk ${criticalStock.slice(0, 2).map((p) => p.name).join(", ")} berada di bawah batas aman. Lakukan pemesanan ke supplier.`,
-        impact: "Mencegah lost sales dan menjaga kepuasan pelanggan.",
+        impact: "Mencegah lost sales dan menjaga ketersediaan barang.",
         link: "/stok",
       });
     }
@@ -599,24 +435,11 @@ export default function AnalitikPage() {
       });
     }
 
-    // 4. Follow-up pelanggan repeat order
-    if (repeatOrderAlerts.length > 0) {
-      actions.push({
-        id: "act-repeat-order",
-        priority: 4,
-        tag: "RETENSI PELANGGAN",
-        title: `Hubungi ${Math.min(5, repeatOrderAlerts.length)} Pelanggan yang Terlambat Order`,
-        description: `Pelanggan setia belum melakukan pemesanan ulang sesuai siklus belanjanya. Sapa via WhatsApp untuk menawarkan stok terbaru.`,
-        impact: "Meningkatkan omzet repeat order dengan biaya akuisisi Rp0.",
-        link: "/pelanggan",
-      });
-    }
-
-    // 5. Cadangan Kas Runway
+    // 4. Cadangan Kas Runway
     if (healthData.totalScore < 75) {
       actions.push({
         id: "act-cash-buffer",
-        priority: 5,
+        priority: 4,
         tag: "PROTEKSI KAS",
         title: "Tahan Penarikan Prive & Perkuat Cadangan Kas",
         description: "Skor kesehatan mengindikasikan perlunya kehati-hatian likuiditas. Prioritaskan kas untuk kebutuhan operasional pokok.",
@@ -626,7 +449,7 @@ export default function AnalitikPage() {
     }
 
     return actions;
-  }, [orders, products, expenseCategories, budgets, expenses, repeatOrderAlerts, healthData]);
+  }, [orders, products, expenseCategories, budgets, expenses, healthData]);
 
   function handleCopy(id: string, text: string) {
     navigator.clipboard.writeText(text);
@@ -659,8 +482,8 @@ export default function AnalitikPage() {
               description: "Peringatan otomatis saat ada lonjakan biaya tidak wajar, harga beli barang naik drastis dari supplier, atau pesanan anjlok.",
             },
             {
-              title: "Peluang Belanja Ulang (Repeat Order)",
-              description: "Daftar pelanggan setia yang sudah melewati siklus belanja biasanya lengkap dengan draf pesan sapaan WA siap kirim.",
+              title: "Tindakan Prioritas Mingguan",
+              description: "Rekomendasi langkah praktis terpenting mingguan untuk mengamankan kas dan mencegah pemborosan biaya.",
             },
           ]}
         />
@@ -706,22 +529,6 @@ export default function AnalitikPage() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab("repeat_order")}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
-              activeTab === "repeat_order"
-                ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
-                : "text-[hsl(var(--muted-fg))] hover:text-[hsl(var(--foreground))]"
-            }`}
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-cyan-500" />
-            Repeat Order Terlambat
-            {repeatOrderAlerts.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
-                {repeatOrderAlerts.length}
-              </span>
-            )}
-          </button>
-          <button
             onClick={() => setActiveTab("tindakan")}
             className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === "tindakan"
@@ -732,7 +539,7 @@ export default function AnalitikPage() {
             <Zap className="w-3.5 h-3.5 text-purple-500" />
             Tindakan Mingguan
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-              {weeklyActions.filter((a) => !completedActions[a.id] && !dismissedActions[a.id]).length}
+              {weeklyActions.filter((a) => !analitikActions[a.id]).length}
             </span>
           </button>
         </div>
@@ -1071,101 +878,7 @@ export default function AnalitikPage() {
           </div>
         )}
 
-        {/* TAB 4: REPEAT ORDER ALERTS */}
-        {activeTab === "repeat_order" && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm">
-              <h4 className="text-sm font-bold text-[hsl(var(--foreground))]">Pelanggan Terlambat Repeat Order</h4>
-              <p className="text-xs text-[hsl(var(--muted-fg))] mt-0.5">
-                Daftar pelanggan setia yang telah melewati interval belanja rutinnya. Hubungi via WhatsApp untuk re-engagement.
-              </p>
-            </div>
-
-            {repeatOrderAlerts.length === 0 ? (
-              <div className="p-12 text-center rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm">
-                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                <h4 className="text-base font-bold text-[hsl(var(--foreground))]">Semua Pelanggan Aktif Sesuai Jadwal</h4>
-                <p className="text-xs text-[hsl(var(--muted-fg))] mt-1">
-                  Tidak ada pelanggan berulang yang mengalami keterlambatan siklus pesanan.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {repeatOrderAlerts.map((cust) => (
-                  <div
-                    key={cust.customerId}
-                    className="p-5 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm flex flex-col justify-between space-y-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-sm font-bold text-[hsl(var(--foreground))]">{cust.customerName}</h4>
-                          <span className="text-xs text-[hsl(var(--muted-fg))]">{cust.phone}</span>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-900">
-                          Terlambat {cust.delayDays} hari
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-[hsl(var(--muted))] mt-3 text-center text-xs">
-                        <div>
-                          <div className="text-[hsl(var(--muted-fg))] text-[10px]">Siklus Belanja</div>
-                          <div className="font-semibold text-[hsl(var(--foreground))] mt-0.5">Tiap {cust.avgIntervalDays} hr</div>
-                        </div>
-                        <div>
-                          <div className="text-[hsl(var(--muted-fg))] text-[10px]">Hari Terakhir</div>
-                          <div className="font-semibold text-[hsl(var(--foreground))] mt-0.5">{cust.daysSinceLastOrder} hr lalu</div>
-                        </div>
-                        <div>
-                          <div className="text-[hsl(var(--muted-fg))] text-[10px]">Total Belanja</div>
-                          <div className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                            {formatRp(cust.totalSpend)}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-3 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] mt-3 text-xs text-[hsl(var(--muted-fg))] italic leading-relaxed">
-                        &quot;{cust.messageTemplate}&quot;
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-2 border-t border-[hsl(var(--border))]">
-                      <button
-                        onClick={() => handleCopy(cust.customerId, cust.messageTemplate)}
-                        className="flex-1 px-3 py-2 rounded-lg bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--foreground))] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        {copiedId === cust.customerId ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-emerald-600 dark:text-emerald-400">Tersalin!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-[hsl(var(--muted-fg))]" />
-                            Salin Pesan WA
-                          </>
-                        )}
-                      </button>
-                      <a
-                        href={`https://wa.me/${cust.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                          cust.messageTemplate
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        Buka WhatsApp
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: WEEKLY ACTIONS */}
+        {/* TAB 4: WEEKLY ACTIONS */}
         {activeTab === "tindakan" && (
           <div className="space-y-4 animate-fade-in">
             <div className="p-4 rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--card-border))] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1176,14 +889,14 @@ export default function AnalitikPage() {
                 </p>
               </div>
               <div className="text-xs font-semibold px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 self-start sm:self-auto">
-                {Object.values(completedActions).filter(Boolean).length} dari {weeklyActions.length} Selesai
+                {weeklyActions.filter((a) => analitikActions[a.id] === "done").length} dari {weeklyActions.length} Selesai
               </div>
             </div>
 
             <div className="space-y-3">
               {weeklyActions.map((act) => {
-                const isCompleted = !!completedActions[act.id];
-                const isDismissed = !!dismissedActions[act.id];
+                const isCompleted = analitikActions[act.id] === "done";
+                const isDismissed = analitikActions[act.id] === "dismissed";
 
                 if (isDismissed) return null;
 
@@ -1231,23 +944,23 @@ export default function AnalitikPage() {
                         </Link>
                         {!isCompleted ? (
                           <button
-                            onClick={() => setCompletedActions((prev) => ({ ...prev, [act.id]: true }))}
-                            className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                            onClick={() => setAnalitikAction(act.id, "done")}
+                            className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" /> Tandai Selesai
                           </button>
                         ) : (
                           <button
-                            onClick={() => setCompletedActions((prev) => ({ ...prev, [act.id]: false }))}
-                            className="px-3 py-2 rounded-lg bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--muted-fg))] text-xs font-semibold transition-colors"
+                            onClick={() => setAnalitikAction(act.id, null)}
+                            className="px-3 py-2 rounded-lg bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--muted-fg))] text-xs font-semibold transition-colors cursor-pointer"
                           >
                             Batalkan
                           </button>
                         )}
                         <button
-                          onClick={() => setDismissedActions((prev) => ({ ...prev, [act.id]: true }))}
-                          title="Abaikan"
-                          className="p-2 rounded-lg text-[hsl(var(--muted-fg))] hover:text-red-500 hover:bg-[hsl(var(--muted))] transition-colors"
+                          onClick={() => setAnalitikAction(act.id, "dismissed")}
+                          title="Abaikan rekomendasi ini"
+                          className="p-2 rounded-lg text-[hsl(var(--muted-fg))] hover:text-red-500 hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
                         >
                           <XCircle className="w-4 h-4" />
                         </button>

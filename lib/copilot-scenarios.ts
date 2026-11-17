@@ -14,12 +14,7 @@ export interface CopilotContext {
   weeklyProfit: number;
   monthlyRevenue: number;
   monthlyProfit: number;
-  marketplaceAMargin: number;
-  marketplaceBMargin: number;
-  chatMargin: number;
-  offlineMargin: number;
-  marketplaceARevenue: number;
-  marketplaceBRevenue: number;
+  topMarginProducts: Array<{ name: string; sellPrice: number; marginPct: number }>;
   lowStockProducts: string[];
   slowProducts: string[];
   topProducts: string[];
@@ -88,10 +83,10 @@ ${ctx.overdueReceivables
 **Total Piutang Tertunggak:** **${formatRp(
       ctx.overdueReceivables.reduce((s, r) => s + r.amount, 0)
     )}**`
-  : "✅ **Semua piutang pelanggan tercatat lancar!** Tidak ada tagihan yang melewati batas tanggal jatuh tempo."}
+  : "✅ **Semua piutang transaksi tercatat lancar!** Tidak ada tagihan yang melewati batas tanggal jatuh tempo."}
 
 💡 **Saran Penagihan:**
-Buka menu **Pembayaran & Piutang** atau klik **Hubungi Pelanggan** untuk mengirimkan ringkasan tagihan ramah melalui WhatsApp.`,
+Buka menu **Tagihan dan Utang** untuk melihat rincian dan mencatat pelunasan transaksi.`,
   },
   {
     triggers: ["laba turun", "kenapa laba", "profit turun", "kenapa profit", "penurunan laba"],
@@ -102,27 +97,22 @@ Buka menu **Pembayaran & Piutang** atau klik **Hubungi Pelanggan** untuk mengiri
 - **Margin Bersih Aktual:** ${ctx.monthlyRevenue > 0 ? Math.round((ctx.monthlyProfit / ctx.monthlyRevenue) * 100) : 0}%
 
 **Penyebab Utama Penekanan Margin:**
-1. Potongan biaya admin marketplace (terutama Shopee ~7.5%).
-2. Fluktuasi harga beli bahan/stok dari supplier.
-3. Kenaikan biaya operasional di kategori beban penjualan.
+1. Fluktuasi harga beli bahan/stok dari supplier.
+2. Kenaikan beban penjualan dan pengeluaran operasional.
+3. Terlalu banyak diskon atau pergeseran ke produk bermargin rendah.
 
 💡 **Rekomendasi:** Cek menu **Analitik → Diagnosis Laba (PVM)** untuk melihat dekomposisi efek harga, volume, dan bauran produk per SKU secara presisi.`,
   },
   {
-    triggers: ["marketplace paling untung", "kanal paling untung", "paling menguntungkan", "margin terbaik", "margin tertinggi", "shopee atau tokopedia"],
-    response: (ctx) => `📊 **Perbandingan Profitabilitas per Kanal Penjualan**
+    triggers: ["paling untung", "margin terbaik", "margin tertinggi", "produk untung", "paling menguntungkan"],
+    response: (ctx) => `📊 **Produk dengan Margin Keuntungan Tertinggi**
 
-| Kanal | Omzet | Margin Bersih |
-|---|---|---|
-| 🟠 Shopee | ${formatRp(ctx.marketplaceARevenue)} | ${ctx.marketplaceAMargin}% |
-| 🟢 Tokopedia | ${formatRp(ctx.marketplaceBRevenue)} | ${ctx.marketplaceBMargin}% |
-| 💬 WhatsApp / Chat | — | ${ctx.chatMargin}% |
-| 🏪 Toko Offline | — | ${ctx.offlineMargin}% |
+${ctx.topMarginProducts.length > 0
+  ? ctx.topMarginProducts.map((p, i) => `${i + 1}. **${p.name}** — Margin: **${p.marginPct}%** (Harga Jual: ${formatRp(p.sellPrice)})`).join("\n")
+  : "Belum ada data margin produk yang cukup."}
 
-**Kesimpulan:**
-- **Tokopedia** memberikan persentase margin tertinggi karena biaya admin lebih rendah.
-- **Shopee** menyumbang volume perputaran terbesar, namun margin terpotong biaya layanan & fee promo.
-- **WhatsApp & Offline** adalah kanal dengan margin terbersih tanpa potongan pihak ketiga.`,
+💡 **Rekomendasi Strategi:**
+Fokuskan promosi dan ketersediaan stok pada produk dengan margin tertinggi di atas untuk melipatgandakan laba bersih toko tanpa harus menambah banyak biaya operasional.`,
   },
   {
     triggers: ["restock", "stok menipis", "produk habis", "perlu restock", "kritis"],
@@ -164,9 +154,10 @@ export function findCopilotResponse(input: string, ctx: CopilotContext): string 
 }
 
 export const QUICK_QUESTIONS = [
-  "Berapa uang yang aman saya ambil?",
+  "Bagaimana skor kesehatan usaha saya?",
+  "Berapa uang yang aman saya ambil (prive)?",
   "Kategori biaya mana paling boros?",
   "Piutang mana yang jatuh tempo?",
-  "Marketplace mana yang paling untung?",
-  "Produk apa yang harus di-restock?",
+  "Produk mana yang marginnya paling untung?",
+  "Produk apa yang hampir habis stok?",
 ];

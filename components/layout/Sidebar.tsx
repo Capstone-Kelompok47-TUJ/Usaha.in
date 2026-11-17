@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
 import type { ModuleKey } from "@/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────
 interface NavItem {
@@ -75,12 +75,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/pengiriman",
         icon: <Truck className="w-4 h-4" />,
         requiresShipping: true,
-      },
-      {
-        key: "pelanggan",
-        label: "Pelanggan",
-        href: "/pelanggan",
-        icon: <Users className="w-4 h-4" />,
       },
       {
         key: "produk",
@@ -168,6 +162,40 @@ export function Sidebar() {
   const pathname = usePathname();
   const getActiveTenant = useStore((s) => s.getActiveTenant);
   const activeTenant = getActiveTenant();
+  const rawOrders = useStore((s) => s.orders);
+  const rawProducts = useStore((s) => s.products);
+  const activeTenantId = useStore((s) => s.activeTenantId);
+
+  const pendingShipments = useMemo(() => {
+    return rawOrders.filter(
+      (o) => o.tenantId === activeTenantId && !o.voided && o.shipmentStatus === "baru"
+    ).length;
+  }, [rawOrders, activeTenantId]);
+
+  const overdueBills = useMemo(() => {
+    const now = Date.now();
+    return rawOrders.filter(
+      (o) =>
+        o.tenantId === activeTenantId &&
+        !o.voided &&
+        (o.paymentStatus === "belum" || o.paymentStatus === "sebagian") &&
+        o.dueDate &&
+        new Date(o.dueDate).getTime() < now
+    ).length;
+  }, [rawOrders, activeTenantId]);
+
+  const lowStockCount = useMemo(() => {
+    return rawProducts.filter(
+      (p) => p.tenantId === activeTenantId && p.trackStock !== false && p.stock <= p.minStock
+    ).length;
+  }, [rawProducts, activeTenantId]);
+
+  function getItemBadge(key: string): number {
+    if (key === "pengiriman") return pendingShipments;
+    if (key === "pembayaran") return overdueBills;
+    if (key === "produk") return lowStockCount;
+    return 0;
+  }
 
   const useStock = activeTenant?.businessSettings?.useStock ?? true;
   const useShipping = activeTenant?.businessSettings?.useShipping ?? true;
@@ -324,6 +352,7 @@ export function Sidebar() {
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
                     const active = isActive(item);
+                    const badgeCount = getItemBadge(item.key);
                     return (
                       <Link
                         key={item.key}
@@ -348,6 +377,11 @@ export function Sidebar() {
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-blue-400" />
                         )}
 
+                        {/* Dot badge on collapsed */}
+                        {isIconOnly && badgeCount > 0 && (
+                          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[hsl(var(--sidebar-bg))]" />
+                        )}
+
                         {/* Icon */}
                         <span
                           className={`shrink-0 transition-colors ${
@@ -365,6 +399,13 @@ export function Sidebar() {
                             <span className="block text-sm leading-tight truncate">
                               {item.label}
                             </span>
+                          </span>
+                        )}
+
+                        {/* Counter badge */}
+                        {!isIconOnly && badgeCount > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                            {badgeCount}
                           </span>
                         )}
 

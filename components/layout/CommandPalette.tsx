@@ -35,7 +35,7 @@ interface CommandPaletteProps {
 
 interface SearchResultItem {
   id: string;
-  category: "Halaman" | "Pesanan" | "Produk" | "Pelanggan" | "Pengeluaran";
+  category: "Halaman" | "Pesanan" | "Produk" | "Pengeluaran";
   title: string;
   subtitle: string;
   href: string;
@@ -54,7 +54,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   const rawOrders = useStore((s) => s.orders);
   const rawProducts = useStore((s) => s.products);
-  const rawCustomers = useStore((s) => s.customers);
   const rawExpenses = useStore((s) => s.expenses);
   const activeTenantId = useStore((s) => s.activeTenantId);
   const expenseCategories = useStore((s) => s.expenseCategories);
@@ -68,10 +67,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const products = useMemo(
     () => rawProducts.filter((p) => p.tenantId === activeTenantId),
     [rawProducts, activeTenantId]
-  );
-  const customers = useMemo(
-    () => rawCustomers.filter((c) => c.tenantId === activeTenantId),
-    [rawCustomers, activeTenantId]
   );
   const expenses = useMemo(
     () => rawExpenses.filter((e) => e.tenantId === activeTenantId),
@@ -125,13 +120,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         requiresShipping: true,
       },
       {
-        key: "pelanggan",
-        title: "Pelanggan",
-        subtitle: "Data kontak & riwayat belanja pelanggan",
-        href: "/pelanggan",
-        icon: <Users className="w-4 h-4 text-indigo-500" />,
-      },
-      {
         key: "produk",
         title: "Produk & Stok",
         subtitle: "Katalog produk, harga jual, dan persediaan",
@@ -148,7 +136,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       {
         key: "pembayaran",
         title: "Tagihan & Utang",
-        subtitle: "Piutang pelanggan & tagihan belum lunas",
+        subtitle: "Piutang penjualan & tagihan belum lunas",
         href: "/pembayaran",
         icon: <CreditCard className="w-4 h-4 text-violet-500" />,
       },
@@ -194,7 +182,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       {
         key: "pengaturan",
         title: "Pengaturan Usaha",
-        subtitle: "Profil toko, batas anggaran, dan fee kanal",
+        subtitle: "Profil toko, saldo awal, dan batas anggaran",
         href: "/pengaturan",
         icon: <Settings className="w-4 h-4 text-gray-500" />,
         ownerOnly: true,
@@ -209,13 +197,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       return can(user, item.key as ModuleKey, "view");
     });
   }, [user, useStock, useShipping]);
-
-  // Customer map lookup for fast customer name resolution
-  const customerMap = useMemo(() => {
-    const map = new Map<string, string>();
-    customers.forEach((c) => map.set(c.id, c.name));
-    return map;
-  }, [customers]);
 
   // Category map lookup for expenses
   const categoryMap = useMemo(() => {
@@ -253,26 +234,22 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       if (can(user, "penjualan", "view")) {
         const matchingOrders = orders
           .filter((o) => {
-            const custName = customerMap.get(o.customerId) || "";
             return (
               (o.externalOrderId && o.externalOrderId.toLowerCase().includes(q)) ||
-              (o.id && o.id.toLowerCase().includes(q)) ||
-              custName.toLowerCase().includes(q) ||
-              (o.channel && o.channel.toLowerCase().includes(q))
+              (o.id && o.id.toLowerCase().includes(q))
             );
           })
           .slice(0, 5);
 
         matchingOrders.forEach((o) => {
-          const custName = customerMap.get(o.customerId) || "Pelanggan";
           list.push({
             id: `order-${o.id}`,
             category: "Pesanan",
-            title: `Pesanan ${o.externalOrderId || o.id.slice(0, 8)} — ${custName}`,
-            subtitle: `${o.channel.toUpperCase()} • Total ${formatRp(o.subtotal)} • Status: ${o.paymentStatus}`,
+            title: `Pesanan ${o.externalOrderId || o.id.slice(0, 8)}`,
+            subtitle: `Total ${formatRp(o.subtotal)} • Status: ${o.paymentStatus}`,
             href: `/penjualan?orderId=${o.id}`,
             icon: <ShoppingCart className="w-4 h-4 text-emerald-500" />,
-            badge: o.channel.toUpperCase(),
+            badge: o.paymentStatus.toUpperCase(),
             badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
           });
         });
@@ -298,31 +275,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             icon: <Package className="w-4 h-4 text-amber-500" />,
             badge: "Produk",
             badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-          });
-        });
-      }
-
-      // Search Customers
-      if (can(user, "pelanggan", "view")) {
-        const matchingCustomers = customers
-          .filter(
-            (c) =>
-              c.name.toLowerCase().includes(q) ||
-              (c.phone && c.phone.includes(q)) ||
-              (c.email && c.email.toLowerCase().includes(q))
-          )
-          .slice(0, 4);
-
-        matchingCustomers.forEach((c) => {
-          list.push({
-            id: `cust-${c.id}`,
-            category: "Pelanggan",
-            title: c.name,
-            subtitle: `Telp: ${c.phone || "-"} • Kanal: ${c.channel.toUpperCase()}`,
-            href: `/pelanggan?search=${encodeURIComponent(c.name)}`,
-            icon: <Users className="w-4 h-4 text-indigo-500" />,
-            badge: c.channel.toUpperCase(),
-            badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
           });
         });
       }
@@ -357,7 +309,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     }
 
     return list;
-  }, [query, navigationItems, orders, products, customers, expenses, customerMap, categoryMap, user]);
+  }, [query, navigationItems, orders, products, expenses, categoryMap, user]);
 
   // Adjust selected index if it exceeds list size
   useEffect(() => {
@@ -422,7 +374,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Cari pesanan, produk, pelanggan, pengeluaran, atau menu..."
+            placeholder="Cari pesanan, produk, pengeluaran, atau menu..."
             className="flex-1 bg-transparent text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-fg))] focus:outline-hidden font-medium"
           />
           {query ? (
@@ -452,7 +404,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               <Search className="w-8 h-8 mx-auto mb-2 text-[hsl(var(--muted-fg))]/50" />
               <p className="font-semibold text-[hsl(var(--foreground))]">Tidak ditemukan hasil</p>
               <p className="text-xs mt-0.5">
-                Coba kata kunci lain untuk mencari transaksi, produk, atau pelanggan.
+                Coba kata kunci lain untuk mencari transaksi, produk, atau pengeluaran.
               </p>
             </div>
           ) : (

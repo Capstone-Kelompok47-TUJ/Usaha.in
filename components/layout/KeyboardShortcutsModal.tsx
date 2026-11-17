@@ -15,7 +15,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
       keys: ["Ctrl", "K"],
       altKeys: ["⌘", "K"],
       label: "Pencarian Global",
-      description: "Cari cepat pesanan, produk, pelanggan, atau pindah menu",
+      description: "Cari cepat pesanan, produk, atau pindah menu",
       icon: <Search className="w-4 h-4 text-blue-500" />,
     },
     {
@@ -116,7 +116,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
             <div>
               <p className="font-semibold mb-0.5">Tips Usaha.in</p>
               <p className="text-blue-600/90 dark:text-blue-300/90 leading-relaxed">
-                Anda dapat menekan <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-blue-200 dark:bg-blue-900/50 rounded border border-blue-300 dark:border-blue-700 font-semibold">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-blue-200 dark:bg-blue-900/50 rounded border border-blue-300 dark:border-blue-700 font-semibold">K</kbd> kapan saja untuk mencari transaksi penjualan, nama pelanggan, katalog barang, atau beralih antar menu.
+                Anda dapat menekan <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-blue-200 dark:bg-blue-900/50 rounded border border-blue-300 dark:border-blue-700 font-semibold">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-blue-200 dark:bg-blue-900/50 rounded border border-blue-300 dark:border-blue-700 font-semibold">K</kbd> kapan saja untuk mencari transaksi penjualan, katalog barang, atau beralih antar menu.
               </p>
             </div>
           </div>

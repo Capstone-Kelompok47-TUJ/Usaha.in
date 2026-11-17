@@ -44,7 +44,7 @@ export const GLOSSARY: Record<string, GlossaryItem> = {
     key: "piutang",
     simpleTerm: "Tagihan belum dibayar",
     technicalTerm: "Piutang Usaha (Accounts Receivable)",
-    tooltip: "Uang penjualan yang masih tertahan di pembeli atau belum cair dari pihak pihak kanal penjualan.",
+    tooltip: "Uang penjualan yang masih tertahan di pembeli atau belum dilunasi.",
   },
   utang_usaha: {
     key: "utang_usaha",

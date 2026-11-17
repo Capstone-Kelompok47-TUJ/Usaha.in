@@ -122,87 +122,43 @@ function EmployeeFormModal({
 
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     if (editUser) {
-      setSubmitting(true);
-      try {
-        await fetch("/api/team", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "x-owner-email": currentUser?.loginEmail || currentUser?.username || "",
-          },
-          body: JSON.stringify({
-            userId: editUser.id,
-            permissions,
-            template,
-          }),
-        });
-        updateUserPermissions(editUser.id, permissions, template as string);
-        onClose();
-      } catch (err: any) {
-        setError(err?.message || "Gagal memperbarui data karyawan.");
-      } finally {
-        setSubmitting(false);
-      }
+      updateUserPermissions(editUser.id, permissions, template);
+      onClose();
+      return;
+    }
+
+    const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9._]/g, "");
+    if (!cleanUser) {
+      setError("Nama ID / username login wajib diisi.");
+      return;
+    }
+    const initialPassword = password.trim() || "88888888";
+    if (initialPassword.length < 6) {
+      setError("Kata sandi minimal 6 karakter.");
+      return;
+    }
+
+    const fullEmail = `${cleanUser}@${tenantDomain}`;
+    setSubmitting(true);
+    const result = addUser({
+      name: name.trim(),
+      username: cleanUser,
+      loginEmail: fullEmail,
+      password: initialPassword,
+      template,
+      permissions,
+    });
+    setSubmitting(false);
+
+    if (!result.success) {
+      setError(result.message || "Gagal menambahkan akun karyawan.");
     } else {
-      const cleanUser = username.trim().toLowerCase().replace(/[^a-z0-9._]/g, "");
-      if (!cleanUser) {
-        setError("Nama ID / username login wajib diisi.");
-        return;
-      }
-      const initialPassword = password.trim() || "88888888";
-      if (initialPassword.length < 6) {
-        setError("Kata sandi minimal 6 karakter.");
-        return;
-      }
-
-      const fullEmail = `${cleanUser}@${tenantDomain}`;
-
-      setSubmitting(true);
-      try {
-        const res = await fetch("/api/team", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-owner-email": currentUser?.loginEmail || currentUser?.username || "",
-          },
-          body: JSON.stringify({
-            name: name.trim(),
-            username: fullEmail,
-            password: initialPassword,
-            template: template as string,
-            permissions,
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Gagal menambahkan akun karyawan ke database.");
-          setSubmitting(false);
-          return;
-        }
-
-        // Also add to local store for instant UI feedback
-        addUser({
-          id: data?.user?.id,
-          name: name.trim(),
-          username: cleanUser,
-          loginEmail: fullEmail,
-          password: initialPassword,
-          template: template as string,
-          permissions,
-        } as any);
-
-        onClose();
-      } catch (err: any) {
-        setError(err?.message || "Terjadi kesalahan jaringan.");
-      } finally {
-        setSubmitting(false);
-      }
+      onClose();
     }
   }
 
@@ -305,7 +261,7 @@ function EmployeeFormModal({
           <button type="submit"
             disabled={submitting}
             className="w-full py-2.5 rounded-lg bg-blue-600 disabled:opacity-50 text-white font-semibold text-sm hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/20">
-            {submitting ? "Menyimpan ke Database..." : editUser ? "Simpan Perubahan" : "Buat Akun Karyawan"}
+            {submitting ? "Menyimpan..." : editUser ? "Simpan Perubahan" : "Buat Akun Karyawan"}
           </button>
         </form>
       </div>
@@ -336,85 +292,19 @@ export default function TimPage() {
   const [pendingDeletion, setPendingDeletion] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const addUser = useStore((s) => s.addUser);
   const deleteUser = useStore((s) => s.deleteUser);
-
-  // Sync team members from Supabase on mount
-  useEffect(() => {
-    async function fetchTeam() {
-      try {
-        const res = await fetch("/api/team", {
-          headers: {
-            "x-owner-email": user?.loginEmail || user?.username || "",
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.members && Array.isArray(data.members)) {
-            data.members.forEach((m: any) => {
-              const exists = tenantUsers.some((u) => u.id === m.id || u.username === m.username);
-              if (!exists && !m.is_owner) {
-                addUser({
-                  id: m.id,
-                  name: m.name,
-                  username: m.username,
-                  password: "●●●●●●",
-                  template: m.template || "Karyawan",
-                  permissions: m.permissions || {},
-                } as any);
-              }
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Gagal sinkronisasi data tim:", e);
-      }
-    }
-    fetchTeam();
-  }, [user]);
 
   const employees = tenantUsers.filter((u) => !u.isOwner);
 
   function handleToggleActive(emp: User) {
     toggleUserActive(emp.id);
-    fetch("/api/team", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "x-owner-email": user?.loginEmail || user?.username || "",
-      },
-      body: JSON.stringify({ userId: emp.id, active: !emp.active }),
-    }).catch(console.error);
   }
 
-  async function handleDeleteUser(emp: User) {
+  function handleDeleteUser(emp: User) {
     setIsDeleting(true);
-    try {
-      const params = new URLSearchParams();
-      if (emp.id) params.set("userId", emp.id);
-      if (emp.loginEmail) params.set("email", emp.loginEmail);
-      if (emp.username) params.set("username", emp.username);
-
-      const res = await fetch(`/api/team?${params.toString()}`, {
-        method: "DELETE",
-        headers: {
-          "x-owner-email": user?.loginEmail || user?.username || "",
-        },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok || res.status === 404) {
-        deleteUser(emp.id);
-        setPendingDeletion(null);
-      } else {
-        deleteUser(emp.id);
-        setPendingDeletion(null);
-      }
-    } catch (err: any) {
-      deleteUser(emp.id);
-      setPendingDeletion(null);
-    } finally {
-      setIsDeleting(false);
-    }
+    deleteUser(emp.id);
+    setPendingDeletion(null);
+    setIsDeleting(false);
   }
 
   function openEdit(emp: User) {
@@ -444,7 +334,7 @@ export default function TimPage() {
           },
           {
             title: "Peran Kasir Khusus",
-            description: "Kasir hanya memiliki akses mencatat penjualan, melihat produk & pelanggan, serta melunasi pembayaran tanpa dapat melihat laporan laba bersih pemilik.",
+            description: "Kasir hanya memiliki akses mencatat penjualan, melihat produk, serta melunasi pembayaran tanpa dapat melihat laporan laba bersih pemilik.",
           },
           {
             title: "Hak Akses Kustom",

@@ -10,8 +10,7 @@ import {
   Check, Phone, Mail, MapPin, Layers, Lock, Sun, Moon, Info
 } from "lucide-react";
 import { LogoIcon } from "@/components/ui/Logo";
-import type { BusinessChannel } from "@/types";
-import { createClient } from "@/lib/supabase/client";
+import type { BusinessType } from "@/types";
 
 export default function DaftarPage() {
   const router = useRouter();
@@ -59,11 +58,10 @@ export default function DaftarPage() {
   const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
   const [slugStatus, setSlugStatus] = useState<{ available: boolean; message: string } | null>(null);
   const [businessType, setBusinessType] = useState("Kuliner & F&B");
-  const [businessTypeSystem, setBusinessTypeSystem] = useState<"dagang" | "produksi" | "jasa">("dagang");
+  const [businessTypeSystem, setBusinessTypeSystem] = useState<BusinessType>("dagang");
   const [cityProvince, setCityProvince] = useState("");
   const [address, setAddress] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
-  const [channels, setChannels] = useState<BusinessChannel[]>(["marketplace", "chat", "offline"]);
   const [nib, setNib] = useState("");
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
 
@@ -150,16 +148,6 @@ export default function DaftarPage() {
     setUsername(clean);
   }
 
-  function toggleChannel(c: BusinessChannel) {
-    if (channels.includes(c)) {
-      if (channels.length > 1) {
-        setChannels(channels.filter((item) => item !== c));
-      }
-    } else {
-      setChannels([...channels, c]);
-    }
-  }
-
   // Password strength helper
   function getPasswordStrength(pwd: string) {
     if (!pwd) return { score: 0, text: "Belum diisi", color: "bg-slate-200" };
@@ -193,7 +181,6 @@ export default function DaftarPage() {
     }
     if (!cityProvince.trim()) errs.cityProvince = "Kota / Provinsi wajib diisi.";
     if (!businessPhone.trim()) errs.businessPhone = "WhatsApp / Telepon usaha wajib diisi.";
-    if (channels.length === 0) errs.channels = "Pilih minimal 1 kanal penjualan.";
 
     setStep1Errors(errs);
     return Object.keys(errs).length === 0;
@@ -261,70 +248,39 @@ export default function DaftarPage() {
     const city = parts[0] || cityProvince;
     const province = parts[1] || "";
 
-    try {
-      const supabase = createClient();
-      const signupEmail = contactEmail.trim().toLowerCase();
-
-      // 1. Sign up user directly in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: password,
-        options: {
-          data: {
-            business_name: name.trim(),
-            name: ownerName.trim(),
-            username: username.trim().toLowerCase(),
-            phone: ownerPhone.trim() || businessPhone.trim(),
-            city,
-            province,
-          },
+    const res = registerTenant(
+      {
+        name: name.trim(),
+        slug: slug.trim().toLowerCase(),
+        businessType,
+        businessSettings: {
+          businessType: businessTypeSystem,
+          useStock: true,
+          useProduction: businessTypeSystem === "produksi",
+          useShipping: true,
+          useCredit: true,
+          defaultShopeeFeePct: 7.5,
+          defaultTokopediaFeePct: 3.5,
         },
-      });
-
-      if (authError) {
-        setErrorBanner(authError.message);
-        setLoading(false);
-        return;
+        city,
+        province,
+        address: address.trim() || undefined,
+        phone: businessPhone.trim(),
+        nib: nib.trim() || undefined,
+      },
+      {
+        name: ownerName.trim(),
+        username: username.trim().toLowerCase(),
+        contactEmail: contactEmail.trim().toLowerCase(),
+        phone: ownerPhone.trim(),
+        password,
       }
+    );
 
-      // 2. Register in UI state for seamless dashboard navigation
-      const res = registerTenant(
-        {
-          name: name.trim(),
-          slug: slug.trim().toLowerCase(),
-          businessType,
-          businessSettings: {
-            businessType: businessTypeSystem,
-            useStock: businessTypeSystem !== "jasa",
-            useProduction: businessTypeSystem === "produksi",
-            useShipping: businessTypeSystem !== "jasa",
-            useCredit: true,
-            defaultShopeeFeePct: 7.5,
-            defaultTokopediaFeePct: 3.5,
-          },
-          city,
-          province,
-          address: address.trim() || undefined,
-          phone: businessPhone.trim(),
-          channels,
-          nib: nib.trim() || undefined,
-        },
-        {
-          name: ownerName.trim(),
-          username: username.trim().toLowerCase(),
-          contactEmail: signupEmail,
-          phone: ownerPhone.trim(),
-          password,
-        }
-      );
-
-      if (res.success) {
-        router.push("/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (err: any) {
-      setErrorBanner(err?.message || "Terjadi kesalahan saat pendaftaran.");
+    if (res.success) {
+      router.push("/dashboard");
+    } else {
+      setErrorBanner(res.message || "Pendaftaran gagal. Periksa kembali data yang diisi.");
       setLoading(false);
     }
   }
@@ -527,7 +483,6 @@ export default function DaftarPage() {
                     <option value="Kerajinan & Kriya">Kerajinan & Kriya</option>
                     <option value="Kesehatan & Kecantikan">Kesehatan & Kecantikan</option>
                     <option value="Retail & Toko Kelontong">Retail & Toko Kelontong</option>
-                    <option value="Jasa & Servis">Jasa & Servis</option>
                     <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
@@ -561,11 +516,10 @@ export default function DaftarPage() {
                     — menentukan fitur aktif (stok, produksi, pengiriman)
                   </span>
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {([
-                    { value: "dagang", label: "Dagang", icon: "🛒", desc: "Beli dan jual barang. Stok & pengiriman aktif." },
-                    { value: "produksi", label: "Produksi", icon: "🏭", desc: "Buat produk dari bahan baku. Resep & produksi aktif." },
-                    { value: "jasa", label: "Jasa", icon: "🤝", desc: "Layanan tanpa stok fisik. Cocok untuk salon, konsultan, dll." },
+                    { value: "dagang", label: "Produk Jadi (Reseller)", icon: "🛍️", desc: "Beli dan jual barang jadi siap edar. Stok & persediaan aktif." },
+                    { value: "produksi", label: "Produksi Sendiri (Olahan)", icon: "🌾", desc: "Buat produk dari bahan baku. Resep & racikan aktif." },
                   ] as const).map((t) => (
                     <button
                       key={t.value}
@@ -642,47 +596,6 @@ export default function DaftarPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                 </div>
-              </div>
-
-              {/* Kanal Penjualan */}
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
-                  Kanal Penjualan Aktif <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { id: "marketplace" as BusinessChannel, label: "Marketplace Online", desc: "Shopee & Tokopedia" },
-                    { id: "chat" as BusinessChannel, label: "Pemesanan via WhatsApp", desc: "Pesan instan WhatsApp" },
-                    { id: "offline" as BusinessChannel, label: "Toko Offline", desc: "Gerai fisik / Kasir" },
-                  ].map((ch) => {
-                    const checked = channels.includes(ch.id);
-                    return (
-                      <label
-                        key={ch.id}
-                        onClick={() => toggleChannel(ch.id)}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5 ${
-                          checked
-                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30"
-                            : "border-[hsl(var(--border))] bg-[hsl(var(--background))]"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {}}
-                          className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
-                        />
-                        <div>
-                          <div className="text-xs font-bold">{ch.label}</div>
-                          <div className="text-[10px] text-[hsl(var(--muted-fg))]">{ch.desc}</div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-                {step1Errors.channels && (
-                  <p className="text-xs text-red-500 mt-1">{step1Errors.channels}</p>
-                )}
               </div>
 
               {/* Action Buttons */}
@@ -1009,16 +922,6 @@ export default function DaftarPage() {
                       <p className="font-mono font-medium">{nib}</p>
                     </div>
                   )}
-                  <div>
-                    <span className="text-[hsl(var(--muted-fg))]">Kanal Penjualan:</span>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {channels.map((c) => (
-                        <span key={c} className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold text-[10px] uppercase">
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 
